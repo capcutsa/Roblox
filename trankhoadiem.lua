@@ -1,216 +1,322 @@
-repeat task.wait() until game:IsLoaded() and game.Players.LocalPlayer
+--[[
+	TKD Utility Menu v1.0  |  Dev: Tran Khoa Diem  |  Telegram: @TranKhoaDiem
+	VỊ TRÍ: StarterPlayer > StarterPlayerScripts  (LocalScript)
+	Chạy hoàn toàn trên client, chỉ dùng API chính thức của Roblox.
+]]
 
-local function safeGetService(serviceName)
-    local service = game:GetService(serviceName)
-    return (cloneref and cloneref(service)) or service
-end
-
-local Players = safeGetService("Players")
-local RunService = safeGetService("RunService")
-local TweenService = safeGetService("TweenService")
-local UserInputService = safeGetService("UserInputService")
-local CollectionService = safeGetService("CollectionService")
-local Lighting = safeGetService("Lighting")
-local Workspace = safeGetService("Workspace")
-
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-
+----------------------------------------------------------------
+-- CẤU HÌNH (sửa tại đây)
+----------------------------------------------------------------
 local CONFIG = {
-	MenuToggleKey = Enum.KeyCode.RightShift,
-	StartOpen = true,
-	GuiName = "KhoaDiemHub",
 	Version = "v1.0",
+	MenuName = "TKD Menu",
+	DeveloperName = "Tran Khoa Diem",
+	TelegramHandle = "@TranKhoaDiem",
+	TelegramLink = "https://t.me/TranKhoaDiem",
+	Introduction = "Xin chào! Mình là Tran Khoa Diem, nhà phát triển của menu này. "
+		.. "Menu được làm riêng cho trải nghiệm của mình, giao diện tối, gọn nhẹ và mượt trên cả PC lẫn điện thoại. "
+		.. "Cảm ơn bạn đã sử dụng!",
+	GuiName = "TKD_UtilityMenu",
+	MenuToggleKey = Enum.KeyCode.RightShift,
+	WelcomeDuration = 2.2,
+	NotificationDuration = 2.5,
 
-	Developer = {
-		Name = "Tran Khoa Diem",
-		Telegram = "@TranKhoaDiem",
-		TelegramUrl = "https://t.me/TranKhoaDiem",
-		Intro = "Xin chào! Mình là Tran Khoa Diem, người phát triển KhoaDiemHub. Menu được thiết kế gọn nhẹ, giao diện tối và thao tác mượt trên cả máy tính lẫn điện thoại. Nếu cần hỗ trợ, góp ý hoặc báo lỗi, hãy liên hệ mình qua Telegram nhé!",
-	},
+	-- Speed Walk / High Jump (Step = bước làm tròn của slider)
+	WalkSpeed = { Min = 16, Max = 120, Default = 40, Step = 1 },
+	JumpPower = { Min = 50, Max = 250, Default = 100, Step = 1 },
+	JumpHeight = { Min = 7.2, Max = 60, Default = 20, Step = 0.5 },
 
-	WalkSpeed = { Min = 16, Max = 150, Default = 50 },
-	JumpPower = { Min = 50, Max = 300, Default = 100 },
-	JumpHeight = { Min = 7, Max = 80, Default = 25 },
-	MaxCorrectionsPerSecond = 10,
+	-- Auto Farm
+	EnemyTag = "FarmableEnemy",
+	FallbackEnemyFolder = "Enemies", -- tên Folder nằm trực tiếp trong Workspace
+	EnemyHoverHeight = 10, -- khoảng cách phía trên quái (studs)
+	AttackInterval = 0.4, -- giây giữa 2 lần gọi attackTarget
 
-	Movement = {
-		TweenSpeed = 90,
-		FollowSharpness = 14,
-		SettleDistance = 4,
-		RetweenDistance = 30,
-	},
-	SearchInterval = 0.5,
+	-- Auto Loot
+	LootTags = { "LootChest", "DevilFruit" }, -- thêm tag mới vào đây
+	LootStopDistance = 4, -- khoảng cách dừng khi tiến gần vật phẩm
+	LootRetryCooldown = 15, -- giây bỏ qua vật phẩm không nhặt được
+	MaxLootAttempts = 3,
+	CollectWithProximityPrompt = true, -- dùng ProximityPrompt có sẵn (API chính thức)
 
-	Farm = {
-		EnemyTag = "FarmableEnemy",
-		FallbackEnemyFolderPath = { "Enemies" },
-		HeightAboveEnemy = 8,
-		AttackInterval = 0.4,
-	},
+	-- Di chuyển chung
+	TweenSpeed = 80, -- studs / giây
+	MinTweenTime = 0.08,
+	TargetSearchInterval = 0.5, -- giây giữa 2 lần tìm mục tiêu mới
+	FarmTickInterval = 0.1,
+	GoalTolerance = 1, -- sai lệch cho phép trước khi tạo tween mới
 
-	Loot = {
-		Tags = { "LootChest", "DevilFruit" },
-		StopDistance = 4,
-		HeightOffset = 2.5,
-		ApproachTimeout = 20,
-		CollectTimeout = 3,
-		IgnoreSeconds = 30,
+	Esp = {
+		UpdateInterval = 0.25,
+		ShowNames = true,
+		ShowDistance = true,
+		ShowHealth = true,
+		HideSameTeam = false,
+		OutlineColor = Color3.fromRGB(255, 255, 255),
+		FillColor = Color3.fromRGB(255, 70, 100),
+		FillTransparency = 0.85,
+		TextColor = Color3.fromRGB(255, 255, 255),
+		HealthHighColor = Color3.fromRGB(80, 220, 120),
+		HealthLowColor = Color3.fromRGB(235, 70, 70),
 	},
 
 	FixLag = {
-		FogEnd = 100000,
-		ScanBatchSize = 400,
-		SimplifyMaterials = true,
-		HideDecals = true,
-		ReduceMeshDetail = true,
-		ProtectedNameKeywords = { "hitbox" },
+		FogEnd = 1000000,
+		ReplacementMaterial = Enum.Material.SmoothPlastic,
+		DecorativeMaterials = {
+			[Enum.Material.Grass] = true,
+			[Enum.Material.Sand] = true,
+			[Enum.Material.Brick] = true,
+			[Enum.Material.Cobblestone] = true,
+			[Enum.Material.Concrete] = true,
+			[Enum.Material.Pavement] = true,
+			[Enum.Material.Granite] = true,
+			[Enum.Material.Marble] = true,
+			[Enum.Material.Slate] = true,
+			[Enum.Material.Wood] = true,
+			[Enum.Material.WoodPlanks] = true,
+			[Enum.Material.Fabric] = true,
+			[Enum.Material.Ground] = true,
+			[Enum.Material.Mud] = true,
+			[Enum.Material.Rock] = true,
+			[Enum.Material.Asphalt] = true,
+			[Enum.Material.LeafyGrass] = true,
+		},
+		HitboxNameKeyword = "hitbox", -- phần tử có tên chứa từ này sẽ không bị sửa
 	},
 
 	FullBright = {
 		Brightness = 2,
-		Ambient = Color3.fromRGB(150, 150, 150),
-		OutdoorAmbient = Color3.fromRGB(150, 150, 150),
+		Ambient = Color3.fromRGB(140, 140, 140),
+		OutdoorAmbient = Color3.fromRGB(140, 140, 140),
 		ExposureCompensation = 0.25,
 		GlobalShadows = false,
 	},
 
-	ESP = {
-		ShowNames = true,
-		ShowHealth = true,
-		ShowDistance = true,
-		HideTeammates = false,
-		UpdateInterval = 0.25,
-		MaxDistance = 1500,
-		Colors = {
-			Enemy = Color3.fromRGB(255, 70, 70),
-			Team = Color3.fromRGB(70, 200, 120),
-			Text = Color3.fromRGB(255, 255, 255),
-			HealthFull = Color3.fromRGB(80, 220, 120),
-			HealthLow = Color3.fromRGB(235, 70, 70),
-			BarBackground = Color3.fromRGB(25, 25, 30),
-		},
+	Theme = {
+		Background = Color3.fromRGB(16, 16, 22),
+		Panel = Color3.fromRGB(24, 24, 33),
+		Element = Color3.fromRGB(35, 35, 48),
+		Off = Color3.fromRGB(65, 65, 85),
+		Accent = Color3.fromRGB(125, 95, 255),
+		Text = Color3.fromRGB(235, 235, 245),
+		SubText = Color3.fromRGB(150, 150, 172),
+		Success = Color3.fromRGB(70, 200, 120),
+		Danger = Color3.fromRGB(235, 80, 90),
+		Warning = Color3.fromRGB(240, 180, 60),
 	},
 }
 
-if PlayerGui:FindFirstChild(CONFIG.GuiName) then
-	warn("[KhoaDiemHub] Menu đã tồn tại, bỏ qua lần chạy trùng.")
-	return
-end
+----------------------------------------------------------------
+-- DỊCH VỤ
+----------------------------------------------------------------
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CollectionService = game:GetService("CollectionService")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
 
-local THEME = {
-	Background = Color3.fromRGB(16, 16, 20),
-	Card = Color3.fromRGB(26, 26, 32),
-	CardHover = Color3.fromRGB(36, 36, 45),
-	CardPress = Color3.fromRGB(46, 46, 58),
-	Field = Color3.fromRGB(21, 21, 27),
-	FieldHover = Color3.fromRGB(30, 30, 38),
-	Stroke = Color3.fromRGB(48, 48, 60),
-	Accent = Color3.fromRGB(99, 102, 241),
-	Text = Color3.fromRGB(240, 240, 246),
-	Muted = Color3.fromRGB(145, 145, 162),
-	Off = Color3.fromRGB(58, 58, 72),
-	Success = Color3.fromRGB(52, 211, 153),
-	Warning = Color3.fromRGB(251, 191, 36),
-	Error = Color3.fromRGB(248, 113, 113),
-	Font = Enum.Font.SourceSansSemibold,
-	FontBold = Enum.Font.SourceSansBold,
-}
+local player = Players.LocalPlayer
+local theme = CONFIG.Theme
+local weakKeys = { __mode = "k" }
 
-local STATUS_COLORS = {
-	off = THEME.Muted,
-	success = THEME.Success,
-	warn = THEME.Warning,
-	error = THEME.Error,
-	info = THEME.Accent,
-}
-
-local Janitor = {}
-Janitor.__index = Janitor
-
-function Janitor.new()
-	return setmetatable({ items = {} }, Janitor)
-end
-
-function Janitor:Add(item)
-	table.insert(self.items, item)
-	return item
-end
-
-function Janitor:Cleanup()
-	local items = self.items
-	self.items = {}
-	for index = #items, 1, -1 do
-		local item = items[index]
-		local itemType = typeof(item)
-		if itemType == "RBXScriptConnection" then
-			item:Disconnect()
-		elseif itemType == "Instance" then
-			if item:IsA("Tween") then
-				item:Cancel()
-			end
-			item:Destroy()
-		elseif itemType == "function" then
-			pcall(item)
-		elseif itemType == "thread" then
-			if item ~= coroutine.running() and coroutine.status(item) ~= "dead" then
+----------------------------------------------------------------
+-- BIN: gom và dọn connection / tween / instance / luồng
+----------------------------------------------------------------
+local function newBin()
+	local bin = { items = {} }
+	function bin.add(item)
+		table.insert(bin.items, item)
+		return item
+	end
+	function bin.clean()
+		local items = bin.items
+		bin.items = {}
+		for _, item in items do
+			local itemType = typeof(item)
+			if itemType == "RBXScriptConnection" then
+				item:Disconnect()
+			elseif itemType == "function" then
+				item()
+			elseif itemType == "thread" then
 				task.cancel(item)
+			elseif itemType == "Instance" then
+				if item:IsA("Tween") then
+					item:Cancel()
+				end
+				item:Destroy()
 			end
 		end
 	end
+	return bin
+end
+
+local rootBin = newBin()
+
+----------------------------------------------------------------
+-- GUI GỐC (chống trùng lặp menu)
+----------------------------------------------------------------
+local playerGui = player:WaitForChild("PlayerGui")
+local previousGui = playerGui:FindFirstChild(CONFIG.GuiName)
+if previousGui then
+	previousGui:Destroy() -- bản script cũ sẽ tự dọn dẹp qua sự kiện Destroying
 end
 
 local function create(className, properties, children)
 	local instance = Instance.new(className)
-	if instance:IsA("GuiObject") then
-		instance.BorderSizePixel = 0
+	for key, value in properties do
+		instance[key] = value
 	end
-	local parent = nil
-	for property, value in properties do
-		if property == "Parent" then
-			parent = value
-		else
-			instance[property] = value
-		end
+	for _, child in children or {} do
+		child.Parent = instance
 	end
-	if children then
-		for _, child in children do
-			child.Parent = instance
-		end
-	end
-	instance.Parent = parent
 	return instance
 end
 
-local function createText(properties)
-	local defaults = {
-		BackgroundTransparency = 1,
-		Font = THEME.Font,
-		TextColor3 = THEME.Text,
-		TextSize = 14,
-		TextXAlignment = Enum.TextXAlignment.Left,
+local function playTween(instance, duration, properties)
+	local tween = TweenService:Create(
+		instance,
+		TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		properties
+	)
+	tween:Play()
+	return tween
+end
+
+local gui = create("ScreenGui", {
+	Name = CONFIG.GuiName,
+	ResetOnSpawn = false,
+	IgnoreGuiInset = true,
+	DisplayOrder = 100,
+	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+	Parent = playerGui,
+})
+
+local function getViewportSize()
+	local camera = Workspace.CurrentCamera
+	return camera and camera.ViewportSize or Vector2.new(800, 600)
+end
+
+----------------------------------------------------------------
+-- THÔNG BÁO
+----------------------------------------------------------------
+local toastHolder = create("Frame", {
+	Name = "Toasts",
+	AnchorPoint = Vector2.new(0.5, 0),
+	Position = UDim2.new(0.5, 0, 0, 12),
+	Size = UDim2.fromOffset(260, 0),
+	AutomaticSize = Enum.AutomaticSize.Y,
+	BackgroundTransparency = 1,
+	ZIndex = 50,
+	Parent = gui,
+}, {
+	create("UIListLayout", {
+		Padding = UDim.new(0, 6),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+	}),
+})
+
+local toastCounter = 0
+
+local function notify(message, kind)
+	local colorByKind = {
+		success = theme.Success,
+		error = theme.Danger,
+		warning = theme.Warning,
+		info = theme.Accent,
 	}
-	for key, value in defaults do
-		if properties[key] == nil then
-			properties[key] = value
+	local accent = colorByKind[kind or "info"] or theme.Accent
+	local toasts = {}
+	for _, child in toastHolder:GetChildren() do
+		if child:IsA("CanvasGroup") then
+			table.insert(toasts, child)
 		end
 	end
-	return create("TextLabel", properties)
+	if #toasts >= 3 then
+		table.sort(toasts, function(a, b)
+			return a.LayoutOrder < b.LayoutOrder
+		end)
+		toasts[1]:Destroy()
+	end
+	toastCounter += 1
+	local toast = create("CanvasGroup", {
+		Size = UDim2.fromOffset(260, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundColor3 = theme.Panel,
+		GroupTransparency = 1,
+		LayoutOrder = toastCounter,
+		Parent = toastHolder,
+	}, {
+		create("UICorner", { CornerRadius = UDim.new(0, 8) }),
+		create("UIStroke", { Color = accent, Thickness = 1 }),
+		create("UIPadding", {
+			PaddingTop = UDim.new(0, 7),
+			PaddingBottom = UDim.new(0, 7),
+			PaddingLeft = UDim.new(0, 10),
+			PaddingRight = UDim.new(0, 10),
+		}),
+		create("TextLabel", {
+			Size = UDim2.new(1, 0, 0, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			Text = message,
+			TextWrapped = true,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextColor3 = theme.Text,
+			TextSize = 13,
+			Font = Enum.Font.GothamMedium,
+		}),
+	})
+	playTween(toast, 0.2, { GroupTransparency = 0 })
+	task.delay(CONFIG.NotificationDuration, function()
+		if not toast.Parent then
+			return
+		end
+		playTween(toast, 0.25, { GroupTransparency = 1 })
+		task.delay(0.3, function()
+			if toast.Parent then
+				toast:Destroy()
+			end
+		end)
+	end)
 end
 
-local notify = function(text, kind)
-	print(string.format("[KhoaDiemHub][%s] %s", kind or "info", text))
-end
+----------------------------------------------------------------
+-- TRẠNG THÁI DÙNG CHUNG
+----------------------------------------------------------------
+local selection = {
+	enemyType = nil,
+	lootTypes = {},
+	walkSpeed = CONFIG.WalkSpeed.Default,
+	jumpValues = {
+		JumpPower = CONFIG.JumpPower.Default,
+		JumpHeight = CONFIG.JumpHeight.Default,
+	},
+	espHideSameTeam = CONFIG.Esp.HideSameTeam,
+}
 
-local statusListeners = {}
-local function setStatus(key, text, kind)
-	for _, listener in statusListeners do
-		pcall(listener, key, text, kind)
+local features = {} -- [tên] = { label, start, stop, refresh, enabled, toggle }
+local statusLabels = {}
+local setFeature -- gán ở phần quản lý tính năng
+local enemyListChanged -- gán ở phần UI
+
+local function setStatus(name, text)
+	local label = statusLabels[name]
+	if label and label.Text ~= text then
+		label.Text = text
 	end
 end
 
-local function getCharacterParts()
-	local character = LocalPlayer.Character
+local function getHumanoid()
+	local character = player.Character
+	return character and character:FindFirstChildOfClass("Humanoid")
+end
+
+local function getLivingCharacter()
+	local character = player.Character
 	if not character then
 		return nil
 	end
@@ -222,2044 +328,1842 @@ local function getCharacterParts()
 	return nil
 end
 
-local function resolveCharacter(character, callback)
-	local humanoid = character:WaitForChild("Humanoid", 10)
-	local root = character:WaitForChild("HumanoidRootPart", 10)
-	if humanoid and root and character.Parent then
-		callback(character, humanoid, root)
-	else
-		warn("[KhoaDiemHub] Không tìm thấy Humanoid/HumanoidRootPart của nhân vật mới.")
+----------------------------------------------------------------
+-- LIGHTING: lớp ghi đè để Fix Lag và Full Bright độc lập nhau
+----------------------------------------------------------------
+local lightingOriginals = {}
+local lightingOverrides = {}
+
+local function setLightingOverride(owner, property, value)
+	if lightingOriginals[property] == nil then
+		lightingOriginals[property] = Lighting[property]
 	end
+	lightingOverrides[property] = lightingOverrides[property] or {}
+	lightingOverrides[property][owner] = value
+	Lighting[property] = value
 end
 
-local function watchCharacter(callback)
-	local connection = LocalPlayer.CharacterAdded:Connect(function(character)
-		resolveCharacter(character, callback)
-	end)
-	if LocalPlayer.Character then
-		task.spawn(resolveCharacter, LocalPlayer.Character, callback)
-	end
-	return connection
-end
-
-local function buildFacingCFrame(position, lookPoint, fallback)
-	local flat = Vector3.new(lookPoint.X - position.X, 0, lookPoint.Z - position.Z)
-	if flat.Magnitude < 0.5 then
-		flat = Vector3.new(fallback.LookVector.X, 0, fallback.LookVector.Z)
-		if flat.Magnitude < 0.01 then
-			return CFrame.new(position)
+local function clearLightingOverride(owner)
+	for property, owners in lightingOverrides do
+		owners[owner] = nil
+		local remainingOwner, remainingValue = next(owners)
+		if remainingOwner ~= nil then
+			Lighting[property] = remainingValue
+		else
+			Lighting[property] = lightingOriginals[property]
+			lightingOriginals[property] = nil
+			lightingOverrides[property] = nil
 		end
 	end
-	return CFrame.lookAt(position, position + flat)
 end
 
-local placeholderWarnings = {}
-local function warnPlaceholderOnce(key, message)
-	if not placeholderWarnings[key] then
-		placeholderWarnings[key] = true
-		warn("[KhoaDiemHub] " .. message)
+----------------------------------------------------------------
+-- NOCLIP (đếm yêu cầu theo chủ sở hữu)
+----------------------------------------------------------------
+local Noclip = {
+	owners = {},
+	ownerCount = 0,
+	originalCollide = setmetatable({}, weakKeys),
+	partList = {},
+	activeBin = newBin(),
+	characterBin = newBin(),
+}
+rootBin.add(Noclip.activeBin.clean)
+rootBin.add(Noclip.characterBin.clean)
+
+local function trackNoclipPart(part)
+	if not part:IsA("BasePart") then
+		return
+	end
+	if Noclip.originalCollide[part] == nil then
+		Noclip.originalCollide[part] = part.CanCollide
+	end
+	table.insert(Noclip.partList, part)
+end
+
+local function bindNoclipCharacter(character)
+	Noclip.characterBin.clean()
+	Noclip.partList = {}
+	if not character then
+		return
+	end
+	for _, descendant in character:GetDescendants() do
+		trackNoclipPart(descendant)
+	end
+	Noclip.characterBin.add(character.DescendantAdded:Connect(trackNoclipPart))
+end
+
+local function startNoclip()
+	bindNoclipCharacter(player.Character)
+	Noclip.activeBin.add(player.CharacterAdded:Connect(bindNoclipCharacter))
+	Noclip.activeBin.add(RunService.Stepped:Connect(function()
+		for _, part in Noclip.partList do
+			part.CanCollide = false
+		end
+	end))
+end
+
+local function stopNoclip()
+	Noclip.activeBin.clean()
+	Noclip.characterBin.clean()
+	for part, original in Noclip.originalCollide do
+		part.CanCollide = original
+		Noclip.originalCollide[part] = nil
+	end
+	Noclip.partList = {}
+end
+
+local function requestNoclip(owner)
+	if Noclip.owners[owner] then
+		return
+	end
+	Noclip.owners[owner] = true
+	Noclip.ownerCount += 1
+	if Noclip.ownerCount == 1 then
+		startNoclip()
 	end
 end
 
-local function attackTarget(target)
-	warnPlaceholderOnce("attack", "attackTarget(target) chưa được kết nối với hệ thống chiến đấu. Auto Farm chỉ di chuyển.")
-end
-
-local activePrompt = nil
-
-local function releaseActivePrompt()
-	if activePrompt then
-		pcall(function() activePrompt:InputHoldEnd() end)
-		activePrompt = nil
+local function releaseNoclip(owner)
+	if not Noclip.owners[owner] then
+		return
+	end
+	Noclip.owners[owner] = nil
+	Noclip.ownerCount -= 1
+	if Noclip.ownerCount == 0 then
+		stopNoclip()
 	end
 end
 
-local function collectLoot(item)
-	local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
-	if prompt and prompt.Enabled then
-		activePrompt = prompt
-		pcall(function() prompt:InputHoldBegin() end)
-		task.wait(prompt.HoldDuration + 0.1)
-		releaseActivePrompt()
+----------------------------------------------------------------
+-- FIX LAG
+----------------------------------------------------------------
+local FixLag = {
+	token = 0,
+	originals = setmetatable({}, weakKeys),
+	bin = newBin(),
+}
+rootBin.add(FixLag.bin.clean)
+
+local LAG_EFFECT_CLASSES = {
+	"ParticleEmitter", "Trail", "Beam", "Smoke", "Fire", "Sparkles",
+	"PointLight", "SpotLight", "SurfaceLight",
+}
+local LIGHTING_EFFECT_CLASSES = {
+	"BloomEffect", "BlurEffect", "SunRaysEffect", "ColorCorrectionEffect", "DepthOfFieldEffect",
+}
+
+local function hasProtectedMarker(instance)
+	if string.find(string.lower(instance.Name), CONFIG.FixLag.HitboxNameKeyword, 1, true) then
 		return true
 	end
-	warnPlaceholderOnce("collect", "collectLoot(item): vật phẩm không có ProximityPrompt. Hãy nối vào hệ thống nhặt của game.")
+	if CollectionService:HasTag(instance, CONFIG.EnemyTag) then
+		return true
+	end
+	for _, tag in CONFIG.LootTags do
+		if CollectionService:HasTag(instance, tag) then
+			return true
+		end
+	end
 	return false
 end
 
-local StateManager = {}
-do
-	local features = {}
-	local listeners = {}
-
-	local function emit(name)
-		for _, listener in listeners do
-			pcall(listener, name, features[name].enabled)
-		end
-	end
-
-	local function runSafely(feature, phase)
-		local ok, err = pcall(feature[phase])
-		if not ok then
-			warn(string.format("[KhoaDiemHub] %s.%s lỗi: %s", feature.name, phase, tostring(err)))
-			notify(feature.label .. ": lỗi (xem Output)", "error")
-		end
-		return ok
-	end
-
-	local function disableFeature(feature)
-		feature.enabled = false
-		runSafely(feature, "disable")
-		emit(feature.name)
-	end
-
-	local function disableConflicts(feature)
-		for _, other in features do
-			if other ~= feature and other.enabled and other.exclusiveGroup == feature.exclusiveGroup then
-				disableFeature(other)
-				notify(other.label .. " đã tắt để tránh tranh quyền di chuyển", "info")
-			end
-		end
-	end
-
-	local function enableFeature(feature)
-		if feature.canEnable then
-			local allowed, reason = feature.canEnable()
-			if not allowed then
-				notify(reason, "error")
-				emit(feature.name)
-				return false
-			end
-		end
-		if feature.exclusiveGroup then
-			disableConflicts(feature)
-		end
-		feature.enabled = true
-		if not runSafely(feature, "enable") then
-			disableFeature(feature)
-			return false
-		end
-		emit(feature.name)
+local function isProtectedInstance(instance)
+	if hasProtectedMarker(instance) then
 		return true
 	end
-
-	function StateManager.register(name, definition)
-		definition.name = name
-		definition.enabled = false
-		features[name] = definition
-	end
-
-	function StateManager.isEnabled(name)
-		return features[name] and features[name].enabled or false
-	end
-
-	function StateManager.onChanged(listener)
-		table.insert(listeners, listener)
-	end
-
-	function StateManager.set(name, enabled)
-		local feature = features[name]
-		if not feature then
-			error("Feature không tồn tại: " .. tostring(name))
+	local ancestor = instance.Parent
+	while ancestor and ancestor ~= Workspace do
+		if ancestor:IsA("Model") and ancestor:FindFirstChildOfClass("Humanoid") then
+			return true
 		end
-		if feature.enabled == enabled then
-			emit(name)
+		if hasProtectedMarker(ancestor) then
+			return true
+		end
+		ancestor = ancestor.Parent
+	end
+	return false
+end
+
+local function rememberAndSet(instance, property, value)
+	local saved = FixLag.originals[instance]
+	if not saved then
+		saved = {}
+		FixLag.originals[instance] = saved
+	end
+	if saved[property] == nil then
+		saved[property] = instance[property]
+	end
+	instance[property] = value
+end
+
+local function isInstanceOfAny(instance, classNames)
+	for _, className in classNames do
+		if instance:IsA(className) then
+			return true
+		end
+	end
+	return false
+end
+
+local function reduceInstance(instance)
+	if isProtectedInstance(instance) then
+		return
+	end
+	if isInstanceOfAny(instance, LAG_EFFECT_CLASSES) then
+		rememberAndSet(instance, "Enabled", false)
+	elseif instance:IsA("Texture") then
+		rememberAndSet(instance, "Transparency", 1)
+	elseif instance:IsA("BasePart") and not instance:IsA("Terrain") then
+		rememberAndSet(instance, "CastShadow", false)
+		if CONFIG.FixLag.DecorativeMaterials[instance.Material] then
+			rememberAndSet(instance, "Material", CONFIG.FixLag.ReplacementMaterial)
+		end
+	elseif instance:IsA("Atmosphere") then
+		rememberAndSet(instance, "Density", 0)
+	end
+end
+
+local function reduceLightingInstance(instance)
+	if isInstanceOfAny(instance, LIGHTING_EFFECT_CLASSES) then
+		rememberAndSet(instance, "Enabled", false)
+	elseif instance:IsA("Atmosphere") then
+		rememberAndSet(instance, "Density", 0)
+	end
+end
+
+local function scanForLag(token)
+	for index, instance in Workspace:GetDescendants() do
+		if FixLag.token ~= token then
 			return
 		end
-		if enabled then
-			if enableFeature(feature) then
-				notify("Đã bật " .. feature.label, "success")
-			end
-		else
-			disableFeature(feature)
-			notify("Đã tắt " .. feature.label, "info")
+		reduceInstance(instance)
+		if index % 300 == 0 then
+			task.wait()
 		end
 	end
-
-	function StateManager.disableAll()
-		for _, feature in features do
-			if feature.enabled then
-				disableFeature(feature)
-			end
+	if FixLag.token ~= token then
+		return
+	end
+	for _, instance in Lighting:GetDescendants() do
+		reduceLightingInstance(instance)
+	end
+	local camera = Workspace.CurrentCamera
+	if camera then
+		for _, instance in camera:GetChildren() do
+			reduceLightingInstance(instance)
 		end
 	end
 end
 
-local Noclip = {}
-do
-	local requesters = {}
-	local requesterCount = 0
-	local originalCollisions = {}
-	local trackedParts = {}
-	local runtimeJanitor = Janitor.new()
-	local characterJanitor = Janitor.new()
-
-	local function trackPart(instance)
-		if instance:IsA("BasePart") and not trackedParts[instance] then
-			trackedParts[instance] = true
-			if originalCollisions[instance] == nil then
-				originalCollisions[instance] = instance.CanCollide
-			end
+local function deferReduce(token, reducer, instance)
+	task.defer(function()
+		if FixLag.token == token and instance.Parent then
+			reducer(instance)
 		end
+	end)
+end
+
+local function startFixLag()
+	FixLag.token += 1
+	local token = FixLag.token
+	setLightingOverride("FixLag", "GlobalShadows", false)
+	setLightingOverride("FixLag", "FogEnd", CONFIG.FixLag.FogEnd)
+	FixLag.bin.add(Workspace.DescendantAdded:Connect(function(instance)
+		deferReduce(token, reduceInstance, instance)
+	end))
+	FixLag.bin.add(Lighting.DescendantAdded:Connect(function(instance)
+		deferReduce(token, reduceLightingInstance, instance)
+	end))
+	task.spawn(scanForLag, token)
+	return true
+end
+
+local function stopFixLag()
+	FixLag.token += 1
+	FixLag.bin.clean()
+	for instance, savedProperties in FixLag.originals do
+		for property, value in savedProperties do
+			instance[property] = value
+		end
+	end
+	FixLag.originals = setmetatable({}, weakKeys)
+	clearLightingOverride("FixLag")
+end
+
+----------------------------------------------------------------
+-- FULL BRIGHT
+----------------------------------------------------------------
+local function startFullBright()
+	for property, value in CONFIG.FullBright do
+		setLightingOverride("FullBright", property, value)
+	end
+	return true
+end
+
+local function stopFullBright()
+	clearLightingOverride("FullBright")
+end
+
+----------------------------------------------------------------
+-- SPEED WALK / HIGH JUMP (dùng chung một bộ điều khiển Humanoid)
+----------------------------------------------------------------
+local function createHumanoidStat(label, resolveProperty, resolveTarget)
+	local stat = {
+		enabled = false,
+		bin = newBin(),
+		characterBin = newBin(),
+		originals = setmetatable({}, weakKeys),
+		lastWarning = 0,
+	}
+	rootBin.add(stat.bin.clean)
+	rootBin.add(stat.characterBin.clean)
+
+	local function applyToHumanoid(humanoid)
+		local property = resolveProperty(humanoid)
+		if stat.originals[humanoid] == nil then
+			stat.originals[humanoid] = { property = property, value = humanoid[property] }
+		end
+		humanoid[property] = resolveTarget(property)
+	end
+
+	local function watchForOverride(humanoid)
+		local property = resolveProperty(humanoid)
+		stat.characterBin.add(humanoid:GetPropertyChangedSignal(property):Connect(function()
+			local expected = resolveTarget(property)
+			local overridden = math.abs(humanoid[property] - expected) > 0.05
+			if stat.enabled and overridden and os.clock() - stat.lastWarning > 5 then
+				stat.lastWarning = os.clock()
+				notify(label .. ": server đang ghi đè giá trị " .. property, "warning")
+			end
+		end))
 	end
 
 	local function bindCharacter(character)
-		characterJanitor:Cleanup()
-		trackedParts = {}
-		originalCollisions = {}
-		for _, descendant in character:GetDescendants() do
-			trackPart(descendant)
-		end
-		characterJanitor:Add(character.DescendantAdded:Connect(trackPart))
-	end
-
-	local function applyNoclip()
-		for part in trackedParts do
-			if part.Parent then
-				if part.CanCollide then
-					part.CanCollide = false
-				end
-			else
-				trackedParts[part] = nil
+		stat.characterBin.clean()
+		task.spawn(function()
+			local humanoid = character:WaitForChild("Humanoid", 10)
+			if not stat.enabled or player.Character ~= character then
+				return
 			end
-		end
-	end
-
-	local function activate()
-		runtimeJanitor:Add(watchCharacter(bindCharacter))
-		runtimeJanitor:Add(RunService.Stepped:Connect(applyNoclip))
-	end
-
-	local function deactivate()
-		runtimeJanitor:Cleanup()
-		characterJanitor:Cleanup()
-		for part, original in originalCollisions do
-			if part.Parent then
-				part.CanCollide = original
+			if not humanoid then
+				notify(label .. ": không tìm thấy Humanoid", "error")
+				return
 			end
-		end
-		originalCollisions = {}
-		trackedParts = {}
-	end
-
-	function Noclip.request(owner)
-		if requesters[owner] then
-			return
-		end
-		requesters[owner] = true
-		requesterCount += 1
-		if requesterCount == 1 then
-			activate()
-		end
-	end
-
-	function Noclip.release(owner)
-		if not requesters[owner] then
-			return
-		end
-		requesters[owner] = nil
-		requesterCount -= 1
-		if requesterCount == 0 then
-			deactivate()
-		end
-	end
-end
-
-local Movement = {}
-do
-	local connection = nil
-	local activeTween = nil
-	local mode = "idle"
-	local goalProvider = nil
-	local settled = false
-
-	local function cancelTween()
-		local tween = activeTween
-		activeTween = nil
-		if tween then
-			tween:Cancel()
-			tween:Destroy()
-		end
-	end
-
-	local function startTween(root, goal)
-		cancelTween()
-		local distance = (goal.Position - root.Position).Magnitude
-		local duration = math.max(distance / CONFIG.Movement.TweenSpeed, 0.05)
-		local tween = TweenService:Create(root, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = goal })
-		activeTween = tween
-		mode = "tween"
-		settled = false
-		tween.Completed:Once(function(playbackState)
-			if activeTween == tween and playbackState == Enum.PlaybackState.Completed then
-				mode = "hold"
-			end
+			applyToHumanoid(humanoid)
+			watchForOverride(humanoid)
 		end)
-		tween:Play()
 	end
 
-	local function holdStep(root, dt)
-		local goal = goalProvider and goalProvider()
-		if not goal then
-			return
+	function stat.start()
+		stat.enabled = true
+		if player.Character then
+			bindCharacter(player.Character)
 		end
-		local distance = (goal.Position - root.Position).Magnitude
-		settled = distance <= CONFIG.Movement.SettleDistance
-		if distance > CONFIG.Movement.RetweenDistance then
-			startTween(root, goal)
-			return
-		end
-		local alpha = 1 - math.exp(-CONFIG.Movement.FollowSharpness * dt)
-		root.CFrame = root.CFrame:Lerp(goal, alpha)
+		stat.bin.add(player.CharacterAdded:Connect(bindCharacter))
+		return true
 	end
 
-	local function step(dt)
-		if mode == "idle" then
-			return
-		end
-		local _, _, root = getCharacterParts()
-		if not root then
-			return
-		end
-		root.AssemblyLinearVelocity = Vector3.zero
-		root.AssemblyAngularVelocity = Vector3.zero
-		if mode == "hold" then
-			holdStep(root, dt)
+	function stat.refresh()
+		local humanoid = getHumanoid()
+		if stat.enabled and humanoid then
+			applyToHumanoid(humanoid)
 		end
 	end
 
-	function Movement.acquire()
-		if not connection then
-			connection = RunService.Heartbeat:Connect(step)
+	function stat.stop()
+		stat.enabled = false
+		stat.bin.clean()
+		stat.characterBin.clean()
+		for humanoid, saved in stat.originals do
+			if humanoid.Parent then
+				humanoid[saved.property] = saved.value
+			end
 		end
+		stat.originals = setmetatable({}, weakKeys)
 	end
 
-	function Movement.goTo(provider)
-		goalProvider = provider
-		settled = false
-		local _, _, root = getCharacterParts()
-		local goal = provider()
-		if not root or not goal then
-			Movement.idle()
-			return
-		end
-		if (goal.Position - root.Position).Magnitude <= CONFIG.Movement.SettleDistance then
-			cancelTween()
-			mode = "hold"
-		else
-			startTween(root, goal)
-		end
-	end
-
-	function Movement.idle()
-		cancelTween()
-		mode = "idle"
-		settled = false
-		goalProvider = nil
-	end
-
-	function Movement.release()
-		Movement.idle()
-		if connection then
-			connection:Disconnect()
-			connection = nil
-		end
-	end
-
-	function Movement.isSettled()
-		return settled
-	end
+	return stat
 end
 
-local function createHumanoidModifier(label, resolveProperty, getTargetValue)
-	local modifier = { enabled = false }
-	local watchJanitor = Janitor.new()
-	local humanoidJanitor = Janitor.new()
-	local trackedHumanoid = nil
-	local trackedProperty = nil
-	local originalValue = nil
-	local windowStart = 0
-	local windowCount = 0
-	local lastWarning = 0
-
-	local function withinCorrectionBudget()
-		local now = os.clock()
-		if now - windowStart > 1 then
-			windowStart = now
-			windowCount = 0
-		end
-		windowCount += 1
-		return windowCount <= CONFIG.MaxCorrectionsPerSecond
-	end
-
-	local function onExternalChange()
-		if not modifier.enabled or not trackedHumanoid then
-			return
-		end
-		local target = getTargetValue(trackedProperty)
-		if math.abs(trackedHumanoid[trackedProperty] - target) < 0.01 then
-			return
-		end
-		if os.clock() - lastWarning > 5 then
-			lastWarning = os.clock()
-			notify(label .. ": server/game đang ghi đè giá trị này", "warn")
-		end
-		if withinCorrectionBudget() then
-			trackedHumanoid[trackedProperty] = target
-		end
-	end
-
-	local function attach(_, humanoid)
-		humanoidJanitor:Cleanup()
-		trackedHumanoid = humanoid
-		trackedProperty = resolveProperty(humanoid)
-		originalValue = humanoid[trackedProperty]
-		humanoid[trackedProperty] = getTargetValue(trackedProperty)
-		humanoidJanitor:Add(humanoid:GetPropertyChangedSignal(trackedProperty):Connect(onExternalChange))
-	end
-
-	function modifier.enable()
-		modifier.enabled = true
-		watchJanitor:Add(watchCharacter(attach))
-	end
-
-	function modifier.disable()
-		modifier.enabled = false
-		watchJanitor:Cleanup()
-		humanoidJanitor:Cleanup()
-		if trackedHumanoid and trackedHumanoid.Parent and originalValue ~= nil then
-			trackedHumanoid[trackedProperty] = originalValue
-		end
-		trackedHumanoid = nil
-	end
-
-	function modifier.refresh()
-		if modifier.enabled and trackedHumanoid then
-			trackedHumanoid[trackedProperty] = getTargetValue(trackedProperty)
-		end
-	end
-
-	return modifier
-end
-
-local walkSpeedValue = CONFIG.WalkSpeed.Default
-local jumpValues = { JumpPower = CONFIG.JumpPower.Default, JumpHeight = CONFIG.JumpHeight.Default }
-
-local function detectJumpProperty(humanoid)
-	return if humanoid.UseJumpPower then "JumpPower" else "JumpHeight"
-end
-
-local SpeedWalk = createHumanoidModifier("Speed Walk", function()
+local walkStat = createHumanoidStat("Speed Walk", function()
 	return "WalkSpeed"
 end, function()
-	return walkSpeedValue
+	return selection.walkSpeed
 end)
 
-local HighJump = createHumanoidModifier("High Jump", detectJumpProperty, function(property)
-	return jumpValues[property]
+local jumpStat = createHumanoidStat("High Jump", function(humanoid)
+	return humanoid.UseJumpPower and "JumpPower" or "JumpHeight"
+end, function(property)
+	return selection.jumpValues[property]
 end)
 
-local LightingLayers = {}
-do
-	local PRIORITY = { "FixLag", "FullBright" }
-	local layers = {}
-	local originals = {}
-	local appliedValues = {}
-	local watchers = {}
-
-	local function valuesMatch(first, second)
-		if typeof(first) == "number" and typeof(second) == "number" then
-			return math.abs(first - second) < 0.001
-		end
-		return first == second
+local function detectJumpProperty()
+	local humanoid = getHumanoid()
+	if humanoid and not humanoid.UseJumpPower then
+		return "JumpHeight"
 	end
-
-	local function effectiveValue(property)
-		for index = #PRIORITY, 1, -1 do
-			local layer = layers[PRIORITY[index]]
-			if layer and layer[property] ~= nil then
-				return layer[property]
-			end
-		end
-		return nil
-	end
-
-	local function restoreProperty(property)
-		if watchers[property] then
-			watchers[property]:Disconnect()
-			watchers[property] = nil
-		end
-		Lighting[property] = originals[property]
-		originals[property] = nil
-		appliedValues[property] = nil
-	end
-
-	local function onExternalChange(property)
-		if valuesMatch(Lighting[property], appliedValues[property]) then
-			return
-		end
-		originals[property] = Lighting[property]
-		Lighting[property] = appliedValues[property]
-	end
-
-	local function applyProperty(property)
-		local value = effectiveValue(property)
-		if value == nil then
-			if originals[property] ~= nil then
-				restoreProperty(property)
-			end
-			return
-		end
-		if originals[property] == nil then
-			originals[property] = Lighting[property]
-			watchers[property] = Lighting:GetPropertyChangedSignal(property):Connect(function()
-				onExternalChange(property)
-			end)
-		end
-		appliedValues[property] = value
-		Lighting[property] = value
-	end
-
-	function LightingLayers.set(layerName, values)
-		layers[layerName] = values
-		for property in values do
-			applyProperty(property)
-		end
-	end
-
-	function LightingLayers.clear(layerName)
-		local values = layers[layerName]
-		layers[layerName] = nil
-		if values then
-			for property in values do
-				applyProperty(property)
-			end
-		end
-	end
+	return "JumpPower"
 end
 
-local FullBright = {}
+----------------------------------------------------------------
+-- DI CHUYỂN DÙNG CHUNG (Auto Farm / Auto Loot)
+----------------------------------------------------------------
+local movement = { tween = nil, goal = nil, root = nil }
+rootBin.add(function()
+	if movement.tween then
+		movement.tween:Cancel()
+	end
+end)
 
-function FullBright.enable()
-	LightingLayers.set("FullBright", CONFIG.FullBright)
+function movement.cancel()
+	if movement.tween then
+		movement.tween:Cancel()
+		movement.tween:Destroy()
+	end
+	movement.tween = nil
+	movement.goal = nil
+	movement.root = nil
 end
 
-function FullBright.disable()
-	LightingLayers.clear("FullBright")
-end
-
-local FixLag = {}
-do
-	local TOGGLED_CLASSES = {
-		ParticleEmitter = true, Trail = true, Beam = true, Smoke = true, Fire = true, Sparkles = true,
-		PointLight = true, SpotLight = true, SurfaceLight = true,
-		BloomEffect = true, BlurEffect = true, SunRaysEffect = true,
-		ColorCorrectionEffect = true, DepthOfFieldEffect = true,
-	}
-	local SIMPLIFIABLE_MATERIALS = {
-		[Enum.Material.Grass] = true, [Enum.Material.Sand] = true, [Enum.Material.Mud] = true,
-		[Enum.Material.Ground] = true, [Enum.Material.Slate] = true, [Enum.Material.Concrete] = true,
-		[Enum.Material.Brick] = true, [Enum.Material.Cobblestone] = true, [Enum.Material.Pebble] = true,
-		[Enum.Material.Granite] = true, [Enum.Material.Marble] = true, [Enum.Material.Rock] = true,
-		[Enum.Material.Basalt] = true, [Enum.Material.Asphalt] = true, [Enum.Material.Pavement] = true,
-		[Enum.Material.Limestone] = true, [Enum.Material.Sandstone] = true, [Enum.Material.Snow] = true,
-		[Enum.Material.Fabric] = true, [Enum.Material.Wood] = true, [Enum.Material.WoodPlanks] = true,
-		[Enum.Material.Salt] = true, [Enum.Material.Glacier] = true, [Enum.Material.CrackedLava] = true,
-	}
-
-	local protectedTags = { CONFIG.Farm.EnemyTag }
-	for _, tag in CONFIG.Loot.Tags do
-		table.insert(protectedTags, tag)
+function movement.follow(root, goal)
+	if movement.root ~= root then
+		movement.cancel()
 	end
-
-	local originals = setmetatable({}, { __mode = "k" })
-	local janitor = Janitor.new()
-	local runId = 0
-	local active = false
-	local pending = {}
-	local drainScheduled = false
-
-	local function remember(instance, property)
-		local record = originals[instance]
-		if not record then
-			record = {}
-			originals[instance] = record
-		end
-		if record[property] == nil then
-			record[property] = instance[property]
-		end
-	end
-
-	local function setProperty(instance, property, value)
-		remember(instance, property)
-		instance[property] = value
-	end
-
-	local function hasProtectedTag(instance)
-		for _, tag in protectedTags do
-			if CollectionService:HasTag(instance, tag) then
-				return true
-			end
-		end
-		return false
-	end
-
-	local function isProtected(instance)
-		if hasProtectedTag(instance) then
-			return true
-		end
-		local ancestor = instance.Parent
-		while ancestor and ancestor ~= Workspace do
-			if ancestor:IsA("Model") and ancestor:FindFirstChildOfClass("Humanoid") then
-				return true
-			end
-			if hasProtectedTag(ancestor) then
-				return true
-			end
-			ancestor = ancestor.Parent
-		end
-		return false
-	end
-
-	local function isHitboxPart(part)
-		if part.Transparency >= 0.95 then
-			return true
-		end
-		local lowerName = string.lower(part.Name)
-		for _, keyword in CONFIG.FixLag.ProtectedNameKeywords do
-			if string.find(lowerName, keyword, 1, true) then
-				return true
-			end
-		end
-		return false
-	end
-
-	local function simplifyPart(part)
-		if part:IsA("Terrain") or isHitboxPart(part) or isProtected(part) then
+	root.AssemblyLinearVelocity = Vector3.zero
+	local distance = (root.Position - goal.Position).Magnitude
+	if movement.tween and movement.goal then
+		if (movement.goal.Position - goal.Position).Magnitude <= CONFIG.GoalTolerance then
 			return
 		end
-		setProperty(part, "CastShadow", false)
-		if CONFIG.FixLag.ReduceMeshDetail and part:IsA("MeshPart") then
-			setProperty(part, "RenderFidelity", Enum.RenderFidelity.Performance)
-		end
-		if CONFIG.FixLag.SimplifyMaterials and part.Anchored and SIMPLIFIABLE_MATERIALS[part.Material] then
-			setProperty(part, "Material", Enum.Material.SmoothPlastic)
-		end
+	elseif distance <= 0.25 then
+		root.CFrame = CFrame.new(root.Position) * goal.Rotation
+		return
 	end
-
-	local function processInstance(instance)
-		local className = instance.ClassName
-		if TOGGLED_CLASSES[className] then
-			if not isProtected(instance) then
-				setProperty(instance, "Enabled", false)
-			end
-		elseif className == "Atmosphere" then
-			setProperty(instance, "Density", 0)
-			setProperty(instance, "Haze", 0)
-		elseif instance:IsA("BasePart") then
-			simplifyPart(instance)
-		elseif CONFIG.FixLag.HideDecals and (className == "Decal" or className == "Texture") then
-			if not isProtected(instance) then
-				setProperty(instance, "Transparency", 1)
-			end
+	movement.cancel()
+	local duration = math.max(distance / CONFIG.TweenSpeed, CONFIG.MinTweenTime)
+	local tween = TweenService:Create(root, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = goal })
+	movement.tween = tween
+	movement.goal = goal
+	movement.root = root
+	tween.Completed:Once(function()
+		if movement.tween == tween then
+			movement.tween = nil
+			movement.goal = nil
 		end
-	end
-
-	local function drainPending()
-		drainScheduled = false
-		local batch = pending
-		pending = {}
-		if not active then
-			return
-		end
-		for _, instance in batch do
-			if instance.Parent then
-				processInstance(instance)
-			end
-		end
-	end
-
-	local function queueInstance(instance)
-		table.insert(pending, instance)
-		if not drainScheduled then
-			drainScheduled = true
-			task.defer(drainPending)
-		end
-	end
-
-	local function scanContainer(container, token)
-		local descendants = container:GetDescendants()
-		for index, instance in descendants do
-			if token ~= runId then
-				return false
-			end
-			if instance.Parent then
-				processInstance(instance)
-			end
-			if index % CONFIG.FixLag.ScanBatchSize == 0 then
-				task.wait()
-			end
-		end
-		return true
-	end
-
-	local function initialScan(token)
-		local finished = scanContainer(Lighting, token) and scanContainer(Workspace, token)
-		if finished and token == runId then
-			notify("Fix Lag: đã xử lý xong bản đồ", "success")
-		end
-	end
-
-	function FixLag.enable()
-		runId += 1
-		active = true
-		LightingLayers.set("FixLag", {
-			GlobalShadows = false,
-			FogEnd = CONFIG.FixLag.FogEnd,
-		})
-		janitor:Add(Workspace.DescendantAdded:Connect(queueInstance))
-		janitor:Add(Lighting.DescendantAdded:Connect(queueInstance))
-		janitor:Add(task.spawn(initialScan, runId))
-	end
-
-	function FixLag.disable()
-		runId += 1
-		active = false
-		janitor:Cleanup()
-		pending = {}
-		LightingLayers.clear("FixLag")
-		for instance, record in originals do
-			for property, value in record do
-				pcall(function() instance[property] = value end)
-			end
-		end
-		originals = setmetatable({}, { __mode = "k" })
-	end
-end
-
-local function getModelPosition(model)
-	local part = model.PrimaryPart or model:FindFirstChild("HumanoidRootPart") or model:FindFirstChildWhichIsA("BasePart")
-	return part and part.Position
-end
-
-local function getItemPosition(item)
-	if item:IsA("BasePart") then
-		return item.Position
-	end
-	if item:IsA("Model") then
-		if item.PrimaryPart then
-			return item.PrimaryPart.Position
-		end
-		return item:GetPivot().Position
-	end
-	return nil
-end
-
-local EnemyRegistry = {}
-do
-	local taggedModels = {}
-	local folderCache = {}
-	local folderCacheTime = 0
-
-	local function resolveFolder()
-		local current = Workspace
-		for _, name in CONFIG.Farm.FallbackEnemyFolderPath do
-			current = current:FindFirstChild(name)
-			if not current then
-				return nil
-			end
-		end
-		return current
-	end
-
-	local function getFolderModels()
-		if os.clock() - folderCacheTime < CONFIG.SearchInterval then
-			return folderCache
-		end
-		folderCacheTime = os.clock()
-		folderCache = {}
-		local folder = resolveFolder()
-		if folder then
-			for _, descendant in folder:GetDescendants() do
-				if descendant:IsA("Model") and descendant:FindFirstChildOfClass("Humanoid") then
-					table.insert(folderCache, descendant)
-				end
-			end
-		end
-		return folderCache
-	end
-
-	function EnemyRegistry.start(janitor)
-		local tag = CONFIG.Farm.EnemyTag
-		for _, instance in CollectionService:GetTagged(tag) do
-			if instance:IsA("Model") then
-				taggedModels[instance] = true
-			end
-		end
-		janitor:Add(CollectionService:GetInstanceAddedSignal(tag):Connect(function(instance)
-			if instance:IsA("Model") then
-				taggedModels[instance] = true
-			end
-		end))
-		janitor:Add(CollectionService:GetInstanceRemovedSignal(tag):Connect(function(instance)
-			taggedModels[instance] = nil
-		end))
-	end
-
-	function EnemyRegistry.getModels()
-		local models = {}
-		for model in taggedModels do
-			table.insert(models, model)
-		end
-		if #models > 0 then
-			return models
-		end
-		return getFolderModels()
-	end
-
-	function EnemyRegistry.isAlive(model)
-		if not model.Parent or not model:IsDescendantOf(Workspace) then
-			return false
-		end
-		if Players:GetPlayerFromCharacter(model) then
-			return false
-		end
-		local humanoid = model:FindFirstChildOfClass("Humanoid")
-		return humanoid ~= nil and humanoid.Health > 0
-	end
-
-	function EnemyRegistry.getTypeNames()
-		local seen = {}
-		local names = {}
-		for _, model in EnemyRegistry.getModels() do
-			if model:IsDescendantOf(Workspace) and not seen[model.Name] then
-				seen[model.Name] = true
-				table.insert(names, model.Name)
-			end
-		end
-		table.sort(names)
-		return names
-	end
-
-	function EnemyRegistry.findNearest(typeName, origin)
-		local nearest = nil
-		local nearestDistance = math.huge
-		for _, model in EnemyRegistry.getModels() do
-			if model.Name == typeName and EnemyRegistry.isAlive(model) then
-				local position = getModelPosition(model)
-				if position then
-					local distance = (position - origin).Magnitude
-					if distance < nearestDistance then
-						nearest = model
-						nearestDistance = distance
-					end
-				end
-			end
-		end
-		return nearest
-	end
-end
-
-local LootRegistry = {}
-do
-	local itemsByTag = {}
-
-	function LootRegistry.start(janitor)
-		for _, tag in CONFIG.Loot.Tags do
-			local items = {}
-			itemsByTag[tag] = items
-			for _, instance in CollectionService:GetTagged(tag) do
-				items[instance] = true
-			end
-			janitor:Add(CollectionService:GetInstanceAddedSignal(tag):Connect(function(instance)
-				items[instance] = true
-			end))
-			janitor:Add(CollectionService:GetInstanceRemovedSignal(tag):Connect(function(instance)
-				items[instance] = nil
-			end))
-		end
-	end
-
-	function LootRegistry.isValid(item)
-		return item.Parent ~= nil and item:IsDescendantOf(Workspace) and getItemPosition(item) ~= nil
-	end
-
-	function LootRegistry.findNearest(selectedTags, origin, ignoredUntil)
-		local nearest = nil
-		local nearestDistance = math.huge
-		local now = os.clock()
-		for tag in selectedTags do
-			for item in itemsByTag[tag] or {} do
-				local ignored = ignoredUntil[item]
-				if (not ignored or ignored < now) and LootRegistry.isValid(item) then
-					local distance = (getItemPosition(item) - origin).Magnitude
-					if distance < nearestDistance then
-						nearest = item
-						nearestDistance = distance
-					end
-				end
-			end
-		end
-		return nearest
-	end
-end
-
-local AutoFarm = {}
-do
-	local janitor = Janitor.new()
-	local runId = 0
-	local selectedType = nil
-	local target = nil
-	local lastAttackTime = 0
-
-	local function buildGoalProvider(enemy, root)
-		local approachFacing = buildFacingCFrame(root.Position, getModelPosition(enemy) or root.Position, root.CFrame)
-		return function()
-			local enemyPosition = getModelPosition(enemy)
-			if not enemyPosition then
-				return nil
-			end
-			local goalPosition = enemyPosition + Vector3.new(0, CONFIG.Farm.HeightAboveEnemy, 0)
-			return buildFacingCFrame(goalPosition, enemyPosition, approachFacing)
-		end
-	end
-
-	local function acquireTarget(root)
-		target = EnemyRegistry.findNearest(selectedType, root.Position)
-		if not target then
-			Movement.idle()
-			setStatus("farm", "Waiting for enemy to spawn", "warn")
-			return
-		end
-		Movement.goTo(buildGoalProvider(target, root))
-		setStatus("farm", "Đang farm: " .. target.Name, "success")
-	end
-
-	local function tryAttack()
-		local now = os.clock()
-		if not Movement.isSettled() or now - lastAttackTime < CONFIG.Farm.AttackInterval then
-			return
-		end
-		lastAttackTime = now
-		attackTarget(target)
-	end
-
-	local function farmStep()
-		local _, _, root = getCharacterParts()
-		if not root then
-			target = nil
-			Movement.idle()
-			setStatus("farm", "Đang chờ hồi sinh", "warn")
-			return
-		end
-		if target and not EnemyRegistry.isAlive(target) then
-			target = nil
-			Movement.idle()
-		end
-		if not target then
-			acquireTarget(root)
-		end
-		if target then
-			tryAttack()
-		end
-	end
-
-	local function runLoop(token)
-		local interval = math.min(CONFIG.SearchInterval, CONFIG.Farm.AttackInterval)
-		while token == runId do
-			local ok, err = pcall(farmStep)
-			if not ok then
-				warn("[KhoaDiemHub] Auto Farm lỗi: " .. tostring(err))
-				notify("Auto Farm gặp lỗi và đã tắt (xem Output)", "error")
-				task.defer(StateManager.set, "AutoFarm", false)
-				return
-			end
-			task.wait(interval)
-		end
-	end
-
-	function AutoFarm.setSelectedType(name)
-		selectedType = name
-		target = nil
-		if StateManager.isEnabled("AutoFarm") then
-			Movement.idle()
-		end
-	end
-
-	function AutoFarm.canEnable()
-		if not selectedType then
-			return false, "Hãy chọn loại enemy trước khi bật Auto Farm"
-		end
-		return true
-	end
-
-	function AutoFarm.enable()
-		runId += 1
-		target = nil
-		Noclip.request("AutoFarm")
-		Movement.acquire()
-		setStatus("farm", "Đang tìm enemy...", "warn")
-		janitor:Add(task.spawn(runLoop, runId))
-	end
-
-	function AutoFarm.disable()
-		runId += 1
-		janitor:Cleanup()
-		target = nil
-		Movement.release()
-		Noclip.release("AutoFarm")
-		setStatus("farm", "Tắt", "off")
-	end
-end
-
-local AutoLoot = {}
-do
-	local janitor = Janitor.new()
-	local runId = 0
-	local selectedTags = {}
-	local ignoredUntil = setmetatable({}, { __mode = "k" })
-
-	local function ignoreItem(item)
-		ignoredUntil[item] = os.clock() + CONFIG.Loot.IgnoreSeconds
-	end
-
-	local function buildGoal(item, rootPosition)
-		local itemPosition = getItemPosition(item)
-		local horizontal = Vector3.new(rootPosition.X - itemPosition.X, 0, rootPosition.Z - itemPosition.Z)
-		local direction = if horizontal.Magnitude > 0.1 then horizontal.Unit else Vector3.new(0, 0, 1)
-		local goalPosition = itemPosition + direction * CONFIG.Loot.StopDistance + Vector3.new(0, CONFIG.Loot.HeightOffset, 0)
-		return buildFacingCFrame(goalPosition, itemPosition, CFrame.new(goalPosition))
-	end
-
-	local function approachItem(item, token)
-		local _, _, root = getCharacterParts()
-		if not root then
-			return false
-		end
-		local goal = buildGoal(item, root.Position)
-		Movement.goTo(function()
-			return goal
-		end)
-		local deadline = os.clock() + CONFIG.Loot.ApproachTimeout
-		local timedOut = false
-		while token == runId and LootRegistry.isValid(item) and not Movement.isSettled() do
-			if not getCharacterParts() then
-				return false
-			end
-			if os.clock() > deadline then
-				timedOut = true
-				break
-			end
-			task.wait(0.1)
-		end
-		if timedOut then
-			ignoreItem(item)
-			return false
-		end
-		return token == runId and LootRegistry.isValid(item)
-	end
-
-	local function collectItem(item, token)
-		if not collectLoot(item) then
-			ignoreItem(item)
-			return
-		end
-		local deadline = os.clock() + CONFIG.Loot.CollectTimeout
-		while token == runId and LootRegistry.isValid(item) and os.clock() < deadline do
-			task.wait(0.1)
-		end
-		if token == runId and LootRegistry.isValid(item) then
-			ignoreItem(item)
-		end
-	end
-
-	local function lootStep(token)
-		local _, _, root = getCharacterParts()
-		if not root then
-			Movement.idle()
-			setStatus("loot", "Đang chờ hồi sinh", "warn")
-			return
-		end
-		local item = LootRegistry.findNearest(selectedTags, root.Position, ignoredUntil)
-		if not item then
-			Movement.idle()
-			setStatus("loot", "Waiting for loot to spawn", "warn")
-			return
-		end
-		setStatus("loot", "Đang nhặt: " .. item.Name, "success")
-		if approachItem(item, token) then
-			collectItem(item, token)
-		end
-	end
-
-	local function runLoop(token)
-		while token == runId do
-			local ok, err = pcall(lootStep, token)
-			if not ok then
-				warn("[KhoaDiemHub] Auto Loot lỗi: " .. tostring(err))
-				notify("Auto Loot gặp lỗi và đã tắt (xem Output)", "error")
-				task.defer(StateManager.set, "AutoLoot", false)
-				return
-			end
-			task.wait(CONFIG.SearchInterval)
-		end
-	end
-
-	function AutoLoot.setSelectedTags(tagSet)
-		selectedTags = {}
-		for tag in tagSet do
-			selectedTags[tag] = true
-		end
-	end
-
-	function AutoLoot.canEnable()
-		if next(selectedTags) == nil then
-			return false, "Hãy chọn ít nhất một loại loot trước khi bật Auto Loot"
-		end
-		return true
-	end
-
-	function AutoLoot.enable()
-		runId += 1
-		Noclip.request("AutoLoot")
-		Movement.acquire()
-		setStatus("loot", "Đang tìm loot...", "warn")
-		janitor:Add(task.spawn(runLoop, runId))
-	end
-
-	function AutoLoot.disable()
-		runId += 1
-		janitor:Cleanup()
-		releaseActivePrompt()
-		Movement.release()
-		Noclip.release("AutoLoot")
-		setStatus("loot", "Tắt", "off")
-	end
-end
-
-local PlayerEsp = {}
-do
-	local COLORS = CONFIG.ESP.Colors
-	local janitor = Janitor.new()
-	local entries = {}
-	local playerJanitors = {}
-	local runId = 0
-	local hideTeammates = CONFIG.ESP.HideTeammates
-
-	local function isTeammate(player)
-		return LocalPlayer.Team ~= nil and player.Team == LocalPlayer.Team
-	end
-
-	local function createBillboard(head)
-		local billboard = create("BillboardGui", {
-			Name = "KhoaDiemHubEsp",
-			Adornee = head,
-			AlwaysOnTop = true,
-			Size = UDim2.fromOffset(150, 42),
-			StudsOffset = Vector3.new(0, 3, 0),
-			MaxDistance = CONFIG.ESP.MaxDistance,
-			ResetOnSpawn = false,
-			Parent = head,
-		})
-		local nameLabel = createText({
-			Size = UDim2.new(1, 0, 0, 16), TextXAlignment = Enum.TextXAlignment.Center, Font = THEME.FontBold,
-			TextColor3 = COLORS.Text, TextStrokeTransparency = 0.4, Visible = CONFIG.ESP.ShowNames, Parent = billboard,
-		})
-		local barBack = create("Frame", {
-			Size = UDim2.new(1, -20, 0, 5), Position = UDim2.fromOffset(10, 19),
-			BackgroundColor3 = COLORS.BarBackground, Visible = CONFIG.ESP.ShowHealth, Parent = billboard,
-		})
-		local barFill = create("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = COLORS.HealthFull, Parent = barBack })
-		local infoLabel = createText({
-			Size = UDim2.new(1, 0, 0, 14), Position = UDim2.fromOffset(0, 26), TextSize = 13,
-			TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = COLORS.Text, TextStrokeTransparency = 0.5, Parent = billboard,
-		})
-		return billboard, nameLabel, barFill, infoLabel
-	end
-
-	local function applyVisibility(entry)
-		local teammate = isTeammate(entry.player)
-		local visible = entry.humanoid.Health > 0 and not (hideTeammates and teammate)
-		local color = if teammate then COLORS.Team else COLORS.Enemy
-		entry.highlight.Enabled = visible
-		entry.billboard.Enabled = visible
-		entry.highlight.OutlineColor = color
-		entry.highlight.FillColor = color
-	end
-
-	local function updateEntry(entry, localRoot)
-		local humanoid = entry.humanoid
-		local maxHealth = math.max(humanoid.MaxHealth, 1)
-		local fraction = math.clamp(humanoid.Health / maxHealth, 0, 1)
-		entry.barFill.Size = UDim2.fromScale(fraction, 1)
-		entry.barFill.BackgroundColor3 = COLORS.HealthLow:Lerp(COLORS.HealthFull, fraction)
-		local parts = {}
-		if CONFIG.ESP.ShowHealth then
-			table.insert(parts, string.format("HP %d/%d", math.ceil(humanoid.Health), math.ceil(maxHealth)))
-		end
-		if CONFIG.ESP.ShowDistance and localRoot then
-			table.insert(parts, string.format("%dm", math.floor((entry.head.Position - localRoot.Position).Magnitude)))
-		end
-		entry.infoLabel.Text = table.concat(parts, " | ")
-	end
-
-	local function removeEntry(player)
-		local entry = entries[player]
-		if entry then
-			entry.janitor:Cleanup()
-			entries[player] = nil
-		end
-	end
-
-	local function buildEntry(player, character, token)
-		local humanoid = character:WaitForChild("Humanoid", 10)
-		local head = character:WaitForChild("Head", 10)
-		if token ~= runId or not humanoid or not head or not character.Parent then
-			return
-		end
-		removeEntry(player)
-		local entryJanitor = Janitor.new()
-		local highlight = entryJanitor:Add(create("Highlight", {
-			Name = "KhoaDiemHubEsp", Adornee = character, FillTransparency = 0.75, OutlineTransparency = 0,
-			DepthMode = Enum.HighlightDepthMode.AlwaysOnTop, Parent = character,
-		}))
-		local billboard, nameLabel, barFill, infoLabel = createBillboard(head)
-		entryJanitor:Add(billboard)
-		nameLabel.Text = player.DisplayName
-		local entry = {
-			player = player, humanoid = humanoid, head = head, highlight = highlight, billboard = billboard,
-			barFill = barFill, infoLabel = infoLabel, janitor = entryJanitor,
-		}
-		entries[player] = entry
-		entryJanitor:Add(humanoid.Died:Connect(function()
-			applyVisibility(entry)
-		end))
-		local _, _, localRoot = getCharacterParts()
-		applyVisibility(entry)
-		updateEntry(entry, localRoot)
-	end
-
-	local function attachPlayer(player)
-		if player == LocalPlayer or playerJanitors[player] then
-			return
-		end
-		local playerJanitor = Janitor.new()
-		playerJanitors[player] = playerJanitor
-		local token = runId
-		playerJanitor:Add(player.CharacterAdded:Connect(function(character)
-			buildEntry(player, character, token)
-		end))
-		playerJanitor:Add(player.CharacterRemoving:Connect(function()
-			removeEntry(player)
-		end))
-		playerJanitor:Add(player:GetPropertyChangedSignal("Team"):Connect(function()
-			if entries[player] then
-				applyVisibility(entries[player])
-			end
-		end))
-		if player.Character then
-			task.spawn(buildEntry, player, player.Character, token)
-		end
-	end
-
-	local function detachPlayer(player)
-		removeEntry(player)
-		if playerJanitors[player] then
-			playerJanitors[player]:Cleanup()
-			playerJanitors[player] = nil
-		end
-	end
-
-	local function refreshAll()
-		for _, entry in entries do
-			applyVisibility(entry)
-		end
-	end
-
-	local function updateLoop(token)
-		while token == runId do
-			local _, _, localRoot = getCharacterParts()
-			for _, entry in entries do
-				if entry.humanoid.Health > 0 then
-					updateEntry(entry, localRoot)
-				end
-			end
-			task.wait(CONFIG.ESP.UpdateInterval)
-		end
-	end
-
-	function PlayerEsp.setHideTeammates(value)
-		hideTeammates = value
-		refreshAll()
-	end
-
-	function PlayerEsp.enable()
-		runId += 1
-		for _, player in Players:GetPlayers() do
-			attachPlayer(player)
-		end
-		janitor:Add(Players.PlayerAdded:Connect(attachPlayer))
-		janitor:Add(Players.PlayerRemoving:Connect(detachPlayer))
-		janitor:Add(LocalPlayer:GetPropertyChangedSignal("Team"):Connect(refreshAll))
-		janitor:Add(task.spawn(updateLoop, runId))
-	end
-
-	function PlayerEsp.disable()
-		runId += 1
-		janitor:Cleanup()
-		for player in entries do
-			removeEntry(player)
-		end
-		for player, playerJanitor in playerJanitors do
-			playerJanitor:Cleanup()
-			playerJanitors[player] = nil
-		end
-	end
-end
-
-StateManager.register("FixLag", { label = "Fix Lag", enable = FixLag.enable, disable = FixLag.disable })
-StateManager.register("FullBright", { label = "Full Bright", enable = FullBright.enable, disable = FullBright.disable })
-StateManager.register("SpeedWalk", { label = "Speed Walk", enable = SpeedWalk.enable, disable = SpeedWalk.disable })
-StateManager.register("HighJump", { label = "High Jump", enable = HighJump.enable, disable = HighJump.disable })
-StateManager.register("Noclip", {
-	label = "Noclip",
-	enable = function() Noclip.request("UserToggle") end,
-	disable = function() Noclip.release("UserToggle") end,
-})
-StateManager.register("AutoFarm", {
-	label = "Auto Farm", exclusiveGroup = "Movement",
-	canEnable = AutoFarm.canEnable, enable = AutoFarm.enable, disable = AutoFarm.disable,
-})
-StateManager.register("AutoLoot", {
-	label = "Auto Loot", exclusiveGroup = "Movement",
-	canEnable = AutoLoot.canEnable, enable = AutoLoot.enable, disable = AutoLoot.disable,
-})
-StateManager.register("PlayerESP", { label = "Player ESP", enable = PlayerEsp.enable, disable = PlayerEsp.disable })
-
-local interfaceJanitor = Janitor.new()
-local activeTweens = setmetatable({}, { __mode = "k" })
-
-local function animate(instance, goals, duration)
-	local byProperty = activeTweens[instance]
-	if not byProperty then
-		byProperty = {}
-		activeTweens[instance] = byProperty
-	end
-	for property in goals do
-		if byProperty[property] then
-			byProperty[property]:Cancel()
-		end
-	end
-	local tween = TweenService:Create(
-		instance,
-		TweenInfo.new(duration or 0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-		goals
-	)
-	for property in goals do
-		byProperty[property] = tween
-	end
+	end)
 	tween:Play()
-	return tween
 end
 
-local function styleCorner(instance, radius)
-	return create("UICorner", { CornerRadius = UDim.new(0, radius), Parent = instance })
+local function getInstancePosition(instance)
+	return instance:GetPivot().Position
 end
 
-local function styleStroke(instance, color)
-	return create("UIStroke", { Color = color, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = instance })
-end
+----------------------------------------------------------------
+-- DANH SÁCH QUÁI (CollectionService trước, Folder dự phòng sau)
+----------------------------------------------------------------
+local EnemyRegistry = { tagged = {}, folder = {} }
 
-local function addHover(button, baseColor, hoverColor, pressColor)
-	button.AutoButtonColor = false
-	button.BackgroundColor3 = baseColor
-	local hovering = false
-	button.MouseEnter:Connect(function()
-		hovering = true
-		animate(button, { BackgroundColor3 = hoverColor }, 0.12)
-	end)
-	button.MouseLeave:Connect(function()
-		hovering = false
-		animate(button, { BackgroundColor3 = baseColor }, 0.15)
-	end)
-	button.MouseButton1Down:Connect(function()
-		animate(button, { BackgroundColor3 = pressColor }, 0.06)
-	end)
-	button.MouseButton1Up:Connect(function()
-		animate(button, { BackgroundColor3 = if hovering then hoverColor else baseColor }, 0.12)
-	end)
-end
-
-local function createSection(parent, titleText, order)
-	local card = create("Frame", {
-		Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = THEME.Card, LayoutOrder = order, Parent = parent,
-	})
-	styleCorner(card, 10)
-	styleStroke(card, THEME.Stroke)
-	create("UIPadding", {
-		PaddingTop = UDim.new(0, 8), PaddingBottom = UDim.new(0, 8),
-		PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), Parent = card,
-	})
-	create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = card })
-	createText({
-		Text = titleText, TextSize = 12, TextColor3 = THEME.Muted, Font = THEME.FontBold,
-		Size = UDim2.new(1, 0, 0, 14), LayoutOrder = -1, Parent = card,
-	})
-	return card
-end
-
-local function createToggleRow(parent, text, onClick)
-	local row = create("TextButton", { Size = UDim2.new(1, 0, 0, 32), Text = "", Parent = parent })
-	styleCorner(row, 8)
-	addHover(row, THEME.Card, THEME.CardHover, THEME.CardPress)
-	createText({ Text = text, Size = UDim2.new(1, -60, 1, 0), Position = UDim2.fromOffset(6, 0), Parent = row })
-	local track = create("Frame", {
-		Size = UDim2.fromOffset(38, 20), Position = UDim2.new(1, -44, 0.5, -10), BackgroundColor3 = THEME.Off, Parent = row,
-	})
-	styleCorner(track, 10)
-	local knob = create("Frame", {
-		Size = UDim2.fromOffset(14, 14), Position = UDim2.fromOffset(3, 3), BackgroundColor3 = Color3.new(1, 1, 1), Parent = track,
-	})
-	styleCorner(knob, 7)
-	row.Activated:Connect(onClick)
-	local toggle = {}
-	function toggle.setState(enabled)
-		animate(track, { BackgroundColor3 = if enabled then THEME.Accent else THEME.Off }, 0.15)
-		animate(knob, { Position = if enabled then UDim2.fromOffset(21, 3) else UDim2.fromOffset(3, 3) }, 0.15)
+local function registerEnemy(set, model)
+	if model:IsA("Model") and not set[model] then
+		set[model] = true
+		if enemyListChanged then
+			enemyListChanged()
+		end
 	end
+end
+
+local function unregisterEnemy(set, model)
+	if set[model] then
+		set[model] = nil
+		if enemyListChanged then
+			enemyListChanged()
+		end
+	end
+end
+
+local function bindFallbackFolder(folder)
+	local function onAdded(descendant)
+		if descendant:IsA("Humanoid") and descendant.Parent and descendant.Parent:IsA("Model") then
+			registerEnemy(EnemyRegistry.folder, descendant.Parent)
+		end
+	end
+	for _, descendant in folder:GetDescendants() do
+		onAdded(descendant)
+	end
+	rootBin.add(folder.DescendantAdded:Connect(onAdded))
+	rootBin.add(folder.DescendantRemoving:Connect(function(descendant)
+		if descendant:IsA("Humanoid") and descendant.Parent then
+			unregisterEnemy(EnemyRegistry.folder, descendant.Parent)
+		end
+	end))
+end
+
+local function watchFallbackFolder()
+	local folder = Workspace:FindFirstChild(CONFIG.FallbackEnemyFolder)
+	if folder then
+		bindFallbackFolder(folder)
+		return
+	end
+	local connection
+	connection = Workspace.ChildAdded:Connect(function(child)
+		if child.Name == CONFIG.FallbackEnemyFolder then
+			connection:Disconnect()
+			bindFallbackFolder(child)
+		end
+	end)
+	rootBin.add(connection)
+end
+
+local function startEnemyRegistry()
+	local tag = CONFIG.EnemyTag
+	for _, model in CollectionService:GetTagged(tag) do
+		registerEnemy(EnemyRegistry.tagged, model)
+	end
+	rootBin.add(CollectionService:GetInstanceAddedSignal(tag):Connect(function(model)
+		registerEnemy(EnemyRegistry.tagged, model)
+	end))
+	rootBin.add(CollectionService:GetInstanceRemovedSignal(tag):Connect(function(model)
+		unregisterEnemy(EnemyRegistry.tagged, model)
+	end))
+	watchFallbackFolder()
+end
+
+local function getActiveEnemySet()
+	if next(EnemyRegistry.tagged) ~= nil then
+		return EnemyRegistry.tagged
+	end
+	return EnemyRegistry.folder
+end
+
+local function listEnemyTypes()
+	local seen, names = {}, {}
+	for model in getActiveEnemySet() do
+		if model:IsDescendantOf(Workspace) and not seen[model.Name] then
+			seen[model.Name] = true
+			table.insert(names, model.Name)
+		end
+	end
+	table.sort(names)
+	return names
+end
+
+local function isEnemyAlive(model)
+	if not model or not model:IsDescendantOf(Workspace) then
+		return false
+	end
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	return humanoid ~= nil and humanoid.Health > 0
+end
+
+local function findNearestEnemy(enemyType, origin)
+	local nearest, nearestDistance = nil, math.huge
+	for model in getActiveEnemySet() do
+		if model.Name == enemyType and isEnemyAlive(model) then
+			local distance = (getInstancePosition(model) - origin).Magnitude
+			if distance < nearestDistance then
+				nearest, nearestDistance = model, distance
+			end
+		end
+	end
+	return nearest
+end
+
+----------------------------------------------------------------
+-- AUTO FARM
+----------------------------------------------------------------
+local AutoFarm = { token = 0, attackWarned = false }
+
+-- >>> KẾT NỐI HỆ THỐNG CHIẾN ĐẤU CỦA GAME TẠI ĐÂY <<<
+-- Gọi hệ thống combat có sẵn của bạn (vd: kích hoạt công cụ, gọi hàm trong module của game).
+-- Không tự tạo RemoteEvent. Trả về true nếu đã thực hiện tấn công.
+local function attackTarget(target)
+	if not AutoFarm.attackWarned then
+		AutoFarm.attackWarned = true
+		warn("[TKD] attackTarget chưa được kết nối với hệ thống chiến đấu của game.")
+	end
+	return false
+end
+
+local function computeFarmGoal(root, targetPosition)
+	local hoverPosition = targetPosition + Vector3.new(0, CONFIG.EnemyHoverHeight, 0)
+	local look = Vector3.new(targetPosition.X - root.Position.X, 0, targetPosition.Z - root.Position.Z)
+	if look.Magnitude < 0.5 then
+		look = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z)
+	end
+	if look.Magnitude < 0.01 then
+		look = Vector3.zAxis
+	end
+	return CFrame.lookAt(hoverPosition, hoverPosition + look.Unit)
+end
+
+local function tryAttack(target)
+	local ok, result = pcall(attackTarget, target)
+	if not ok then
+		notify("Lỗi attackTarget: " .. tostring(result), "error")
+		warn("[TKD] attackTarget lỗi: " .. tostring(result))
+		setFeature("AutoFarm", false)
+	end
+end
+
+local function farmTarget(root, target, lastAttack)
+	local goal = computeFarmGoal(root, getInstancePosition(target))
+	movement.follow(root, goal)
+	setStatus("AutoFarm", "Đang farm: " .. target.Name)
+	local closeEnough = (root.Position - goal.Position).Magnitude <= CONFIG.GoalTolerance * 3
+	if closeEnough and os.clock() - lastAttack >= CONFIG.AttackInterval then
+		tryAttack(target)
+		return os.clock()
+	end
+	return lastAttack
+end
+
+local function runAutoFarm(token)
+	local target, lastSearch, lastAttack = nil, 0, 0
+	while AutoFarm.token == token do
+		local _, _, root = getLivingCharacter()
+		if not root then
+			movement.cancel()
+			target = nil
+			setStatus("AutoFarm", "Đang chờ hồi sinh...")
+		else
+			if target and not isEnemyAlive(target) then
+				target = nil
+			end
+			if not target and os.clock() - lastSearch >= CONFIG.TargetSearchInterval then
+				lastSearch = os.clock()
+				target = findNearestEnemy(selection.enemyType, root.Position)
+			end
+			if target then
+				lastAttack = farmTarget(root, target, lastAttack)
+			else
+				movement.cancel()
+				setStatus("AutoFarm", "Waiting for enemy to spawn")
+			end
+		end
+		task.wait(CONFIG.FarmTickInterval)
+	end
+end
+
+local function startAutoFarm()
+	if not selection.enemyType then
+		return false, "Hãy chọn loại quái trước khi bật Auto Farm"
+	end
+	AutoFarm.token += 1
+	requestNoclip("AutoFarm")
+	setStatus("AutoFarm", "Đang tìm quái...")
+	task.spawn(runAutoFarm, AutoFarm.token)
+	return true
+end
+
+local function stopAutoFarm()
+	AutoFarm.token += 1
+	movement.cancel()
+	releaseNoclip("AutoFarm")
+	setStatus("AutoFarm", "Tắt")
+end
+
+----------------------------------------------------------------
+-- AUTO LOOT
+----------------------------------------------------------------
+local AutoLoot = {
+	token = 0,
+	attempts = setmetatable({}, weakKeys),
+	skipUntil = setmetatable({}, weakKeys),
+	collectWarned = false,
+}
+
+-- >>> KẾT NỐI HỆ THỐNG NHẶT VẬT PHẨM CỦA GAME TẠI ĐÂY <<<
+-- Mặc định: dùng ProximityPrompt có sẵn trên vật phẩm (API chính thức).
+-- ClickDetector không có API client chính thức, hãy tự nối vào cơ chế nhặt của game.
+-- Không tự tạo RemoteEvent. Trả về true nếu đã thực hiện thao tác nhặt.
+local function collectLoot(item)
+	if CONFIG.CollectWithProximityPrompt then
+		local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
+		if prompt and prompt.Enabled then
+			prompt:InputHoldBegin()
+			task.wait(prompt.HoldDuration + 0.1)
+			prompt:InputHoldEnd()
+			return true
+		end
+	end
+	if not AutoLoot.collectWarned then
+		AutoLoot.collectWarned = true
+		warn("[TKD] collectLoot chưa được kết nối (vật phẩm không có ProximityPrompt).")
+	end
+	return false
+end
+
+local function isLootValid(item)
+	return item ~= nil and item.Parent ~= nil and item:IsA("PVInstance") and item:IsDescendantOf(Workspace)
+end
+
+local function findNearestLoot(origin)
+	local nearest, nearestDistance = nil, math.huge
+	local now = os.clock()
+	for tag in selection.lootTypes do
+		for _, item in CollectionService:GetTagged(tag) do
+			local blockedUntil = AutoLoot.skipUntil[item] or 0
+			if isLootValid(item) and blockedUntil <= now then
+				local distance = (getInstancePosition(item) - origin).Magnitude
+				if distance < nearestDistance then
+					nearest, nearestDistance = item, distance
+				end
+			end
+		end
+	end
+	return nearest
+end
+
+local function computeLootGoal(root, itemPosition)
+	local offset = root.Position - itemPosition
+	local direction = offset.Magnitude > 0.1 and offset.Unit or Vector3.xAxis
+	local goalPosition = itemPosition + direction * CONFIG.LootStopDistance
+	local flatTarget = Vector3.new(itemPosition.X, goalPosition.Y, itemPosition.Z)
+	if (flatTarget - goalPosition).Magnitude < 0.1 then
+		return CFrame.new(goalPosition)
+	end
+	return CFrame.lookAt(goalPosition, flatTarget)
+end
+
+local function attemptCollect(item)
+	AutoLoot.attempts[item] = (AutoLoot.attempts[item] or 0) + 1
+	local ok, result = pcall(collectLoot, item)
+	if not ok then
+		notify("Lỗi collectLoot: " .. tostring(result), "error")
+		warn("[TKD] collectLoot lỗi: " .. tostring(result))
+		setFeature("AutoLoot", false)
+		return true
+	end
+	if isLootValid(item) and AutoLoot.attempts[item] >= CONFIG.MaxLootAttempts then
+		AutoLoot.skipUntil[item] = os.clock() + CONFIG.LootRetryCooldown
+		AutoLoot.attempts[item] = nil
+		return true
+	end
+	return false
+end
+
+local function lootTarget(root, item)
+	local goal = computeLootGoal(root, getInstancePosition(item))
+	movement.follow(root, goal)
+	setStatus("AutoLoot", "Đang nhặt: " .. item.Name)
+	local arrived = (root.Position - goal.Position).Magnitude <= CONFIG.GoalTolerance * 2
+	if arrived then
+		return attemptCollect(item)
+	end
+	return false
+end
+
+local function runAutoLoot(token)
+	local target, lastSearch = nil, 0
+	while AutoLoot.token == token do
+		local _, _, root = getLivingCharacter()
+		if not root then
+			movement.cancel()
+			target = nil
+			setStatus("AutoLoot", "Đang chờ hồi sinh...")
+		else
+			if target and not isLootValid(target) then
+				target = nil
+			end
+			if not target and os.clock() - lastSearch >= CONFIG.TargetSearchInterval then
+				lastSearch = os.clock()
+				target = findNearestLoot(root.Position)
+			end
+			if target then
+				if lootTarget(root, target) then
+					target = nil
+				end
+			else
+				movement.cancel()
+				setStatus("AutoLoot", "Waiting for loot to spawn")
+			end
+		end
+		task.wait(CONFIG.FarmTickInterval)
+	end
+end
+
+local function startAutoLoot()
+	if next(selection.lootTypes) == nil then
+		return false, "Hãy chọn ít nhất một loại vật phẩm"
+	end
+	AutoLoot.token += 1
+	requestNoclip("AutoLoot")
+	setStatus("AutoLoot", "Đang tìm vật phẩm...")
+	task.spawn(runAutoLoot, AutoLoot.token)
+	return true
+end
+
+local function stopAutoLoot()
+	AutoLoot.token += 1
+	movement.cancel()
+	releaseNoclip("AutoLoot")
+	setStatus("AutoLoot", "Tắt")
+end
+
+----------------------------------------------------------------
+-- NOCLIP THỦ CÔNG
+----------------------------------------------------------------
+local function startManualNoclip()
+	requestNoclip("Manual")
+	return true
+end
+
+local function stopManualNoclip()
+	releaseNoclip("Manual")
+end
+
+----------------------------------------------------------------
+-- PLAYER ESP
+----------------------------------------------------------------
+local Esp = { token = 0, entries = {}, playerBins = {}, bin = newBin() }
+rootBin.add(Esp.bin.clean)
+
+local function removeEspEntry(target)
+	local entry = Esp.entries[target]
+	if entry then
+		entry.bin.clean()
+		Esp.entries[target] = nil
+	end
+end
+
+local function buildEspText(target, entry, distance)
+	local settings = CONFIG.Esp
+	local lines = {}
+	if settings.ShowNames then
+		table.insert(lines, target.DisplayName)
+	end
+	local details = {}
+	if settings.ShowDistance then
+		table.insert(details, string.format("%dm", math.floor(distance)))
+	end
+	if settings.ShowHealth then
+		table.insert(details, string.format("%d/%d HP", math.floor(entry.humanoid.Health), math.floor(entry.humanoid.MaxHealth)))
+	end
+	if #details > 0 then
+		table.insert(lines, table.concat(details, " | "))
+	end
+	return table.concat(lines, "\n")
+end
+
+local function updateEspEntry(target, entry)
+	local hidden = selection.espHideSameTeam and target.Team ~= nil and target.Team == player.Team
+	entry.highlight.Enabled = not hidden
+	entry.billboard.Enabled = not hidden
+	if hidden then
+		return
+	end
+	local _, _, localRoot = getLivingCharacter()
+	local distance = localRoot and (entry.root.Position - localRoot.Position).Magnitude or 0
+	entry.infoLabel.Text = buildEspText(target, entry, distance)
+	local ratio = math.clamp(entry.humanoid.Health / math.max(entry.humanoid.MaxHealth, 1), 0, 1)
+	entry.barFill.Size = UDim2.fromScale(ratio, 1)
+	entry.barFill.BackgroundColor3 = CONFIG.Esp.HealthLowColor:Lerp(CONFIG.Esp.HealthHighColor, ratio)
+end
+
+local function createEspBillboard(root, entryBin)
+	local settings = CONFIG.Esp
+	local billboard = entryBin.add(create("BillboardGui", {
+		Adornee = root,
+		AlwaysOnTop = true,
+		Size = UDim2.fromOffset(150, 46),
+		StudsOffset = Vector3.new(0, 3.4, 0),
+		ResetOnSpawn = false,
+		Parent = Esp.container,
+	}))
+	local infoLabel = create("TextLabel", {
+		Size = UDim2.new(1, 0, 0, 30),
+		BackgroundTransparency = 1,
+		TextColor3 = settings.TextColor,
+		TextStrokeTransparency = 0.4,
+		TextSize = 12,
+		Font = Enum.Font.GothamMedium,
+		Text = "",
+		Parent = billboard,
+	})
+	local barBack = create("Frame", {
+		Position = UDim2.new(0.1, 0, 0, 34),
+		Size = UDim2.new(0.8, 0, 0, 6),
+		BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+		BorderSizePixel = 0,
+		Visible = settings.ShowHealth,
+		Parent = billboard,
+	})
+	local barFill = create("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = settings.HealthHighColor,
+		BorderSizePixel = 0,
+		Parent = barBack,
+	})
+	return billboard, infoLabel, barFill
+end
+
+local function createEspEntry(target, character)
+	removeEspEntry(target)
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	local root = character:FindFirstChild("HumanoidRootPart")
+	if not humanoid or not root or humanoid.Health <= 0 then
+		return
+	end
+	local settings = CONFIG.Esp
+	local entryBin = newBin()
+	local highlight = entryBin.add(create("Highlight", {
+		Adornee = character,
+		FillColor = settings.FillColor,
+		FillTransparency = settings.FillTransparency,
+		OutlineColor = settings.OutlineColor,
+		DepthMode = Enum.HighlightDepthMode.AlwaysOnTop,
+		Parent = Esp.container,
+	}))
+	local billboard, infoLabel, barFill = createEspBillboard(root, entryBin)
+	entryBin.add(humanoid.Died:Connect(function()
+		removeEspEntry(target)
+	end))
+	local entry = {
+		bin = entryBin, humanoid = humanoid, root = root, highlight = highlight,
+		billboard = billboard, infoLabel = infoLabel, barFill = barFill,
+	}
+	Esp.entries[target] = entry
+	updateEspEntry(target, entry)
+end
+
+local function attachEsp(target, character)
+	local token = Esp.token
+	task.spawn(function()
+		local root = character:WaitForChild("HumanoidRootPart", 10)
+		local humanoid = character:WaitForChild("Humanoid", 10)
+		if Esp.token ~= token or target.Character ~= character then
+			return
+		end
+		if not root or not humanoid then
+			warn("[TKD] ESP: không tìm thấy Humanoid/HumanoidRootPart của " .. target.Name)
+			return
+		end
+		createEspEntry(target, character)
+	end)
+end
+
+local function untrackEspPlayer(target)
+	removeEspEntry(target)
+	local playerBin = Esp.playerBins[target]
+	if playerBin then
+		playerBin.clean()
+		Esp.playerBins[target] = nil
+	end
+end
+
+local function trackEspPlayer(target)
+	if target == player or Esp.playerBins[target] then
+		return
+	end
+	local playerBin = newBin()
+	Esp.playerBins[target] = playerBin
+	playerBin.add(target.CharacterAdded:Connect(function(character)
+		attachEsp(target, character)
+	end))
+	playerBin.add(target.CharacterRemoving:Connect(function()
+		removeEspEntry(target)
+	end))
+	if target.Character then
+		attachEsp(target, target.Character)
+	end
+end
+
+local function runEspUpdates(token)
+	while Esp.token == token do
+		for target, entry in Esp.entries do
+			updateEspEntry(target, entry)
+		end
+		task.wait(CONFIG.Esp.UpdateInterval)
+	end
+end
+
+local function startEsp()
+	Esp.token += 1
+	Esp.container = Esp.bin.add(create("Folder", { Name = "TKD_ESP", Parent = Workspace }))
+	for _, other in Players:GetPlayers() do
+		trackEspPlayer(other)
+	end
+	Esp.bin.add(Players.PlayerAdded:Connect(trackEspPlayer))
+	Esp.bin.add(Players.PlayerRemoving:Connect(untrackEspPlayer))
+	task.spawn(runEspUpdates, Esp.token)
+	return true
+end
+
+local function stopEsp()
+	Esp.token += 1
+	for target in Esp.entries do
+		removeEspEntry(target)
+	end
+	for target, playerBin in Esp.playerBins do
+		playerBin.clean()
+		Esp.playerBins[target] = nil
+	end
+	Esp.bin.clean()
+end
+
+----------------------------------------------------------------
+-- QUẢN LÝ TÍNH NĂNG
+----------------------------------------------------------------
+features.FixLag = { label = "Fix Lag", start = startFixLag, stop = stopFixLag }
+features.FullBright = { label = "Full Bright", start = startFullBright, stop = stopFullBright }
+features.SpeedWalk = { label = "Speed Walk", start = walkStat.start, stop = walkStat.stop, refresh = walkStat.refresh }
+features.HighJump = { label = "High Jump", start = jumpStat.start, stop = jumpStat.stop, refresh = jumpStat.refresh }
+features.Noclip = { label = "Noclip", start = startManualNoclip, stop = stopManualNoclip }
+features.AutoFarm = { label = "Auto Farm", start = startAutoFarm, stop = stopAutoFarm }
+features.AutoLoot = { label = "Auto Loot", start = startAutoLoot, stop = stopAutoLoot }
+features.PlayerEsp = { label = "Player ESP", start = startEsp, stop = stopEsp }
+
+local EXCLUSIVE_FEATURES = { AutoFarm = "AutoLoot", AutoLoot = "AutoFarm" }
+
+local function syncToggle(feature)
+	if feature.toggle then
+		feature.toggle.set(feature.enabled)
+	end
+end
+
+local function enableFeature(feature)
+	local ok, success, reason = pcall(feature.start)
+	if not ok then
+		notify("Lỗi khi bật " .. feature.label, "error")
+		warn("[TKD] Lỗi bật " .. feature.label .. ": " .. tostring(success))
+		return false
+	end
+	if success == false then
+		notify(reason or ("Không thể bật " .. feature.label), "error")
+		return false
+	end
+	feature.enabled = true
+	notify("Đã bật " .. feature.label, "success")
+	return true
+end
+
+local function disableFeature(feature)
+	local ok, err = pcall(feature.stop)
+	if not ok then
+		warn("[TKD] Lỗi tắt " .. feature.label .. ": " .. tostring(err))
+		notify("Lỗi khi tắt " .. feature.label, "error")
+	end
+	feature.enabled = false
+	notify("Đã tắt " .. feature.label, "info")
+end
+
+function setFeature(name, enabled)
+	local feature = features[name]
+	if feature.enabled == enabled then
+		syncToggle(feature)
+		return true
+	end
+	if enabled then
+		local rival = EXCLUSIVE_FEATURES[name]
+		if rival and features[rival].enabled then
+			setFeature(rival, false)
+		end
+		enableFeature(feature)
+	else
+		disableFeature(feature)
+	end
+	syncToggle(feature)
+	return feature.enabled == enabled
+end
+
+local function shutdown()
+	for _, feature in features do
+		if feature.enabled then
+			local ok, err = pcall(feature.stop)
+			if not ok then
+				warn("[TKD] Lỗi dọn dẹp " .. feature.label .. ": " .. tostring(err))
+			end
+			feature.enabled = false
+		end
+	end
+	rootBin.clean()
+end
+
+rootBin.add(gui.Destroying:Connect(shutdown))
+
+----------------------------------------------------------------
+-- THÀNH PHẦN GIAO DIỆN
+----------------------------------------------------------------
+local function addPressFeedback(button)
+	local scale = create("UIScale", { Parent = button })
+	local active
+	local function animate(target, duration)
+		if active then
+			active:Cancel()
+		end
+		active = playTween(scale, duration, { Scale = target })
+	end
+	rootBin.add(button.MouseButton1Down:Connect(function()
+		animate(0.95, 0.08)
+	end))
+	rootBin.add(button.MouseButton1Up:Connect(function()
+		animate(1, 0.12)
+	end))
+	rootBin.add(button.MouseLeave:Connect(function()
+		animate(1, 0.12)
+	end))
+end
+
+local function createRoundedFrame(parent, size, color)
+	return create("Frame", {
+		Size = size,
+		BackgroundColor3 = color,
+		BorderSizePixel = 0,
+		Parent = parent,
+	}, { create("UICorner", { CornerRadius = UDim.new(0, 8) }) })
+end
+
+local function createSection(parent, text)
+	return create("TextLabel", {
+		Size = UDim2.new(1, 0, 0, 20),
+		BackgroundTransparency = 1,
+		Text = text,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = theme.Accent,
+		TextSize = 11,
+		Font = Enum.Font.GothamBold,
+		Parent = parent,
+	})
+end
+
+local function createInfoLabel(parent, text, textSize, color)
+	return create("TextLabel", {
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		Text = text,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = color or theme.Text,
+		TextSize = textSize or 13,
+		Font = Enum.Font.GothamMedium,
+		Parent = parent,
+	})
+end
+
+local function createToggle(parent, text, onClick)
+	local row = create("TextButton", {
+		Size = UDim2.new(1, 0, 0, 32),
+		BackgroundColor3 = theme.Element,
+		AutoButtonColor = false,
+		Text = "",
+		Parent = parent,
+	}, { create("UICorner", { CornerRadius = UDim.new(0, 8) }) })
+	create("TextLabel", {
+		Position = UDim2.fromOffset(10, 0),
+		Size = UDim2.new(1, -62, 1, 0),
+		BackgroundTransparency = 1,
+		Text = text,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = theme.Text,
+		TextSize = 13,
+		Font = Enum.Font.GothamMedium,
+		Parent = row,
+	})
+	local track = create("Frame", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -10, 0.5, 0),
+		Size = UDim2.fromOffset(36, 18),
+		BackgroundColor3 = theme.Off,
+		BorderSizePixel = 0,
+		Parent = row,
+	}, { create("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	local knob = create("Frame", {
+		Position = UDim2.new(0, 2, 0.5, -7),
+		Size = UDim2.fromOffset(14, 14),
+		BackgroundColor3 = theme.Text,
+		BorderSizePixel = 0,
+		Parent = track,
+	}, { create("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	local toggle = { state = false }
+	function toggle.set(state)
+		toggle.state = state
+		playTween(track, 0.15, { BackgroundColor3 = state and theme.Accent or theme.Off })
+		playTween(knob, 0.15, { Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7) })
+	end
+	addPressFeedback(row)
+	rootBin.add(row.Activated:Connect(function()
+		onClick(not toggle.state)
+	end))
 	return toggle
 end
 
-local function createStatusRow(parent, key)
-	local row = create("Frame", { Size = UDim2.new(1, 0, 0, 18), BackgroundTransparency = 1, Parent = parent })
-	local dot = create("Frame", {
-		Size = UDim2.fromOffset(8, 8), Position = UDim2.new(0, 8, 0.5, -4), BackgroundColor3 = THEME.Muted, Parent = row,
-	})
-	styleCorner(dot, 4)
-	local label = createText({
-		Text = "Trạng thái: Tắt", Size = UDim2.new(1, -26, 1, 0), Position = UDim2.fromOffset(22, 0),
-		TextSize = 13, TextColor3 = THEME.Muted, Parent = row,
-	})
-	table.insert(statusListeners, function(statusKey, text, kind)
-		if statusKey ~= key then
-			return
-		end
-		local color = STATUS_COLORS[kind] or THEME.Muted
-		label.Text = "Trạng thái: " .. text
-		animate(dot, { BackgroundColor3 = color }, 0.15)
-		animate(label, { TextColor3 = color }, 0.15)
+local function bindFeatureToggle(parent, name)
+	local feature = features[name]
+	feature.toggle = createToggle(parent, feature.label, function(wanted)
+		setFeature(name, wanted)
 	end)
 end
 
-local function createSlider(parent, scroller, spec)
-	local range = { min = spec.min, max = spec.max }
-	local value = spec.value
-	local row = create("Frame", { Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, Parent = parent })
-	local title = createText({ Text = spec.label, Size = UDim2.new(1, -64, 0, 22), TextColor3 = THEME.Muted, TextSize = 13, Parent = row })
-	local input = create("TextBox", {
-		Size = UDim2.fromOffset(58, 22), Position = UDim2.new(1, -58, 0, 0), BackgroundColor3 = THEME.Field,
-		Font = THEME.Font, TextSize = 14, TextColor3 = THEME.Text, ClearTextOnFocus = false, Text = "", Parent = row,
-	})
-	styleCorner(input, 6)
-	styleStroke(input, THEME.Stroke)
-	local hitbox = create("TextButton", {
-		Size = UDim2.new(1, 0, 0, 26), Position = UDim2.fromOffset(0, 24), BackgroundTransparency = 1, Text = "", Parent = row,
-	})
-	local track = create("Frame", { Size = UDim2.new(1, 0, 0, 6), Position = UDim2.new(0, 0, 0.5, -3), BackgroundColor3 = THEME.Off, Parent = hitbox })
-	styleCorner(track, 3)
-	local fill = create("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = THEME.Accent, Parent = track })
-	styleCorner(fill, 3)
-	local knob = create("Frame", {
-		Size = UDim2.fromOffset(14, 14), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0, 0, 0.5, 0),
-		BackgroundColor3 = Color3.new(1, 1, 1), Parent = track,
-	})
-	styleCorner(knob, 7)
+local function roundToStep(value, step)
+	return math.round(value / step) * step
+end
 
-	local slider = {}
+local function createSlider(parent, text, range, onChanged)
+	local slider = { min = range.Min, max = range.Max, step = range.Step, value = range.Default }
+	local container = createRoundedFrame(parent, UDim2.new(1, 0, 0, 56), theme.Element)
+	local title = create("TextLabel", {
+		Position = UDim2.fromOffset(10, 4),
+		Size = UDim2.new(1, -80, 0, 22),
+		BackgroundTransparency = 1,
+		Text = text,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = theme.SubText,
+		TextSize = 12,
+		Font = Enum.Font.GothamMedium,
+		Parent = container,
+	})
+	local box = create("TextBox", {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -10, 0, 4),
+		Size = UDim2.fromOffset(56, 22),
+		BackgroundColor3 = theme.Background,
+		TextColor3 = theme.Text,
+		TextSize = 12,
+		Font = Enum.Font.GothamMedium,
+		ClearTextOnFocus = false,
+		Text = "",
+		Parent = container,
+	}, { create("UICorner", { CornerRadius = UDim.new(0, 6) }) })
+	local track = create("TextButton", {
+		Position = UDim2.fromOffset(10, 32),
+		Size = UDim2.new(1, -20, 0, 16),
+		BackgroundTransparency = 1,
+		Text = "",
+		AutoButtonColor = false,
+		Parent = container,
+	})
+	local rail = createRoundedFrame(track, UDim2.new(1, 0, 0, 6), theme.Off)
+	rail.Position = UDim2.new(0, 0, 0.5, -3)
+	local fill = createRoundedFrame(rail, UDim2.fromScale(0, 1), theme.Accent)
 
-	local function snap(raw)
-		local step = spec.step or 1
-		return tonumber(string.format("%.2f", math.floor(raw / step + 0.5) * step))
+	local function render()
+		local span = math.max(slider.max - slider.min, 0.0001)
+		fill.Size = UDim2.fromScale((slider.value - slider.min) / span, 1)
+		local decimals = slider.step < 1 and "%.1f" or "%d"
+		box.Text = string.format(decimals, slider.value)
 	end
 
-	function slider.setValue(newValue, silent)
-		value = math.clamp(snap(newValue), range.min, range.max)
-		local alpha = (value - range.min) / (range.max - range.min)
-		animate(fill, { Size = UDim2.fromScale(alpha, 1) }, 0.07)
-		animate(knob, { Position = UDim2.new(alpha, 0, 0.5, 0) }, 0.07)
-		input.Text = string.format("%g", value)
+	function slider.setValue(value, silent)
+		slider.value = math.clamp(roundToStep(value, slider.step), slider.min, slider.max)
+		render()
 		if not silent then
-			spec.onChange(value)
+			onChanged(slider.value)
 		end
 	end
 
-	function slider.setRange(minValue, maxValue)
-		range.min, range.max = minValue, maxValue
-		slider.setValue(value, true)
+	function slider.setRange(minimum, maximum)
+		slider.min, slider.max = minimum, maximum
+		slider.value = math.clamp(slider.value, minimum, maximum)
+		render()
 	end
 
-	function slider.setLabel(text)
-		title.Text = text
+	function slider.setLabel(newText)
+		title.Text = newText
 	end
 
-	local function updateFromPosition(positionX)
-		local alpha = math.clamp((positionX - track.AbsolutePosition.X) / math.max(track.AbsoluteSize.X, 1), 0, 1)
-		slider.setValue(range.min + alpha * (range.max - range.min))
+	local function setFromPointer(positionX)
+		local ratio = math.clamp((positionX - track.AbsolutePosition.X) / math.max(track.AbsoluteSize.X, 1), 0, 1)
+		slider.setValue(slider.min + (slider.max - slider.min) * ratio)
 	end
 
-	hitbox.InputBegan:Connect(function(inputObject)
-		local inputType = inputObject.UserInputType
-		if inputType ~= Enum.UserInputType.MouseButton1 and inputType ~= Enum.UserInputType.Touch then
+	local dragging = false
+	rootBin.add(track.InputBegan:Connect(function(input)
+		local inputType = input.UserInputType
+		if inputType == Enum.UserInputType.MouseButton1 or inputType == Enum.UserInputType.Touch then
+			dragging = true
+			setFromPointer(input.Position.X)
+			local endConnection
+			endConnection = input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+					endConnection:Disconnect()
+				end
+			end)
+			rootBin.add(endConnection)
+		end
+	end))
+	rootBin.add(UserInputService.InputChanged:Connect(function(input)
+		local inputType = input.UserInputType
+		if dragging and (inputType == Enum.UserInputType.MouseMovement or inputType == Enum.UserInputType.Touch) then
+			setFromPointer(input.Position.X)
+		end
+	end))
+	rootBin.add(box.FocusLost:Connect(function()
+		local number = tonumber(box.Text)
+		if not number or number ~= number then
+			notify("Giá trị không hợp lệ", "error")
+			render()
 			return
 		end
-		scroller.ScrollingEnabled = false
-		updateFromPosition(inputObject.Position.X)
-		local dragJanitor = Janitor.new()
-		dragJanitor:Add(UserInputService.InputChanged:Connect(function(changed)
-			if changed.UserInputType == Enum.UserInputType.MouseMovement or changed == inputObject then
-				updateFromPosition(changed.Position.X)
-			end
-		end))
-		dragJanitor:Add(inputObject.Changed:Connect(function()
-			if inputObject.UserInputState == Enum.UserInputState.End then
-				dragJanitor:Cleanup()
-				scroller.ScrollingEnabled = true
-			end
-		end))
-	end)
-
-	input.FocusLost:Connect(function()
-		local parsed = tonumber(input.Text)
-		if not parsed or parsed ~= parsed or math.abs(parsed) == math.huge then
-			notify("Giá trị không hợp lệ, hãy nhập một số", "error")
-			input.Text = string.format("%g", value)
-			return
+		if number < slider.min or number > slider.max then
+			notify(string.format("Phạm vi cho phép: %s - %s", slider.min, slider.max), "warning")
 		end
-		if parsed < range.min or parsed > range.max then
-			notify(string.format("Giá trị phải trong khoảng %g - %g (đã giới hạn)", range.min, range.max), "warn")
-		end
-		slider.setValue(parsed)
-	end)
-
-	slider.setValue(value, true)
+		slider.setValue(number)
+	end))
+	render()
 	return slider
 end
 
-local function createDropdown(parent, spec)
-	local PANEL_HEIGHT = 150
-	local selection = if spec.multi then {} else nil
-	local allOptions = {}
-	local isOpen = false
-	local setOpen
-
-	local container = create("Frame", { Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Parent = parent })
-	create("UIListLayout", { Padding = UDim.new(0, 4), Parent = container })
-
-	local header = create("TextButton", { Size = UDim2.new(1, 0, 0, 30), Text = "", Parent = container })
-	styleCorner(header, 8)
-	styleStroke(header, THEME.Stroke)
-	addHover(header, THEME.Field, THEME.FieldHover, THEME.FieldHover)
-	local headerLabel = createText({
-		Text = spec.placeholder, Size = UDim2.new(1, -32, 1, 0), Position = UDim2.fromOffset(10, 0),
-		TextTruncate = Enum.TextTruncate.AtEnd, TextColor3 = THEME.Muted, Parent = header,
+local function createDropdown(parent, options)
+	local dropdown = { selected = {}, open = false }
+	local container = createRoundedFrame(parent, UDim2.new(1, 0, 0, 0), theme.Element)
+	container.AutomaticSize = Enum.AutomaticSize.Y
+	create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Parent = container })
+	local header = create("TextButton", {
+		LayoutOrder = 1,
+		Size = UDim2.new(1, 0, 0, 32),
+		BackgroundTransparency = 1,
+		AutoButtonColor = false,
+		Text = "",
+		Parent = container,
 	})
-	local arrow = createText({
-		Text = "▼", Size = UDim2.fromOffset(20, 30), Position = UDim2.new(1, -26, 0, 0), TextSize = 10,
-		TextColor3 = THEME.Muted, TextXAlignment = Enum.TextXAlignment.Center, Parent = header,
+	local headerLabel = create("TextLabel", {
+		Position = UDim2.fromOffset(10, 0),
+		Size = UDim2.new(1, -34, 1, 0),
+		BackgroundTransparency = 1,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		TextColor3 = theme.Text,
+		TextSize = 13,
+		Font = Enum.Font.GothamMedium,
+		Parent = header,
 	})
-
-	local panel = create("Frame", { Size = UDim2.new(1, 0, 0, 0), BackgroundColor3 = THEME.Field, ClipsDescendants = true, Visible = false, Parent = container })
-	styleCorner(panel, 8)
-	styleStroke(panel, THEME.Stroke)
-	local searchBox = create("TextBox", {
-		Size = UDim2.new(1, -12, 0, 26), Position = UDim2.fromOffset(6, 6), BackgroundColor3 = THEME.Card, Text = "",
-		PlaceholderText = "Tìm kiếm...", PlaceholderColor3 = THEME.Muted, ClearTextOnFocus = false, Font = THEME.Font,
-		TextSize = 14, TextColor3 = THEME.Text, TextXAlignment = Enum.TextXAlignment.Left, Parent = panel,
+	local arrow = create("TextLabel", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -10, 0.5, 0),
+		Size = UDim2.fromOffset(14, 14),
+		BackgroundTransparency = 1,
+		Text = "▾",
+		TextColor3 = theme.SubText,
+		TextSize = 14,
+		Parent = header,
 	})
-	styleCorner(searchBox, 6)
-	create("UIPadding", { PaddingLeft = UDim.new(0, 8), Parent = searchBox })
+	local body = create("Frame", {
+		LayoutOrder = 2,
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		Visible = false,
+		Parent = container,
+	}, {
+		create("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }),
+		create("UIPadding", { PaddingBottom = UDim.new(0, 6), PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6) }),
+	})
+	local search = create("TextBox", {
+		LayoutOrder = 1,
+		Size = UDim2.new(1, 0, 0, 26),
+		BackgroundColor3 = theme.Background,
+		PlaceholderText = "Tìm kiếm...",
+		PlaceholderColor3 = theme.SubText,
+		Text = "",
+		TextColor3 = theme.Text,
+		TextSize = 12,
+		Font = Enum.Font.GothamMedium,
+		ClearTextOnFocus = false,
+		Parent = body,
+	}, { create("UICorner", { CornerRadius = UDim.new(0, 6) }) })
 	local list = create("ScrollingFrame", {
-		Size = UDim2.new(1, -12, 1, -44), Position = UDim2.fromOffset(6, 38), BackgroundTransparency = 1, ScrollBarThickness = 3,
-		AutomaticCanvasSize = Enum.AutomaticSize.Y, CanvasSize = UDim2.new(), Parent = panel,
-	})
-	create("UIListLayout", { Padding = UDim.new(0, 2), Parent = list })
-
-	local function isSelected(name)
-		if spec.multi then
-			return selection[name] == true
-		end
-		return selection == name
-	end
+		LayoutOrder = 2,
+		Size = UDim2.new(1, 0, 0, 100),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 3,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(),
+		Parent = body,
+	}, { create("UIListLayout", { Padding = UDim.new(0, 3) }) })
 
 	local function updateHeader()
-		local text = nil
-		if spec.multi then
-			local names = {}
-			for name in selection do
-				table.insert(names, name)
-			end
-			table.sort(names)
-			text = if #names > 0 then table.concat(names, ", ") else nil
-		else
-			text = selection
+		local names = {}
+		for name in dropdown.selected do
+			table.insert(names, name)
 		end
-		headerLabel.Text = text or spec.placeholder
-		headerLabel.TextColor3 = if text then THEME.Text else THEME.Muted
+		table.sort(names)
+		local summary = #names > 0 and table.concat(names, ", ") or "Chưa chọn"
+		headerLabel.Text = options.title .. ": " .. summary
 	end
 
-	local rebuild
-
-	local function createOption(name)
-		local selected = isSelected(name)
-		local option = create("TextButton", {
-			Size = UDim2.new(1, -4, 0, 26), Text = (if selected then "✓  " else "     ") .. name, Font = THEME.Font, TextSize = 14,
-			TextColor3 = if selected then THEME.Accent else THEME.Text, TextXAlignment = Enum.TextXAlignment.Left,
-			TextTruncate = Enum.TextTruncate.AtEnd, Parent = list,
-		})
-		styleCorner(option, 6)
-		addHover(option, THEME.Field, THEME.CardHover, THEME.CardPress)
-		option.Activated:Connect(function()
-			if spec.multi then
-				selection[name] = if selection[name] then nil else true
-				spec.onChange(selection)
-			else
-				selection = name
-				spec.onChange(name)
-				setOpen(false)
-			end
-			updateHeader()
-			rebuild()
-		end)
+	local function choose(name)
+		if options.multi then
+			dropdown.selected[name] = (not dropdown.selected[name]) or nil
+		else
+			dropdown.selected = { [name] = true }
+			dropdown.setOpen(false)
+		end
+		updateHeader()
+		options.onChanged(dropdown.selected)
+		dropdown.refresh()
 	end
 
-	rebuild = function()
+	function dropdown.refresh()
 		for _, child in list:GetChildren() do
-			if child:IsA("GuiObject") then
+			if child:IsA("TextButton") then
 				child:Destroy()
 			end
 		end
-		local filter = string.lower(searchBox.Text)
-		local shown = 0
-		for _, name in allOptions do
-			if filter == "" or string.find(string.lower(name), filter, 1, true) then
-				shown += 1
-				createOption(name)
-			end
-		end
-		if shown == 0 then
-			createText({ Text = "Không có dữ liệu", Size = UDim2.new(1, 0, 0, 24), TextColor3 = THEME.Muted, TextXAlignment = Enum.TextXAlignment.Center, Parent = list })
-		end
-	end
-
-	setOpen = function(open)
-		isOpen = open
-		if open then
-			allOptions = spec.getOptions()
-			searchBox.Text = ""
-			rebuild()
-			panel.Visible = true
-			animate(panel, { Size = UDim2.new(1, 0, 0, PANEL_HEIGHT) }, 0.18)
-		else
-			animate(panel, { Size = UDim2.new(1, 0, 0, 0) }, 0.15).Completed:Once(function()
-				if not isOpen then
-					panel.Visible = false
-				end
-			end)
-		end
-		animate(arrow, { Rotation = if open then 180 else 0 }, 0.15)
-	end
-
-	header.Activated:Connect(function()
-		setOpen(not isOpen)
-	end)
-	searchBox:GetPropertyChangedSignal("Text"):Connect(rebuild)
-	return container
-end
-
-local function createNotifier(screenGui)
-	local holder = create("Frame", {
-		Name = "Toasts", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 8), Size = UDim2.fromOffset(280, 0),
-		AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, ZIndex = 10, Parent = screenGui,
-	})
-	create("UIListLayout", { Padding = UDim.new(0, 6), HorizontalAlignment = Enum.HorizontalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder, Parent = holder })
-	local activeToasts = {}
-	local pendingThreads = {}
-
-	local function show(text, kind)
-		local color = STATUS_COLORS[kind] or THEME.Accent
-		local toast = create("CanvasGroup", { Size = UDim2.new(1, 0, 0, 34), BackgroundColor3 = THEME.Card, GroupTransparency = 1, ZIndex = 10, Parent = holder })
-		styleCorner(toast, 8)
-		styleStroke(toast, color)
-		createText({ Text = text, Size = UDim2.new(1, -16, 1, 0), Position = UDim2.fromOffset(10, 0), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 10, Parent = toast })
-		table.insert(activeToasts, toast)
-		if #activeToasts > 4 then
-			table.remove(activeToasts, 1):Destroy()
-		end
-		animate(toast, { GroupTransparency = 0 }, 0.2)
-		local thread
-		thread = task.delay(2.5, function()
-			pendingThreads[thread] = nil
-			if toast.Parent then
-				animate(toast, { GroupTransparency = 1 }, 0.25).Completed:Once(function()
-					toast:Destroy()
+		local query = string.lower(search.Text)
+		for _, name in options.getOptions() do
+			if query == "" or string.find(string.lower(name), query, 1, true) then
+				local isSelected = dropdown.selected[name] == true
+				local item = create("TextButton", {
+					Size = UDim2.new(1, -4, 0, 24),
+					BackgroundColor3 = isSelected and theme.Accent or theme.Background,
+					AutoButtonColor = false,
+					Text = (isSelected and "✓ " or "") .. name,
+					TextColor3 = theme.Text,
+					TextSize = 12,
+					Font = Enum.Font.GothamMedium,
+					Parent = list,
+				}, { create("UICorner", { CornerRadius = UDim.new(0, 6) }) })
+				item.Activated:Connect(function()
+					choose(name)
 				end)
 			end
-		end)
-		pendingThreads[thread] = true
-	end
-
-	local function cancelAll()
-		for thread in pendingThreads do
-			task.cancel(thread)
 		end
-		pendingThreads = {}
+		updateHeader()
 	end
 
-	return show, cancelAll
+	function dropdown.setOpen(open)
+		dropdown.open = open
+		body.Visible = open
+		playTween(arrow, 0.15, { Rotation = open and 180 or 0 })
+		if open then
+			dropdown.refresh()
+		end
+	end
+
+	addPressFeedback(header)
+	rootBin.add(header.Activated:Connect(function()
+		dropdown.setOpen(not dropdown.open)
+	end))
+	rootBin.add(search:GetPropertyChangedSignal("Text"):Connect(dropdown.refresh))
+	updateHeader()
+	return dropdown
 end
 
-local function makeDraggable(handle, target, clampPosition)
-	handle.InputBegan:Connect(function(inputObject)
-		local inputType = inputObject.UserInputType
+local function makeDraggable(handle, target, onTap)
+	local dragging, moved = false, false
+	local dragStart, startPosition
+	local endConnection
+	rootBin.add(function()
+		if endConnection then
+			endConnection:Disconnect()
+		end
+	end)
+	rootBin.add(handle.InputBegan:Connect(function(input)
+		local inputType = input.UserInputType
 		if inputType ~= Enum.UserInputType.MouseButton1 and inputType ~= Enum.UserInputType.Touch then
 			return
 		end
-		local startInput = inputObject.Position
-		local startX, startY = target.Position.X.Offset, target.Position.Y.Offset
-		local dragJanitor = Janitor.new()
-		dragJanitor:Add(UserInputService.InputChanged:Connect(function(changed)
-			if changed.UserInputType == Enum.UserInputType.MouseMovement or changed == inputObject then
-				local delta = changed.Position - startInput
-				clampPosition(startX + delta.X, startY + delta.Y)
-			end
-		end))
-		dragJanitor:Add(inputObject.Changed:Connect(function()
-			if inputObject.UserInputState == Enum.UserInputState.End then
-				dragJanitor:Cleanup()
-			end
-		end))
-	end)
-end
-
-local function createAboutPage(scroller)
-	local card = createSection(scroller, "Nhà phát triển", 1)
-	local profile = create("Frame", { Size = UDim2.new(1, 0, 0, 52), BackgroundTransparency = 1, Parent = card })
-	local avatar = create("Frame", { Size = UDim2.fromOffset(46, 46), Position = UDim2.fromOffset(0, 3), BackgroundColor3 = THEME.Accent, Parent = profile })
-	styleCorner(avatar, 23)
-	createText({ Text = "TK", Font = THEME.FontBold, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), Parent = avatar })
-	createText({ Text = "Dev: " .. CONFIG.Developer.Name, Font = THEME.FontBold, TextSize = 17, Size = UDim2.new(1, -56, 0, 24), Position = UDim2.fromOffset(56, 6), Parent = profile })
-	createText({ Text = "Phiên bản " .. CONFIG.Version .. " • Giao diện Dark", TextSize = 13, TextColor3 = THEME.Muted, Size = UDim2.new(1, -56, 0, 18), Position = UDim2.fromOffset(56, 28), Parent = profile })
-
-	local telegram = create("TextButton", {
-		Size = UDim2.new(1, 0, 0, 34), Text = "Telegram: " .. CONFIG.Developer.Telegram, Font = THEME.FontBold, TextSize = 15,
-		TextColor3 = Color3.new(1, 1, 1), Parent = card,
-	})
-	styleCorner(telegram, 8)
-	addHover(telegram, THEME.Accent, Color3.fromRGB(124, 127, 255), Color3.fromRGB(78, 81, 210))
-
-	local linkBox = create("TextBox", {
-		Size = UDim2.new(1, 0, 0, 28), Text = CONFIG.Developer.TelegramUrl, BackgroundColor3 = THEME.Field, Font = THEME.Font,
-		TextSize = 14, TextColor3 = THEME.Accent, ClearTextOnFocus = false, Visible = false, Parent = card,
-	})
-	styleCorner(linkBox, 6)
-	styleStroke(linkBox, THEME.Stroke)
-	linkBox:GetPropertyChangedSignal("Text"):Connect(function()
-		if linkBox.Text ~= CONFIG.Developer.TelegramUrl then
-			linkBox.Text = CONFIG.Developer.TelegramUrl
-		end
-	end)
-	telegram.Activated:Connect(function()
-		linkBox.Visible = true
-		linkBox:CaptureFocus()
-		linkBox.SelectionStart = 1
-		linkBox.CursorPosition = #linkBox.Text + 1
-		local setCB = setclipboard or toclipboard or (syn and syn.write_clipboard)
-		if setCB then
-			pcall(setCB, CONFIG.Developer.TelegramUrl)
-			notify("Đã sao chép liên kết Telegram vào bộ nhớ tạm!", "success")
-		else
-			notify("Đã chọn liên kết Telegram, hãy bấm Ctrl+C để sao chép", "info")
-		end
-	end)
-
-	local intro = createSection(scroller, "Giới thiệu", 2)
-	createText({
-		Text = CONFIG.Developer.Intro, TextWrapped = true, TextSize = 14, TextColor3 = THEME.Text, AutomaticSize = Enum.AutomaticSize.Y,
-		Size = UDim2.new(1, 0, 0, 0), TextYAlignment = Enum.TextYAlignment.Top, Parent = intro,
-	})
-end
-
-local function createScroller(parent)
-	local scroller = create("ScrollingFrame", {
-		Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = THEME.Stroke,
-		AutomaticCanvasSize = Enum.AutomaticSize.Y, CanvasSize = UDim2.new(), Parent = parent,
-	})
-	create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = scroller })
-	create("UIPadding", { PaddingRight = UDim.new(0, 8), PaddingBottom = UDim.new(0, 8), Parent = scroller })
-	return scroller
-end
-
-local function buildFeaturesPage(scroller)
-	local toggles = {}
-	local function bindToggle(parent, featureName, labelText)
-		toggles[featureName] = createToggleRow(parent, labelText, function()
-			StateManager.set(featureName, not StateManager.isEnabled(featureName))
-		end)
-	end
-	StateManager.onChanged(function(name, enabled)
-		if toggles[name] then
-			toggles[name].setState(enabled)
-		end
-	end)
-
-	local graphics = createSection(scroller, "Hiệu năng & hình ảnh", 1)
-	bindToggle(graphics, "FixLag", "Fix Lag (giảm đồ họa)")
-	bindToggle(graphics, "FullBright", "Full Bright")
-
-	local movement = createSection(scroller, "Di chuyển", 2)
-	bindToggle(movement, "SpeedWalk", "Speed Walk")
-	createSlider(movement, scroller, {
-		label = "Walk Speed", min = CONFIG.WalkSpeed.Min, max = CONFIG.WalkSpeed.Max, value = walkSpeedValue,
-		onChange = function(value)
-			walkSpeedValue = value
-			SpeedWalk.refresh()
-		end,
-	})
-	bindToggle(movement, "HighJump", "High Jump")
-	local jumpSlider = createSlider(movement, scroller, {
-		label = "Jump", min = CONFIG.JumpPower.Min, max = CONFIG.JumpPower.Max, value = jumpValues.JumpPower,
-		onChange = function(value)
-			jumpValues[movement:GetAttribute("JumpProperty") or "JumpPower"] = value
-			HighJump.refresh()
-		end,
-	})
-	interfaceJanitor:Add(watchCharacter(function(_, humanoid)
-		local property = detectJumpProperty(humanoid)
-		movement:SetAttribute("JumpProperty", property)
-		jumpSlider.setLabel("Jump (" .. property .. ")")
-		jumpSlider.setRange(CONFIG[property].Min, CONFIG[property].Max)
-		jumpSlider.setValue(jumpValues[property], true)
-	end))
-	bindToggle(movement, "Noclip", "Noclip")
-
-	local farm = createSection(scroller, "Auto Farm", 3)
-	bindToggle(farm, "AutoFarm", "Auto Farm")
-	createStatusRow(farm, "farm")
-	createDropdown(farm, {
-		placeholder = "Chọn loại enemy...",
-		getOptions = EnemyRegistry.getTypeNames,
-		onChange = AutoFarm.setSelectedType,
-	})
-
-	local loot = createSection(scroller, "Auto Loot", 4)
-	bindToggle(loot, "AutoLoot", "Auto Loot")
-	createStatusRow(loot, "loot")
-	createDropdown(loot, {
-		placeholder = "Chọn loại loot...", multi = true,
-		getOptions = function() return CONFIG.Loot.Tags end,
-		onChange = AutoLoot.setSelectedTags,
-	})
-
-	local esp = createSection(scroller, "Player ESP", 5)
-	bindToggle(esp, "PlayerESP", "Player ESP")
-	local opposingToggle = createToggleRow(esp, "Chỉ hiện đối thủ (khác đội)", function() end)
-	local opposingOnly = CONFIG.ESP.HideTeammates
-	opposingToggle.setState(opposingOnly)
-	return opposingToggle
-end
-
-local function buildInterface()
-	local screenGui = create("ScreenGui", {
-		Name = CONFIG.GuiName, ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-		DisplayOrder = 100, Parent = PlayerGui,
-	})
-	local showNotification, cancelNotifications = createNotifier(screenGui)
-	notify = showNotification
-
-	local WIDTH, HEIGHT, TITLE = 330, 430, 40
-	local minimized = false
-	local menuVisible = CONFIG.StartOpen
-	local fadeToken = 0
-
-	local window = create("CanvasGroup", {
-		Name = "Window", Size = UDim2.fromOffset(WIDTH, HEIGHT), Position = UDim2.fromOffset(72, 56),
-		BackgroundColor3 = THEME.Background, GroupTransparency = if menuVisible then 0 else 1, Visible = menuVisible, Parent = screenGui,
-	})
-	styleCorner(window, 12)
-	styleStroke(window, THEME.Stroke)
-
-	local function getBounds()
-		local size = screenGui.AbsoluteSize
-		return if size.X > 0 then size else Vector2.new(800, 600)
-	end
-
-	local function clampPosition(x, y)
-		local bounds = getBounds()
-		local width, height = window.Size.X.Offset, window.Size.Y.Offset
-		window.Position = UDim2.fromOffset(
-			math.clamp(x, 0, math.max(0, bounds.X - width)),
-			math.clamp(y, 0, math.max(0, bounds.Y - height))
-		)
-	end
-
-	local function fitWindow()
-		local bounds = getBounds()
-		local width = math.min(WIDTH, bounds.X - 16)
-		local height = if minimized then TITLE else math.min(HEIGHT, bounds.Y - 16)
-		window.Size = UDim2.fromOffset(width, height)
-		clampPosition(window.Position.X.Offset, window.Position.Y.Offset)
-	end
-
-	local titleBar = create("Frame", { Size = UDim2.new(1, 0, 0, TITLE), BackgroundColor3 = THEME.Card, Parent = window })
-	createText({ Text = "KhoaDiemHub", Font = THEME.FontBold, TextSize = 17, Size = UDim2.fromOffset(130, TITLE), Position = UDim2.fromOffset(14, 0), Parent = titleBar })
-	local badge = create("Frame", { Size = UDim2.fromOffset(40, 18), Position = UDim2.fromOffset(145, 11), BackgroundColor3 = THEME.Accent, Parent = titleBar })
-	styleCorner(badge, 9)
-	createText({ Text = CONFIG.Version, TextSize = 12, Font = THEME.FontBold, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), Parent = badge })
-
-	local function createTitleButton(text, offsetX)
-		local button = create("TextButton", {
-			Size = UDim2.fromOffset(28, 28), Position = UDim2.new(1, offsetX, 0, 6), Text = text, Font = THEME.FontBold,
-			TextSize = 15, TextColor3 = THEME.Text, Parent = titleBar,
-		})
-		styleCorner(button, 8)
-		addHover(button, THEME.Card, THEME.CardHover, THEME.CardPress)
-		return button
-	end
-	local minimizeButton = createTitleButton("-", -68)
-	local closeButton = createTitleButton("X", -36)
-
-	local tabBar = create("Frame", { Size = UDim2.new(1, -16, 0, 28), Position = UDim2.fromOffset(8, 46), BackgroundTransparency = 1, Parent = window })
-	local body = create("Frame", { Size = UDim2.new(1, -16, 1, -106), Position = UDim2.fromOffset(8, 80), BackgroundTransparency = 1, Parent = window })
-	local footer = createText({
-		Text = string.format("Phím tắt: %s  •  Dev: %s", CONFIG.MenuToggleKey.Name, CONFIG.Developer.Name), TextSize = 12,
-		TextColor3 = THEME.Muted, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.new(1, 0, 0, 22),
-		Position = UDim2.new(0, 0, 1, -22), Parent = window,
-	})
-
-	local featuresPage = createScroller(body)
-	local aboutPage = createScroller(body)
-	aboutPage.Visible = false
-	local opposingToggle = buildFeaturesPage(featuresPage)
-	createAboutPage(aboutPage)
-
-	local tabButtons = {}
-	local function selectTab(name)
-		featuresPage.Visible = name == "features"
-		aboutPage.Visible = name == "about"
-		for key, button in tabButtons do
-			local active = key == name
-			animate(button, { BackgroundColor3 = if active then THEME.Accent else THEME.Card }, 0.15)
-			animate(button, { TextColor3 = if active then Color3.new(1, 1, 1) else THEME.Muted }, 0.15)
-		end
-	end
-	local function createTab(key, text, position)
-		local button = create("TextButton", {
-			Size = UDim2.new(0.5, -3, 1, 0), Position = position, Text = text, Font = THEME.FontBold, TextSize = 14,
-			BackgroundColor3 = THEME.Card, TextColor3 = THEME.Muted, AutoButtonColor = false, Parent = tabBar,
-		})
-		styleCorner(button, 8)
-		button.Activated:Connect(function()
-			selectTab(key)
-		end)
-		tabButtons[key] = button
-	end
-	createTab("features", "Tính năng", UDim2.fromScale(0, 0))
-	createTab("about", "Giới thiệu", UDim2.new(0.5, 3, 0, 0))
-	selectTab("features")
-
-	local opposingOnly = CONFIG.ESP.HideTeammates
-	local opposingRow = nil
-	for _, descendant in featuresPage:GetDescendants() do
-		if descendant:IsA("TextLabel") and descendant.Text == "Chỉ hiện đối thủ (khác đội)" then
-			opposingRow = descendant.Parent
-		end
-	end
-	if opposingRow then
-		opposingRow.Activated:Connect(function()
-			opposingOnly = not opposingOnly
-			opposingToggle.setState(opposingOnly)
-			PlayerEsp.setHideTeammates(opposingOnly)
-		end)
-	end
-
-	local function setMenuVisible(visible)
-		menuVisible = visible
-		fadeToken += 1
-		local token = fadeToken
-		if visible then
-			window.Visible = true
-			animate(window, { GroupTransparency = 0 }, 0.18)
-		else
-			animate(window, { GroupTransparency = 1 }, 0.15).Completed:Once(function()
-				if token == fadeToken then
-					window.Visible = false
+		dragging, moved = true, false
+		dragStart, startPosition = input.Position, target.Position
+		endConnection = input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+				endConnection:Disconnect()
+				if not moved and onTap then
+					onTap()
 				end
-			end)
+			end
+		end)
+	end))
+	rootBin.add(UserInputService.InputChanged:Connect(function(input)
+		local inputType = input.UserInputType
+		if not dragging or (inputType ~= Enum.UserInputType.MouseMovement and inputType ~= Enum.UserInputType.Touch) then
+			return
 		end
-	end
+		local delta = input.Position - dragStart
+		if delta.Magnitude > 6 then
+			moved = true
+		end
+		if moved then
+			local size, viewport = target.AbsoluteSize, gui.AbsoluteSize
+			target.Position = UDim2.fromOffset(
+				math.clamp(startPosition.X.Offset + delta.X, 0, math.max(viewport.X - size.X, 0)),
+				math.clamp(startPosition.Y.Offset + delta.Y, 0, math.max(viewport.Y - size.Y, 0))
+			)
+		end
+	end))
+end
 
-	local function setMinimized(value)
-		minimized = value
-		local bounds = getBounds()
-		local height = if value then TITLE else math.min(HEIGHT, bounds.Y - 16)
-		if not value then
-			body.Visible, tabBar.Visible, footer.Visible = true, true, true
-		end
-		animate(window, { Size = UDim2.fromOffset(window.Size.X.Offset, height) }, 0.2).Completed:Once(function()
-			if minimized then
-				body.Visible, tabBar.Visible, footer.Visible = false, false, false
+----------------------------------------------------------------
+-- CỬA SỔ CHÍNH
+----------------------------------------------------------------
+local viewport = getViewportSize()
+local WINDOW_WIDTH = math.min(330, viewport.X - 20)
+local WINDOW_HEIGHT = math.min(370, viewport.Y - 20)
+local TITLE_HEIGHT = 34
+
+local bubble = create("TextButton", {
+	Name = "MenuBubble",
+	Position = UDim2.fromOffset(14, 100),
+	Size = UDim2.fromOffset(46, 46),
+	BackgroundColor3 = theme.Panel,
+	Text = "TKD",
+	TextColor3 = theme.Accent,
+	TextSize = 13,
+	Font = Enum.Font.GothamBold,
+	AutoButtonColor = false,
+	Visible = false,
+	ZIndex = 10,
+	Parent = gui,
+}, {
+	create("UICorner", { CornerRadius = UDim.new(1, 0) }),
+	create("UIStroke", { Color = theme.Accent, Thickness = 1.5 }),
+})
+addPressFeedback(bubble)
+
+local window = create("Frame", {
+	Name = "Window",
+	Position = UDim2.fromOffset(math.max(math.min(70, viewport.X - WINDOW_WIDTH - 4), 0), 60),
+	Size = UDim2.fromOffset(WINDOW_WIDTH, WINDOW_HEIGHT),
+	BackgroundColor3 = theme.Background,
+	BorderSizePixel = 0,
+	ClipsDescendants = true,
+	Visible = false,
+	ZIndex = 5,
+	Parent = gui,
+}, {
+	create("UICorner", { CornerRadius = UDim.new(0, 12) }),
+	create("UIStroke", { Color = theme.Off, Thickness = 1 }),
+})
+local windowScale = create("UIScale", { Parent = window })
+local windowState = { open = false, id = 0, minimized = false }
+
+local titleBar = create("Frame", {
+	Size = UDim2.new(1, 0, 0, TITLE_HEIGHT),
+	BackgroundColor3 = theme.Panel,
+	BorderSizePixel = 0,
+	Parent = window,
+})
+create("TextLabel", {
+	Position = UDim2.fromOffset(12, 0),
+	Size = UDim2.new(1, -80, 1, 0),
+	BackgroundTransparency = 1,
+	Text = "◆ " .. CONFIG.MenuName .. "  " .. CONFIG.Version,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextColor3 = theme.Text,
+	TextSize = 14,
+	Font = Enum.Font.GothamBold,
+	Parent = titleBar,
+})
+
+local function createTitleButton(text, offsetX, color)
+	local button = create("TextButton", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, offsetX, 0.5, 0),
+		Size = UDim2.fromOffset(24, 24),
+		BackgroundColor3 = color,
+		Text = text,
+		TextColor3 = theme.Text,
+		TextSize = 14,
+		Font = Enum.Font.GothamBold,
+		AutoButtonColor = false,
+		Parent = titleBar,
+	}, { create("UICorner", { CornerRadius = UDim.new(0, 6) }) })
+	addPressFeedback(button)
+	return button
+end
+
+local minimizeButton = createTitleButton("–", -38, theme.Element)
+local closeButton = createTitleButton("×", -8, theme.Danger)
+
+local body = create("Frame", {
+	Position = UDim2.fromOffset(0, TITLE_HEIGHT),
+	Size = UDim2.new(1, 0, 1, -TITLE_HEIGHT),
+	BackgroundTransparency = 1,
+	Parent = window,
+})
+local tabBar = create("Frame", {
+	Position = UDim2.fromOffset(8, 6),
+	Size = UDim2.new(1, -16, 0, 28),
+	BackgroundTransparency = 1,
+	Parent = body,
+}, { create("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }) })
+local pagesHolder = create("Frame", {
+	Position = UDim2.fromOffset(8, 40),
+	Size = UDim2.new(1, -16, 1, -48),
+	BackgroundTransparency = 1,
+	Parent = body,
+})
+
+local pages, tabButtons = {}, {}
+
+local function selectTab(name)
+	for pageName, page in pages do
+		page.Visible = pageName == name
+		tabButtons[pageName].BackgroundColor3 = pageName == name and theme.Accent or theme.Element
+	end
+end
+
+local function createPage(name, title)
+	local page = create("ScrollingFrame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 3,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(),
+		Visible = false,
+		Parent = pagesHolder,
+	}, {
+		create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+		create("UIPadding", { PaddingRight = UDim.new(0, 6), PaddingBottom = UDim.new(0, 8) }),
+	})
+	local tab = create("TextButton", {
+		Size = UDim2.new(1 / 3, -4, 1, 0),
+		BackgroundColor3 = theme.Element,
+		Text = title,
+		TextColor3 = theme.Text,
+		TextSize = 12,
+		Font = Enum.Font.GothamBold,
+		AutoButtonColor = false,
+		Parent = tabBar,
+	}, { create("UICorner", { CornerRadius = UDim.new(0, 8) }) })
+	addPressFeedback(tab)
+	rootBin.add(tab.Activated:Connect(function()
+		selectTab(name)
+	end))
+	pages[name], tabButtons[name] = page, tab
+	return page
+end
+
+local function setWindowOpen(open)
+	windowState.open = open
+	windowState.id += 1
+	local id = windowState.id
+	if open then
+		windowScale.Scale = 0.9
+		window.Visible = true
+		playTween(windowScale, 0.15, { Scale = 1 })
+	else
+		playTween(windowScale, 0.12, { Scale = 0.9 })
+		task.delay(0.12, function()
+			if windowState.id == id then
+				window.Visible = false
 			end
 		end)
 	end
-
-	minimizeButton.Activated:Connect(function()
-		setMinimized(not minimized)
-	end)
-	closeButton.Activated:Connect(function()
-		setMenuVisible(false)
-	end)
-	makeDraggable(titleBar, window, clampPosition)
-
-	local launcher = create("TextButton", {
-		Name = "Launcher", Size = UDim2.fromOffset(44, 44), AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 12, 0.5, 0),
-		Text = "", Parent = screenGui,
-	})
-	styleCorner(launcher, 22)
-	styleStroke(launcher, THEME.Stroke)
-	addHover(launcher, THEME.Card, THEME.CardHover, THEME.CardPress)
-	for index = 0, 2 do
-		local line = create("Frame", { Size = UDim2.fromOffset(18, 2), Position = UDim2.fromOffset(13, 14 + index * 6), BackgroundColor3 = THEME.Text, Parent = launcher })
-		styleCorner(line, 1)
-	end
-	launcher.Activated:Connect(function()
-		setMenuVisible(not menuVisible)
-	end)
-
-	interfaceJanitor:Add(UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if not gameProcessed and input.KeyCode == CONFIG.MenuToggleKey then
-			setMenuVisible(not menuVisible)
-		end
-	end))
-	interfaceJanitor:Add(screenGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(fitWindow))
-	fitWindow()
-
-	setStatus("farm", "Tắt", "off")
-	setStatus("loot", "Tắt", "off")
-	return screenGui, cancelNotifications
 end
 
-local coreJanitor = Janitor.new()
-EnemyRegistry.start(coreJanitor)
-LootRegistry.start(coreJanitor)
+local function setMinimized(minimized)
+	windowState.minimized = minimized
+	local height = minimized and TITLE_HEIGHT or WINDOW_HEIGHT
+	body.Visible = not minimized
+	playTween(window, 0.18, { Size = UDim2.fromOffset(WINDOW_WIDTH, height) })
+end
 
-local screenGui, cancelNotifications = buildInterface()
+rootBin.add(minimizeButton.Activated:Connect(function()
+	setMinimized(not windowState.minimized)
+end))
+rootBin.add(closeButton.Activated:Connect(function()
+	setWindowOpen(false)
+end))
 
-screenGui.Destroying:Connect(function()
-	StateManager.disableAll()
-	cancelNotifications()
-	interfaceJanitor:Cleanup()
-	coreJanitor:Cleanup()
+makeDraggable(titleBar, window)
+makeDraggable(bubble, bubble, function()
+	setWindowOpen(not windowState.open)
 end)
 
-notify("KhoaDiemHub " .. CONFIG.Version .. " sẵn sàng", "success")
+rootBin.add(UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not gameProcessed and input.KeyCode == CONFIG.MenuToggleKey then
+		setWindowOpen(not windowState.open)
+	end
+end))
+
+----------------------------------------------------------------
+-- NỘI DUNG CÁC TRANG
+----------------------------------------------------------------
+local jumpSlider
+
+local function syncJumpSlider()
+	if not jumpSlider then
+		return
+	end
+	local property = detectJumpProperty()
+	local range = CONFIG[property]
+	jumpSlider.step = range.Step
+	jumpSlider.setLabel("Độ nhảy (" .. property .. ")")
+	jumpSlider.setRange(range.Min, range.Max)
+	jumpSlider.setValue(selection.jumpValues[property], true)
+end
+
+local function buildFeaturePage(page)
+	createSection(page, "HIỆU NĂNG & HÌNH ẢNH")
+	bindFeatureToggle(page, "FixLag")
+	bindFeatureToggle(page, "FullBright")
+	createSection(page, "NHÂN VẬT")
+	bindFeatureToggle(page, "SpeedWalk")
+	createSlider(page, "Tốc độ chạy (WalkSpeed)", CONFIG.WalkSpeed, function(value)
+		selection.walkSpeed = value
+		features.SpeedWalk.refresh()
+	end)
+	bindFeatureToggle(page, "HighJump")
+	jumpSlider = createSlider(page, "Độ nhảy", CONFIG.JumpPower, function(value)
+		selection.jumpValues[detectJumpProperty()] = value
+		features.HighJump.refresh()
+	end)
+	bindFeatureToggle(page, "Noclip")
+	createSection(page, "NGƯỜI CHƠI")
+	bindFeatureToggle(page, "PlayerEsp")
+	local teamToggle
+	teamToggle = createToggle(page, "ESP: chỉ hiện đối thủ", function(wanted)
+		selection.espHideSameTeam = wanted
+		teamToggle.set(wanted)
+	end)
+	teamToggle.set(selection.espHideSameTeam)
+	syncJumpSlider()
+end
+
+local enemyDropdown, lootDropdown
+
+local function buildFarmPage(page)
+	createSection(page, "AUTO FARM")
+	statusLabels.AutoFarm = createInfoLabel(page, "Tắt", 12, theme.SubText)
+	enemyDropdown = createDropdown(page, {
+		title = "Quái",
+		multi = false,
+		getOptions = listEnemyTypes,
+		onChanged = function(selected)
+			selection.enemyType = next(selected)
+		end,
+	})
+	bindFeatureToggle(page, "AutoFarm")
+	createSection(page, "AUTO LOOT")
+	statusLabels.AutoLoot = createInfoLabel(page, "Tắt", 12, theme.SubText)
+	lootDropdown = createDropdown(page, {
+		title = "Vật phẩm",
+		multi = true,
+		getOptions = function()
+			return CONFIG.LootTags
+		end,
+		onChanged = function(selected)
+			selection.lootTypes = table.clone(selected)
+		end,
+	})
+	bindFeatureToggle(page, "AutoLoot")
+end
+
+local function buildAboutPage(page)
+	createSection(page, "THÔNG TIN")
+	createInfoLabel(page, CONFIG.MenuName .. " " .. CONFIG.Version .. "  •  Giao diện Dark", 14, theme.Text)
+	createInfoLabel(page, "Dev: " .. CONFIG.DeveloperName, 13, theme.Accent)
+	createInfoLabel(page, CONFIG.Introduction, 12, theme.SubText)
+	createSection(page, "LIÊN HỆ")
+	local linkBox = create("TextBox", {
+		Size = UDim2.new(1, 0, 0, 28),
+		BackgroundColor3 = theme.Element,
+		Text = CONFIG.TelegramLink,
+		TextColor3 = theme.Text,
+		TextSize = 12,
+		Font = Enum.Font.GothamMedium,
+		ClearTextOnFocus = false,
+		TextEditable = false,
+		Parent = page,
+	}, { create("UICorner", { CornerRadius = UDim.new(0, 8) }) })
+	local telegramButton = create("TextButton", {
+		Size = UDim2.new(1, 0, 0, 32),
+		BackgroundColor3 = theme.Accent,
+		Text = "Telegram: " .. CONFIG.TelegramHandle,
+		TextColor3 = theme.Text,
+		TextSize = 13,
+		Font = Enum.Font.GothamBold,
+		AutoButtonColor = false,
+		Parent = page,
+	}, { create("UICorner", { CornerRadius = UDim.new(0, 8) }) })
+	addPressFeedback(telegramButton)
+	rootBin.add(telegramButton.Activated:Connect(function()
+		linkBox:CaptureFocus()
+		notify("Chọn và sao chép link: " .. CONFIG.TelegramLink, "info")
+	end))
+end
+
+buildFeaturePage(createPage("features", "Tính năng"))
+buildFarmPage(createPage("farm", "Farm / Loot"))
+buildAboutPage(createPage("about", "Giới thiệu"))
+selectTab("features")
+
+-- Cập nhật danh sách quái (gộp nhiều thay đổi liên tiếp thành một lần)
+local enemyRefreshQueued = false
+enemyListChanged = function()
+	if enemyRefreshQueued or not enemyDropdown then
+		return
+	end
+	enemyRefreshQueued = true
+	task.delay(0.3, function()
+		enemyRefreshQueued = false
+		if enemyDropdown and enemyDropdown.open then
+			enemyDropdown.refresh()
+		end
+	end)
+end
+
+-- Đồng bộ slider nhảy khi hồi sinh
+rootBin.add(player.CharacterAdded:Connect(function(character)
+	local humanoid = character:WaitForChild("Humanoid", 10)
+	if humanoid and gui.Parent then
+		syncJumpSlider()
+	end
+end))
+
+----------------------------------------------------------------
+-- MÀN HÌNH CHÀO MỪNG -> THU NHỎ THÀNH NÚT MENU
+----------------------------------------------------------------
+local function playWelcome()
+	local welcomeSize = Vector2.new(280, 120)
+	local welcome = create("Frame", {
+		Position = UDim2.fromOffset(viewport.X / 2 - welcomeSize.X / 2, viewport.Y / 2 - welcomeSize.Y / 2),
+		Size = UDim2.fromOffset(welcomeSize.X, welcomeSize.Y),
+		BackgroundColor3 = theme.Panel,
+		BorderSizePixel = 0,
+		ZIndex = 20,
+		Parent = gui,
+	}, {
+		create("UICorner", { CornerRadius = UDim.new(0, 14) }),
+		create("UIStroke", { Color = theme.Accent, Thickness = 1.5 }),
+	})
+	local scale = create("UIScale", { Scale = 0.7, Parent = welcome })
+	local labels = {
+		create("TextLabel", {
+			Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 36), BackgroundTransparency = 1,
+			Text = "Chào Mừng", TextColor3 = theme.Text, TextSize = 26, Font = Enum.Font.GothamBold, Parent = welcome,
+		}),
+		create("TextLabel", {
+			Position = UDim2.fromOffset(0, 54), Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
+			Text = CONFIG.MenuName .. " " .. CONFIG.Version, TextColor3 = theme.Accent, TextSize = 14,
+			Font = Enum.Font.GothamMedium, Parent = welcome,
+		}),
+		create("TextLabel", {
+			Position = UDim2.fromOffset(0, 80), Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
+			Text = "Dev: " .. CONFIG.DeveloperName, TextColor3 = theme.SubText, TextSize = 12,
+			Font = Enum.Font.GothamMedium, Parent = welcome,
+		}),
+	}
+	playTween(scale, 0.3, { Scale = 1 })
+	task.spawn(function()
+		task.wait(CONFIG.WelcomeDuration)
+		if not welcome.Parent then
+			return
+		end
+		for _, label in labels do
+			playTween(label, 0.2, { TextTransparency = 1 })
+		end
+		local corner = welcome:FindFirstChildOfClass("UICorner")
+		playTween(corner, 0.45, { CornerRadius = UDim.new(1, 0) })
+		playTween(welcome, 0.45, { Size = bubble.Size, Position = bubble.Position })
+		task.wait(0.5)
+		if welcome.Parent then
+			welcome:Destroy()
+			bubble.Visible = true
+			notify("Bấm nút TKD hoặc phím " .. CONFIG.MenuToggleKey.Name .. " để mở menu", "info")
+		end
+	end)
+end
+
+----------------------------------------------------------------
+-- KHỞI ĐỘNG
+----------------------------------------------------------------
+startEnemyRegistry()
+playWelcome()
