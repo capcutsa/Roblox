@@ -19,14 +19,14 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local CONFIG = {
 	MenuToggleKey = Enum.KeyCode.RightShift,
 	StartOpen = true,
-	GuiName = "UtilityMenu_V1",
+	GuiName = "KhoaDiemHub",
 	Version = "v1.0",
 
 	Developer = {
 		Name = "Tran Khoa Diem",
 		Telegram = "@TranKhoaDiem",
 		TelegramUrl = "https://t.me/TranKhoaDiem",
-		Intro = "Xin chào! Mình là Tran Khoa Diem, người phát triển menu này. Menu được thiết kế gọn nhẹ, giao diện tối và thao tác mượt trên cả máy tính lẫn điện thoại. Nếu cần hỗ trợ, góp ý hoặc báo lỗi, hãy liên hệ mình qua Telegram nhé!",
+		Intro = "Xin chào! Mình là Tran Khoa Diem, người phát triển KhoaDiemHub. Menu được thiết kế gọn nhẹ, giao diện tối và thao tác mượt trên cả máy tính lẫn điện thoại. Nếu cần hỗ trợ, góp ý hoặc báo lỗi, hãy liên hệ mình qua Telegram nhé!",
 	},
 
 	WalkSpeed = { Min = 16, Max = 150, Default = 50 },
@@ -94,7 +94,7 @@ local CONFIG = {
 }
 
 if PlayerGui:FindFirstChild(CONFIG.GuiName) then
-	warn("[UtilityMenu] Menu đã tồn tại, bỏ qua lần chạy trùng.")
+	warn("[KhoaDiemHub] Menu đã tồn tại, bỏ qua lần chạy trùng.")
 	return
 end
 
@@ -199,7 +199,7 @@ local function createText(properties)
 end
 
 local notify = function(text, kind)
-	print(string.format("[UtilityMenu][%s] %s", kind or "info", text))
+	print(string.format("[KhoaDiemHub][%s] %s", kind or "info", text))
 end
 
 local statusListeners = {}
@@ -228,7 +228,7 @@ local function resolveCharacter(character, callback)
 	if humanoid and root and character.Parent then
 		callback(character, humanoid, root)
 	else
-		warn("[UtilityMenu] Không tìm thấy Humanoid/HumanoidRootPart của nhân vật mới.")
+		warn("[KhoaDiemHub] Không tìm thấy Humanoid/HumanoidRootPart của nhân vật mới.")
 	end
 end
 
@@ -257,7 +257,7 @@ local placeholderWarnings = {}
 local function warnPlaceholderOnce(key, message)
 	if not placeholderWarnings[key] then
 		placeholderWarnings[key] = true
-		warn("[UtilityMenu] " .. message)
+		warn("[KhoaDiemHub] " .. message)
 	end
 end
 
@@ -301,7 +301,7 @@ do
 	local function runSafely(feature, phase)
 		local ok, err = pcall(feature[phase])
 		if not ok then
-			warn(string.format("[UtilityMenu] %s.%s lỗi: %s", feature.name, phase, tostring(err)))
+			warn(string.format("[KhoaDiemHub] %s.%s lỗi: %s", feature.name, phase, tostring(err)))
 			notify(feature.label .. ": lỗi (xem Output)", "error")
 		end
 		return ok
@@ -1169,7 +1169,7 @@ do
 		while token == runId do
 			local ok, err = pcall(farmStep)
 			if not ok then
-				warn("[UtilityMenu] Auto Farm lỗi: " .. tostring(err))
+				warn("[KhoaDiemHub] Auto Farm lỗi: " .. tostring(err))
 				notify("Auto Farm gặp lỗi và đã tắt (xem Output)", "error")
 				task.defer(StateManager.set, "AutoFarm", false)
 				return
@@ -1296,7 +1296,7 @@ do
 		while token == runId do
 			local ok, err = pcall(lootStep, token)
 			if not ok then
-				warn("[UtilityMenu] Auto Loot lỗi: " .. tostring(err))
+				warn("[KhoaDiemHub] Auto Loot lỗi: " .. tostring(err))
 				notify("Auto Loot gặp lỗi và đã tắt (xem Output)", "error")
 				task.defer(StateManager.set, "AutoLoot", false)
 				return
@@ -1352,7 +1352,7 @@ do
 
 	local function createBillboard(head)
 		local billboard = create("BillboardGui", {
-			Name = "UtilityMenuEsp",
+			Name = "KhoaDiemHubEsp",
 			Adornee = head,
 			AlwaysOnTop = true,
 			Size = UDim2.fromOffset(150, 42),
@@ -1420,7 +1420,7 @@ do
 		removeEntry(player)
 		local entryJanitor = Janitor.new()
 		local highlight = entryJanitor:Add(create("Highlight", {
-			Name = "UtilityMenuEsp", Adornee = character, FillTransparency = 0.75, OutlineTransparency = 0,
+			Name = "KhoaDiemHubEsp", Adornee = character, FillTransparency = 0.75, OutlineTransparency = 0,
 			DepthMode = Enum.HighlightDepthMode.AlwaysOnTop, Parent = character,
 		}))
 		local billboard, nameLabel, barFill, infoLabel = createBillboard(head)
@@ -2112,8 +2112,8 @@ local function buildInterface()
 	end
 
 	local titleBar = create("Frame", { Size = UDim2.new(1, 0, 0, TITLE), BackgroundColor3 = THEME.Card, Parent = window })
-	createText({ Text = "Utility Menu", Font = THEME.FontBold, TextSize = 17, Size = UDim2.fromOffset(104, TITLE), Position = UDim2.fromOffset(14, 0), Parent = titleBar })
-	local badge = create("Frame", { Size = UDim2.fromOffset(40, 18), Position = UDim2.fromOffset(120, 11), BackgroundColor3 = THEME.Accent, Parent = titleBar })
+	createText({ Text = "KhoaDiemHub", Font = THEME.FontBold, TextSize = 17, Size = UDim2.fromOffset(130, TITLE), Position = UDim2.fromOffset(14, 0), Parent = titleBar })
+	local badge = create("Frame", { Size = UDim2.fromOffset(40, 18), Position = UDim2.fromOffset(145, 11), BackgroundColor3 = THEME.Accent, Parent = titleBar })
 	styleCorner(badge, 9)
 	createText({ Text = CONFIG.Version, TextSize = 12, Font = THEME.FontBold, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), Parent = badge })
 
@@ -2262,4 +2262,4 @@ screenGui.Destroying:Connect(function()
 	coreJanitor:Cleanup()
 end)
 
-notify("Utility Menu " .. CONFIG.Version .. " sẵn sàng", "success")
+notify("KhoaDiemHub " .. CONFIG.Version .. " sẵn sàng", "success")
