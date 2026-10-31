@@ -4,6 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -150,7 +151,7 @@ welcomeFrame:Destroy()
 
 local mainButton = Instance.new("TextButton")
 mainButton.Name = "MainButton"
-mainButton.Size = UDim2.new(0, 110, 0, 36)
+mainButton.Size = UDim2.new(0, 120, 0, 36)
 mainButton.Position = UDim2.new(0, 20, 0, 20)
 mainButton.BackgroundColor3 = Color3.fromRGB(20, 16, 35)
 mainButton.BorderSizePixel = 0
@@ -171,8 +172,8 @@ mainBtnStroke.Parent = mainButton
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 600, 0, 400)
-mainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
+mainFrame.Size = UDim2.new(0, 650, 0, 440)
+mainFrame.Position = UDim2.new(0.5, -325, 0.5, -220)
 mainFrame.BackgroundColor3 = Color3.fromRGB(12, 10, 22)
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -234,11 +235,11 @@ end)
 
 local tabList = Instance.new("ScrollingFrame")
 tabList.Name = "TabList"
-tabList.Size = UDim2.new(0, 140, 1, -45)
+tabList.Size = UDim2.new(0, 150, 1, -45)
 tabList.Position = UDim2.new(0, 5, 0, 40)
 tabList.BackgroundColor3 = Color3.fromRGB(15, 12, 28)
 tabList.BorderSizePixel = 0
-tabList.CanvasSize = UDim2.new(0, 0, 0, 320)
+tabList.CanvasSize = UDim2.new(0, 0, 0, 350)
 tabList.ScrollBarThickness = 3
 tabList.Parent = mainFrame
 
@@ -253,8 +254,8 @@ tabListLayout.Parent = tabList
 
 local containerFrame = Instance.new("Frame")
 containerFrame.Name = "ContainerFrame"
-containerFrame.Size = UDim2.new(1, -155, 1, -45)
-containerFrame.Position = UDim2.new(0, 150, 0, 40)
+containerFrame.Size = UDim2.new(1, -165, 1, -45)
+containerFrame.Position = UDim2.new(0, 160, 0, 40)
 containerFrame.BackgroundTransparency = 1
 containerFrame.Parent = mainFrame
 
@@ -269,7 +270,7 @@ local function createTabContent(name)
     scroller.Name = name .. "Content"
     scroller.Size = UDim2.new(1, 0, 1, 0)
     scroller.BackgroundTransparency = 1
-    scroller.CanvasSize = UDim2.new(0, 0, 0, 850)
+    scroller.CanvasSize = UDim2.new(0, 0, 0, 950)
     scroller.ScrollBarThickness = 4
     scroller.Visible = false
     scroller.Parent = containerFrame
@@ -425,7 +426,7 @@ local function createSlider(parent, text, min, max, default, callback)
     return frame
 end
 
-local function createTabButton(name, index, scroller)
+local function createTabButton(name, scroller)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 30)
     btn.BackgroundColor3 = Color3.fromRGB(22, 17, 40)
@@ -446,13 +447,13 @@ local function createTabButton(name, index, scroller)
     end)
 end
 
-local tabNames = {"Movement", "Combat", "ESP", "World", "Teleport", "Other"}
+local tabNames = {"Movement", "Combat", "ESP", "World", "Spectate & TP", "Visuals", "Other"}
 local scrollers = {}
 
 for i, name in ipairs(tabNames) do
     local scroller = createTabContent(name)
     scrollers[i] = scroller
-    createTabButton(name, i, scroller)
+    createTabButton(name, scroller)
 end
 
 scrollers[1].Visible = true
@@ -461,13 +462,17 @@ local movementTab = scrollers[1]
 local combatTab = scrollers[2]
 local espTab = scrollers[3]
 local worldTab = scrollers[4]
-local teleportTab = scrollers[5]
-local otherTab = scrollers[6]
+local spectateTab = scrollers[5]
+local visualsTab = scrollers[6]
+local otherTab = scrollers[7]
 
 local walkSpeedEnabled = false
 local walkSpeedVal = 16
 createToggle(movementTab, "Run / Fast Speed", false, function(state)
     walkSpeedEnabled = state
+    if not state and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
+    end
 end)
 createSlider(movementTab, "WalkSpeed Value", 16, 250, 16, function(val)
     walkSpeedVal = val
@@ -477,6 +482,9 @@ local jumpPowerEnabled = false
 local jumpPowerVal = 50
 createToggle(movementTab, "High Jump", false, function(state)
     jumpPowerEnabled = state
+    if not state and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = 50
+    end
 end)
 createSlider(movementTab, "JumpPower Value", 50, 500, 50, function(val)
     jumpPowerVal = val
@@ -496,17 +504,33 @@ createToggle(movementTab, "Noclip", false, function(state)
     noclipEnabled = state
 end)
 
+local infiniteJump = false
+createToggle(movementTab, "Infinite Jump", false, function(state)
+    infiniteJump = state
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if infiniteJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
 local aimbotEnabled = false
 local selectedBodyPart = "Head"
-createToggle(combatTab, "Aimbot (Shoot Head/Body)", false, function(state)
+createToggle(combatTab, "Aimbot (Lock Head/Body)", false, function(state)
     aimbotEnabled = state
 end)
 
 local bodyPartsList = {"Head", "HumanoidRootPart", "UpperTorso"}
 local bpIndex = 1
-createButton(combatTab, "Body Part: Head", function()
+createButton(combatTab, "Target Part: Head", function()
     bpIndex = bpIndex % #bodyPartsList + 1
     selectedBodyPart = bodyPartsList[bpIndex]
+end)
+
+local triggerBot = false
+createToggle(combatTab, "Triggerbot Auto Attack", false, function(state)
+    triggerBot = state
 end)
 
 local espBoxEnabled = false
@@ -521,18 +545,90 @@ createToggle(espTab, "ESP Health", false, function(state) espHealthEnabled = sta
 createToggle(espTab, "ESP Distance", false, function(state) espDistanceEnabled = state end)
 createToggle(espTab, "ESP Lines", false, function(state) espLinesEnabled = state end)
 
+local espObjects = {}
+RunService.RenderStepped:Connect(function()
+    for _, obj in pairs(espObjects) do
+        if obj then
+            pcall(function() obj:Remove() end)
+        end
+    end
+    espObjects = {}
+
+    if not (espBoxEnabled or espNameEnabled or espHealthEnabled or espDistanceEnabled or espLinesEnabled) then
+        return
+    end
+
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") then
+            local root = p.Character.HumanoidRootPart
+            local head = p.Character:FindFirstChild("Head") or root
+            local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
+            if onScreen then
+                local dist = (Camera.CFrame.Position - root.Position).Magnitude
+                local topPos, _ = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 1, 0))
+                local bottomPos, _ = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3, 0))
+                local height = math.abs(topPos.Y - bottomPos.Y)
+                local width = height / 2
+
+                if espBoxEnabled then
+                    local box = Drawing.new("Square")
+                    box.Visible = true
+                    box.Size = Vector2.new(width, height)
+                    box.Position = Vector2.new(pos.X - width / 2, topPos.Y)
+                    box.Color = Color3.fromRGB(150, 50, 255)
+                    box.Thickness = 1.5
+                    box.Filled = false
+                    table.insert(espObjects, box)
+                end
+
+                if espLinesEnabled then
+                    local line = Drawing.new("Line")
+                    line.Visible = true
+                    line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                    line.To = Vector2.new(pos.X, pos.Y)
+                    line.Color = Color3.fromRGB(150, 50, 255)
+                    line.Thickness = 1
+                    table.insert(espObjects, line)
+                end
+
+                if espNameEnabled or espHealthEnabled or espDistanceEnabled then
+                    local infoText = ""
+                    if espNameEnabled then infoText = infoText .. p.Name .. " " end
+                    if espHealthEnabled then infoText = infoText .. "[" .. math.floor(p.Character.Humanoid.Health) .. "HP] " end
+                    if espDistanceEnabled then infoText = infoText .. "[" .. math.floor(dist) .. "m]" end
+
+                    local txt = Drawing.new("Text")
+                    txt.Visible = true
+                    txt.Text = infoText
+                    txt.Size = 13
+                    txt.Color = Color3.fromRGB(220, 180, 255)
+                    txt.Center = true
+                    txt.Outline = true
+                    txt.Position = Vector2.new(pos.X, topPos.Y - 18)
+                    table.insert(espObjects, txt)
+                end
+            end
+        end
+    end
+end)
+
 local godMode = false
 createToggle(worldTab, "God Mode / Immortal", false, function(state)
     godMode = state
 end)
 
 local lavaImmune = false
-createToggle(worldTab, "Lava Immunity & Water Walk", false, function(state)
+createToggle(worldTab, "Lava & KillBrick Immunity", false, function(state)
     lavaImmune = state
 end)
 
+local waterWalk = false
+createToggle(worldTab, "Water Walk", false, function(state)
+    waterWalk = state
+end)
+
 local shieldEnabled = false
-createToggle(worldTab, "Shield & Fire Effect", false, function(state)
+createToggle(worldTab, "Shield & Fire Aura", false, function(state)
     shieldEnabled = state
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         if state then
@@ -565,28 +661,30 @@ createToggle(worldTab, "Shield & Fire Effect", false, function(state)
 end)
 
 local spectateTarget = nil
-createButton(teleportTab, "Cycle Spectate Player", function()
+local spectateIndex = 1
+
+createButton(spectateTab, "Cycle Spectate Next Player", function()
     local players = Players:GetPlayers()
-    for i, p in ipairs(players) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            if spectateTarget == p then
-                spectateTarget = players[i % #players + 1]
-                if spectateTarget == LocalPlayer then spectateTarget = nil end
-                break
-            else
-                spectateTarget = p
-                break
-            end
-        end
+    spectateIndex = spectateIndex % #players + 1
+    local target = players[spectateIndex]
+    if target == LocalPlayer then
+        spectateIndex = spectateIndex % #players + 1
+        target = players[spectateIndex]
+    end
+    spectateTarget = target
+    if spectateTarget and spectateTarget.Character and spectateTarget.Character:FindFirstChild("Humanoid") then
+        Camera.CameraSubject = spectateTarget.Character.Humanoid
     end
 end)
 
-createButton(teleportTab, "Reset Camera to Self", function()
+createButton(spectateTab, "Reset Camera to Self", function()
     spectateTarget = nil
-    Camera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        Camera.CameraSubject = LocalPlayer.Character.Humanoid
+    end
 end)
 
-createButton(teleportTab, "Teleport to Spectate Target", function()
+createButton(spectateTab, "Teleport to Spectated User", function()
     if spectateTarget and spectateTarget.Character and spectateTarget.Character:FindFirstChild("HumanoidRootPart") then
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
             LocalPlayer.Character.HumanoidRootPart.CFrame = spectateTarget.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
@@ -594,24 +692,57 @@ createButton(teleportTab, "Teleport to Spectate Target", function()
     end
 end)
 
+local fullBright = false
+createToggle(visualsTab, "Fullbright", false, function(state)
+    fullBright = state
+    if state then
+        Lighting.Brightness = 2
+        Lighting.ClockTime = 14
+        Lighting.GlobalShadows = false
+        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+    else
+        Lighting.Brightness = 1
+        Lighting.GlobalShadows = true
+    end
+end)
+
+local xrayEnabled = false
+createToggle(visualsTab, "X-Ray Wallhack", false, function(state)
+    xrayEnabled = state
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and not obj:IsDescendantOf(LocalPlayer.Character) then
+            if state then
+                obj.LocalTransparencyModifier = 0.5
+            else
+                obj.LocalTransparencyModifier = 0
+            end
+        end
+    end
+end)
+
 local autoChatEnabled = false
-local chatMessages = {"KhoaDiemHub v1.0 on top!", "Tran Khoa Diem is the best dev", "Universal Roblox Hub"}
-createToggle(otherTab, "Auto Chat", false, function(state)
+local chatMessages = {"KhoaDiemHub v1.0 on top!", "Tran Khoa Diem is the best developer", "Universal Roblox Hub"}
+createToggle(otherTab, "Auto Chatting", false, function(state)
     autoChatEnabled = state
 end)
 
-createButton(otherTab, "Telegram: @TranKhoaDiem", function()
+createButton(otherTab, "Open Telegram: @TranKhoaDiem", function()
     pcall(function()
         if setclipboard then
             setclipboard("https://t.me/TranKhoaDiem")
         end
+        if syn and syn.request then
+            syn.request({Url = "https://t.me/TranKhoaDiem", Method = "GET"})
+        elseif request then
+            request({Url = "https://t.me/TranKhoaDiem", Method = "GET"})
+        end
     end)
 end)
 
-createButton(otherTab, "About Developer", function()
+createButton(otherTab, "About Developer Tran Khoa Diem", function()
     local aboutGui = Instance.new("Frame")
-    aboutGui.Size = UDim2.new(0, 350, 0, 180)
-    aboutGui.Position = UDim2.new(0.5, -175, 0.5, -90)
+    aboutGui.Size = UDim2.new(0, 380, 0, 200)
+    aboutGui.Position = UDim2.new(0.5, -190, 0.5, -100)
     aboutGui.BackgroundColor3 = Color3.fromRGB(15, 12, 25)
     aboutGui.BorderSizePixel = 0
     aboutGui.Parent = ScreenGui
@@ -626,10 +757,10 @@ createButton(otherTab, "About Developer", function()
     stroke.Parent = aboutGui
 
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, -20, 1, -20)
+    lbl.Size = UDim2.new(1, -20, 1, -40)
     lbl.Position = UDim2.new(0, 10, 0, 10)
     lbl.BackgroundTransparency = 1
-    lbl.Text = "Hub Name: KhoaDiemHub\nDeveloper: Trần Khoa Điềm\nTelegram: @TranKhoaDiem\nVersion: v1.0\n\nThe ultimate universal script for all Roblox games."
+    lbl.Text = "Hub Name: KhoaDiemHub\nDeveloper: Trần Khoa Điềm\nTelegram: @TranKhoaDiem\nVersion: v1.0\n\nThe ultimate universal script for all Roblox games with advanced custom features."
     lbl.TextColor3 = Color3.fromRGB(220, 200, 255)
     lbl.TextSize = 13
     lbl.Font = Enum.Font.Code
@@ -639,8 +770,8 @@ createButton(otherTab, "About Developer", function()
     lbl.Parent = aboutGui
 
     local closeBtn = Instance.new("TextButton")
-    closeBtn.Size = UDim2.new(0, 80, 0, 25)
-    closeBtn.Position = UDim2.new(0.5, -40, 1, -35)
+    closeBtn.Size = UDim2.new(0, 90, 0, 30)
+    closeBtn.Position = UDim2.new(0.5, -45, 1, -35)
     closeBtn.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
     closeBtn.BorderSizePixel = 0
     closeBtn.Text = "Close"
@@ -695,10 +826,6 @@ RunService.RenderStepped:Connect(function()
         rootPart.CFrame = rootPart.CFrame + (moveVec * (flySpeed * 0.05))
     end
 
-    if spectateTarget and spectateTarget.Character and spectateTarget.Character:FindFirstChild("Humanoid") then
-        Camera.CameraSubject = spectateTarget.Character.Humanoid
-    end
-
     if aimbotEnabled then
         local closestTarget = nil
         local shortestDist = math.huge
@@ -721,10 +848,18 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    if lavaImmune and rootPart then
+    if lavaImmune then
         for _, obj in ipairs(Workspace:GetDescendants()) do
             if obj:IsA("BasePart") and (obj.Name:lower():find("lava") or obj.Name:lower():find("kill") or obj.Material == Enum.Material.Lava) then
                 obj.CanTouch = false
+            end
+        end
+    end
+
+    if waterWalk and rootPart then
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and (obj.Name:lower():find("water") or obj.Material == Enum.Material.Water) then
+                obj.CanCollide = true
             end
         end
     end
