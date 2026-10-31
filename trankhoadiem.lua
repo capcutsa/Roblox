@@ -18,7 +18,7 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local CONFIG = {
 	MenuToggleKey = Enum.KeyCode.RightShift,
-	StartOpen = true,
+	StartOpen = false, -- Đổi thành false để ban đầu chỉ hiện bảng chào mừng rồi thu nhỏ lại
 	GuiName = "KhoaDiemHub",
 	Version = "v1.0",
 
@@ -2234,6 +2234,59 @@ local function buildInterface()
 	end
 	launcher.Activated:Connect(function()
 		setMenuVisible(not menuVisible)
+	end)
+
+	-- TẠO BẢNG CHÀO MỪNG (WELCOME POPUP)
+	local welcomeModal = create("Frame", {
+		Name = "WelcomeModal",
+		Size = UDim2.fromOffset(300, 150),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		BackgroundColor3 = THEME.Card,
+		Parent = screenGui,
+	})
+	styleCorner(welcomeModal, 12)
+	styleStroke(welcomeModal, THEME.Accent)
+	
+	createText({
+		Text = "CHÀO MỪNG ĐẾN VỚI",
+		TextSize = 14,
+		TextColor3 = THEME.Muted,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Size = UDim2.new(1, 0, 0, 20),
+		Position = UDim2.fromOffset(0, 25),
+		Parent = welcomeModal,
+	})
+	
+	createText({
+		Text = "KhoaDiemHub",
+		Font = THEME.FontBold,
+		TextSize = 22,
+		TextColor3 = THEME.Accent,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Size = UDim2.new(1, 0, 0, 30),
+		Position = UDim2.fromOffset(0, 50),
+		Parent = welcomeModal,
+	})
+	
+	createText({
+		Text = "Đang tải hệ thống...",
+		TextSize = 13,
+		TextColor3 = THEME.Text,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Size = UDim2.new(1, 0, 0, 20),
+		Position = UDim2.fromOffset(0, 95),
+		Parent = welcomeModal,
+	})
+
+	-- Hiệu ứng tự động thu nhỏ bảng chào mừng sau 2 giây rồi mở menu chính / thu về nút góc
+	task.delay(2, function()
+		if welcomeModal and welcomeModal.Parent then
+			animate(welcomeModal, { Size = UDim2.fromOffset(0, 0) }, 0.3).Completed:Once(function()
+				welcomeModal:Destroy()
+				setMenuVisible(true) -- Hiện menu chính sau khi chào mừng xong
+			end)
+		end
 	end)
 
 	interfaceJanitor:Add(UserInputService.InputBegan:Connect(function(input, gameProcessed)
