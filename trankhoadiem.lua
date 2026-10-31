@@ -10,7 +10,7 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "KhoaDiemHubPro"
+ScreenGui.Name = "KhoaDiemHubSmoothAim"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
@@ -74,7 +74,7 @@ local welcomeTitle = Instance.new("TextLabel")
 welcomeTitle.Size = UDim2.new(1, 0, 0, 40)
 welcomeTitle.Position = UDim2.new(0, 0, 0, 15)
 welcomeTitle.BackgroundTransparency = 1
-welcomeTitle.Text = "KHOA DIỄM HUB - BẢN NÂNG CẤP"
+welcomeTitle.Text = "KHOA DIỄM HUB - BẢN AIM MƯỢT"
 welcomeTitle.TextColor3 = Color3.fromRGB(255, 130, 220)
 welcomeTitle.TextSize = 18
 welcomeTitle.Font = Enum.Font.Code
@@ -178,7 +178,7 @@ task.wait(0.6)
 welcomeFrame:Destroy()
 
 local mainButton = Instance.new("TextButton")
-mainButton.Name = "MainButtonPro"
+mainButton.Name = "MainButtonSmooth"
 mainButton.Size = UDim2.new(0, 54, 0, 54)
 mainButton.Position = UDim2.new(0, 30, 0, 30)
 mainButton.BackgroundColor3 = Color3.fromRGB(20, 12, 35)
@@ -248,7 +248,7 @@ local topBarTitle = Instance.new("TextLabel")
 topBarTitle.Size = UDim2.new(1, -110, 1, 0)
 topBarTitle.Position = UDim2.new(0, 18, 0, 0)
 topBarTitle.BackgroundTransparency = 1
-topBarTitle.Text = "KHOA DIỄM HUB - BẢN CHUYÊN NGHIỆP | Dev: Trần Khoa Điềm"
+topBarTitle.Text = "KHOA DIỄM HUB - BẢN AIM MƯỢT | Dev: Trần Khoa Điềm"
 topBarTitle.TextColor3 = Color3.fromRGB(255, 150, 225)
 topBarTitle.TextSize = 13
 topBarTitle.Font = Enum.Font.Code
@@ -545,9 +545,13 @@ createToggle(movementTab, "Đi xuyên tường (Noclip)", false, function(state)
     noclipEnabled = state
 end)
 
-local autoAimNearest = false
-createToggle(combatTab, "Tự động ngắm mục tiêu gần nhất", false, function(state)
-    autoAimNearest = state
+local smoothAimEnabled = false
+local aimSmoothness = 5 -- Mức độ mượt (càng cao càng mượt/chậm, càng thấp càng nhanh)
+createToggle(combatTab, "Tự động bám mục tiêu mượt (Smooth Aim)", false, function(state)
+    smoothAimEnabled = state
+end)
+createSlider(combatTab, "Độ trễ mượt camera (Càng cao càng mượt)", 1, 20, 5, function(val)
+    aimSmoothness = val
 end)
 
 local selectedBodyPart = "Head"
@@ -776,7 +780,7 @@ createButton(visualsTab, "Tăng FPS & Giảm lag toàn bộ", function()
 end)
 
 local autoChatEnabled = false
-local chatMessages = {"KhoaDiêmHub Pro Edition đang hoạt động!", "Trần Khoa Điềm là lập trình viên xuất sắc nhất", "Universal Roblox Hub"}
+local chatMessages = {"KhoaDiêmHub Smooth Edition đang hoạt động!", "Trần Khoa Điềm là lập trình viên xuất sắc nhất", "Universal Roblox Hub"}
 createToggle(otherTab, "Tự động nhắn tin kênh chung", false, function(state)
     autoChatEnabled = state
 end)
@@ -823,7 +827,7 @@ createButton(otherTab, "Xem hướng dẫn sử dụng", function()
     lbl.Size = UDim2.new(1, -10, 0, 340)
     lbl.Position = UDim2.new(0, 0, 0, 0)
     lbl.BackgroundTransparency = 1
-    lbl.Text = "HƯỚNG DẪN SỬ DỤNG CHI TIẾT:\n\n1. Di chuyển: Điều chỉnh tốc độ chạy, bật nhảy cao, bay tự do và bật Noclip để đi xuyên tường dễ dàng.\n2. Chiến đấu: Kích hoạt tự động ngắm mục tiêu gần nhất để khóa góc nhìn vào kẻ địch.\n3. Xuyên tường (ESP): Hiển thị khung hộp, tên, HP và khoảng cách của người chơi qua mọi vật cản.\n4. Thế giới: Bật bất tử, khiên bảo vệ và kháng dung nham.\n5. Dịch chuyển & Cam: Duyệt qua danh sách người chơi để theo dõi camera hoặc dịch chuyển ngay lập tức.\n6. Đồ họa: Giúp bật sáng màn hình, nhìn xuyên X-Ray và giảm lag cực mạnh.\n\nPhát triển bởi: Trần Khoa Điềm | Telegram: @TranKhoaDiem"
+    lbl.Text = "HƯỚNG DẪN SỬ DỤNG CHI TIẾT:\n\n1. Di chuyển: Điều chỉnh tốc độ chạy, bật nhảy cao, bay tự do và bật Noclip để đi xuyên tường dễ dàng.\n2. Chiến đấu: Kích hoạt Tự động bám mục tiêu mượt (Smooth Aim) ưu tiên gần nhất. Bạn có thể tự do lia màn hình để đổi mục tiêu mà không bị gắt.\n3. Xuyên tường (ESP): Hiển thị khung hộp, tên, HP và khoảng cách của người chơi qua mọi vật cản.\n4. Thế giới: Bật bất tử, khiên bảo vệ và kháng dung nham.\n5. Dịch chuyển & Cam: Duyệt qua danh sách người chơi để theo dõi camera hoặc dịch chuyển ngay lập tức.\n6. Đồ họa: Giúp bật sáng màn hình, nhìn xuyên X-Ray và giảm lag cực mạnh.\n\nPhát triển bởi: Trần Khoa Điềm | Telegram: @TranKhoaDiem"
     lbl.TextColor3 = Color3.fromRGB(255, 180, 230)
     lbl.TextSize = 12
     lbl.Font = Enum.Font.Code
@@ -873,7 +877,7 @@ createButton(otherTab, "Thông tin tác giả", function()
     lbl.Size = UDim2.new(1, -28, 1, -60)
     lbl.Position = UDim2.new(0, 14, 0, 14)
     lbl.BackgroundTransparency = 1
-    lbl.Text = "Tên Hub: KhoaDiêmHub (Bản Chuyên Nghiệp)\nTác giả / Lập trình viên: Trần Khoa Điềm\nLiên hệ Telegram: @TranKhoaDiem\nTrạng thái: Phiên bản thử nghiệm Beta đang phát triển.\n\nGiao diện tối ưu hoàn hảo, hiển thị toàn bộ tiếng Việt có dấu, tích hợp bộ công cụ hack toàn diện cho mọi tựa game Roblox."
+    lbl.Text = "Tên Hub: KhoaDiêmHub (Bản Aim Mượt)\nTác giả / Lập trình viên: Trần Khoa Điềm\nLiên hệ Telegram: @TranKhoaDiem\nTrạng thái: Phiên bản thử nghiệm Beta đang phát triển.\n\nGiao diện tối ưu hoàn hảo, tích hợp tính năng tự động bám mượt ưu tiên gần nhất, cho phép đổi mục tiêu dễ dàng."
     lbl.TextColor3 = Color3.fromRGB(255, 180, 230)
     lbl.TextSize = 12
     lbl.Font = Enum.Font.Code
@@ -939,15 +943,16 @@ RunService.RenderStepped:Connect(function()
         rootPart.CFrame = rootPart.CFrame + (moveVec * (flySpeed * 0.05))
     end
 
-    if autoAimNearest then
+    if smoothAimEnabled then
         local closestTarget = nil
         local shortestDist = math.huge
+        local mousePos = UserInputService:GetMouseLocation()
+
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild(selectedBodyPart) and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
                 local targetPart = p.Character[selectedBodyPart]
                 local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
                 if onScreen then
-                    local mousePos = UserInputService:GetMouseLocation()
                     local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
                     if dist < shortestDist then
                         shortestDist = dist
@@ -956,8 +961,10 @@ RunService.RenderStepped:Connect(function()
                 end
             end
         end
+
         if closestTarget then
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, closestTarget.Position)
+            local targetCFrame = CFrame.new(Camera.CFrame.Position, closestTarget.Position)
+            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / math.max(aimSmoothness, 1))
         end
     end
 
