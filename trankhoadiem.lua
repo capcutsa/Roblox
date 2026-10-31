@@ -1,25 +1,23 @@
---[[
-	UTILITY MENU v1.0  —  LocalScript duy nhất, chạy hoàn toàn trên client
-	Vị trí đặt: StarterPlayer > StarterPlayerScripts
-	Dev: Tran Khoa Diem  |  Telegram: @TranKhoaDiem
-]]
+repeat task.wait() until game:IsLoaded() and game.Players.LocalPlayer
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local CollectionService = game:GetService("CollectionService")
-local Lighting = game:GetService("Lighting")
-local Workspace = game:GetService("Workspace")
+local function safeGetService(serviceName)
+    local service = game:GetService(serviceName)
+    return (cloneref and cloneref(service)) or service
+end
+
+local Players = safeGetService("Players")
+local RunService = safeGetService("RunService")
+local TweenService = safeGetService("TweenService")
+local UserInputService = safeGetService("UserInputService")
+local CollectionService = safeGetService("CollectionService")
+local Lighting = safeGetService("Lighting")
+local Workspace = safeGetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-----------------------------------------------------------------------
--- 1. CẤU HÌNH (chỉnh sửa tại đây)
-----------------------------------------------------------------------
 local CONFIG = {
-	MenuToggleKey = Enum.KeyCode.RightShift, -- Phím mở/đóng menu
+	MenuToggleKey = Enum.KeyCode.RightShift,
 	StartOpen = true,
 	GuiName = "UtilityMenu_V1",
 	Version = "v1.0",
@@ -32,41 +30,41 @@ local CONFIG = {
 	},
 
 	WalkSpeed = { Min = 16, Max = 150, Default = 50 },
-	JumpPower = { Min = 50, Max = 300, Default = 100 }, -- dùng khi Humanoid.UseJumpPower = true
-	JumpHeight = { Min = 7, Max = 80, Default = 25 }, -- dùng khi Humanoid.UseJumpPower = false
-	MaxCorrectionsPerSecond = 10, -- giới hạn số lần ghi đè lại giá trị khi server thay đổi
+	JumpPower = { Min = 50, Max = 300, Default = 100 },
+	JumpHeight = { Min = 7, Max = 80, Default = 25 },
+	MaxCorrectionsPerSecond = 10,
 
 	Movement = {
-		TweenSpeed = 90, -- studs/giây khi bay tới mục tiêu
-		FollowSharpness = 14, -- độ "bám" mượt khi lơ lửng (cao = bám chặt hơn)
-		SettleDistance = 4, -- khoảng cách coi là đã tới nơi
-		RetweenDistance = 30, -- mục tiêu chạy xa hơn mức này sẽ tween lại
+		TweenSpeed = 90,
+		FollowSharpness = 14,
+		SettleDistance = 4,
+		RetweenDistance = 30,
 	},
-	SearchInterval = 0.5, -- chu kỳ tìm mục tiêu (giây)
+	SearchInterval = 0.5,
 
 	Farm = {
 		EnemyTag = "FarmableEnemy",
-		FallbackEnemyFolderPath = { "Enemies" }, -- đường dẫn trong Workspace: Workspace.Enemies
-		HeightAboveEnemy = 8, -- khoảng cách phía trên enemy (studs)
-		AttackInterval = 0.4, -- tần suất gọi attackTarget
+		FallbackEnemyFolderPath = { "Enemies" },
+		HeightAboveEnemy = 8,
+		AttackInterval = 0.4,
 	},
 
 	Loot = {
-		Tags = { "LootChest", "DevilFruit" }, -- thêm tag loot khác vào đây
-		StopDistance = 4, -- khoảng cách dừng cách vật phẩm (studs, theo phương ngang)
+		Tags = { "LootChest", "DevilFruit" },
+		StopDistance = 4,
 		HeightOffset = 2.5,
-		ApproachTimeout = 20, -- quá thời gian này mà chưa tới nơi -> bỏ qua vật phẩm
-		CollectTimeout = 3, -- sau khi collectLoot mà vật phẩm vẫn còn -> bỏ qua
+		ApproachTimeout = 20,
+		CollectTimeout = 3,
 		IgnoreSeconds = 30,
 	},
 
 	FixLag = {
 		FogEnd = 100000,
-		ScanBatchSize = 400, -- số instance xử lý mỗi khung hình khi quét
+		ScanBatchSize = 400,
 		SimplifyMaterials = true,
 		HideDecals = true,
 		ReduceMeshDetail = true,
-		ProtectedNameKeywords = { "hitbox" }, -- Part có tên chứa từ khóa này sẽ không bị đụng tới
+		ProtectedNameKeywords = { "hitbox" },
 	},
 
 	FullBright = {
@@ -81,7 +79,7 @@ local CONFIG = {
 		ShowNames = true,
 		ShowHealth = true,
 		ShowDistance = true,
-		HideTeammates = false, -- true = chỉ hiện người chơi khác đội
+		HideTeammates = false,
 		UpdateInterval = 0.25,
 		MaxDistance = 1500,
 		Colors = {
@@ -95,15 +93,11 @@ local CONFIG = {
 	},
 }
 
--- Chống chạy trùng: nếu menu đã tồn tại thì dừng ngay.
 if PlayerGui:FindFirstChild(CONFIG.GuiName) then
 	warn("[UtilityMenu] Menu đã tồn tại, bỏ qua lần chạy trùng.")
 	return
 end
 
-----------------------------------------------------------------------
--- 2. TIỆN ÍCH CHUNG
-----------------------------------------------------------------------
 local THEME = {
 	Background = Color3.fromRGB(16, 16, 20),
 	Card = Color3.fromRGB(26, 26, 32),
@@ -119,7 +113,7 @@ local THEME = {
 	Success = Color3.fromRGB(52, 211, 153),
 	Warning = Color3.fromRGB(251, 191, 36),
 	Error = Color3.fromRGB(248, 113, 113),
-	Font = Enum.Font.SourceSansSemibold, -- SourceSans hỗ trợ đầy đủ tiếng Việt
+	Font = Enum.Font.SourceSansSemibold,
 	FontBold = Enum.Font.SourceSansBold,
 }
 
@@ -131,7 +125,6 @@ local STATUS_COLORS = {
 	info = THEME.Accent,
 }
 
--- Janitor: gom connection / instance / tween / thread / function để dọn dẹp một lần.
 local Janitor = {}
 Janitor.__index = Janitor
 
@@ -158,7 +151,7 @@ function Janitor:Cleanup()
 			end
 			item:Destroy()
 		elseif itemType == "function" then
-			item()
+			pcall(item)
 		elseif itemType == "thread" then
 			if item ~= coroutine.running() and coroutine.status(item) ~= "dead" then
 				task.cancel(item)
@@ -205,20 +198,17 @@ local function createText(properties)
 	return create("TextLabel", properties)
 end
 
--- Thông báo: được UI gán lại sau khi dựng xong giao diện.
 local notify = function(text, kind)
 	print(string.format("[UtilityMenu][%s] %s", kind or "info", text))
 end
 
--- Trạng thái Auto Farm / Auto Loot
 local statusListeners = {}
 local function setStatus(key, text, kind)
 	for _, listener in statusListeners do
-		listener(key, text, kind)
+		pcall(listener, key, text, kind)
 	end
 end
 
--- Nhân vật
 local function getCharacterParts()
 	local character = LocalPlayer.Character
 	if not character then
@@ -242,7 +232,6 @@ local function resolveCharacter(character, callback)
 	end
 end
 
--- Gọi callback cho nhân vật hiện tại và mọi lần respawn. Trả về connection để hủy.
 local function watchCharacter(callback)
 	local connection = LocalPlayer.CharacterAdded:Connect(function(character)
 		resolveCharacter(character, callback)
@@ -264,9 +253,6 @@ local function buildFacingCFrame(position, lookPoint, fallback)
 	return CFrame.lookAt(position, position + flat)
 end
 
-----------------------------------------------------------------------
--- 3. ĐIỂM TÍCH HỢP VỚI HỆ THỐNG GAME CỦA BẠN
-----------------------------------------------------------------------
 local placeholderWarnings = {}
 local function warnPlaceholderOnce(key, message)
 	if not placeholderWarnings[key] then
@@ -275,28 +261,15 @@ local function warnPlaceholderOnce(key, message)
 	end
 end
 
---[[
-	attackTarget(target): được Auto Farm gọi định kỳ (mỗi CONFIG.Farm.AttackInterval)
-	khi nhân vật đã vào vị trí phía trên enemy.
-	Hãy nối vào hệ thống chiến đấu CÓ SẴN của game bạn tại đây.
-	Hiện tại là placeholder an toàn: KHÔNG gửi remote nào, KHÔNG giả lập sát thương.
-]]
 local function attackTarget(target)
 	warnPlaceholderOnce("attack", "attackTarget(target) chưa được kết nối với hệ thống chiến đấu. Auto Farm chỉ di chuyển.")
 end
 
---[[
-	collectLoot(item): được Auto Loot gọi sau khi đã tới gần vật phẩm.
-	Trả về true nếu đã thực hiện thao tác nhặt, false nếu không có cách nhặt.
-	Mặc định dùng ProximityPrompt có sẵn trên vật phẩm (API chính thức
-	InputHoldBegin/InputHoldEnd). ClickDetector không có API client chính thức,
-	hãy tự nối vào hệ thống nhặt của game bạn nếu dùng ClickDetector.
-]]
 local activePrompt = nil
 
 local function releaseActivePrompt()
 	if activePrompt then
-		activePrompt:InputHoldEnd()
+		pcall(function() activePrompt:InputHoldEnd() end)
 		activePrompt = nil
 	end
 end
@@ -305,7 +278,7 @@ local function collectLoot(item)
 	local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
 	if prompt and prompt.Enabled then
 		activePrompt = prompt
-		prompt:InputHoldBegin()
+		pcall(function() prompt:InputHoldBegin() end)
 		task.wait(prompt.HoldDuration + 0.1)
 		releaseActivePrompt()
 		return true
@@ -314,9 +287,6 @@ local function collectLoot(item)
 	return false
 end
 
-----------------------------------------------------------------------
--- 4. STATE MANAGER (quản lý bật/tắt, loại trừ lẫn nhau, dọn dẹp)
-----------------------------------------------------------------------
 local StateManager = {}
 do
 	local features = {}
@@ -324,7 +294,7 @@ do
 
 	local function emit(name)
 		for _, listener in listeners do
-			listener(name, features[name].enabled)
+			pcall(listener, name, features[name].enabled)
 		end
 	end
 
@@ -380,7 +350,7 @@ do
 	end
 
 	function StateManager.isEnabled(name)
-		return features[name].enabled
+		return features[name] and features[name].enabled or false
 	end
 
 	function StateManager.onChanged(listener)
@@ -415,9 +385,6 @@ do
 	end
 end
 
-----------------------------------------------------------------------
--- 5. NOCLIP (đếm số yêu cầu dùng chung)
-----------------------------------------------------------------------
 local Noclip = {}
 do
 	local requesters = {}
@@ -498,14 +465,11 @@ do
 	end
 end
 
-----------------------------------------------------------------------
--- 6. MOVEMENT CONTROLLER (một bộ điều khiển duy nhất cho Farm/Loot)
-----------------------------------------------------------------------
 local Movement = {}
 do
 	local connection = nil
 	local activeTween = nil
-	local mode = "idle" -- idle | tween | hold
+	local mode = "idle"
 	local goalProvider = nil
 	local settled = false
 
@@ -607,9 +571,6 @@ do
 	end
 end
 
-----------------------------------------------------------------------
--- 7. SPEED WALK & HIGH JUMP (dùng chung một bộ sửa Humanoid)
-----------------------------------------------------------------------
 local function createHumanoidModifier(label, resolveProperty, getTargetValue)
 	local modifier = { enabled = false }
 	local watchJanitor = Janitor.new()
@@ -698,12 +659,9 @@ local HighJump = createHumanoidModifier("High Jump", detectJumpProperty, functio
 	return jumpValues[property]
 end)
 
-----------------------------------------------------------------------
--- 8. LIGHTING LAYERS (Fix Lag và Full Bright độc lập, không ghi đè bản gốc của nhau)
-----------------------------------------------------------------------
 local LightingLayers = {}
 do
-	local PRIORITY = { "FixLag", "FullBright" } -- layer sau thắng layer trước khi trùng thuộc tính
+	local PRIORITY = { "FixLag", "FullBright" }
 	local layers = {}
 	local originals = {}
 	local appliedValues = {}
@@ -736,7 +694,6 @@ do
 		appliedValues[property] = nil
 	end
 
-	-- Nếu game tự đổi giá trị Lighting khi đang override, coi đó là "bản gốc" mới.
 	local function onExternalChange(property)
 		if valuesMatch(Lighting[property], appliedValues[property]) then
 			return
@@ -781,9 +738,6 @@ do
 	end
 end
 
-----------------------------------------------------------------------
--- 9. FULL BRIGHT
-----------------------------------------------------------------------
 local FullBright = {}
 
 function FullBright.enable()
@@ -794,9 +748,6 @@ function FullBright.disable()
 	LightingLayers.clear("FullBright")
 end
 
-----------------------------------------------------------------------
--- 10. FIX LAG
-----------------------------------------------------------------------
 local FixLag = {}
 do
 	local TOGGLED_CLASSES = {
@@ -979,16 +930,13 @@ do
 		LightingLayers.clear("FixLag")
 		for instance, record in originals do
 			for property, value in record do
-				instance[property] = value
+				pcall(function() instance[property] = value end)
 			end
 		end
 		originals = setmetatable({}, { __mode = "k" })
 	end
 end
 
-----------------------------------------------------------------------
--- 11. REGISTRY ENEMY / LOOT (cache bằng CollectionService, không quét mỗi khung hình)
-----------------------------------------------------------------------
 local function getModelPosition(model)
 	local part = model.PrimaryPart or model:FindFirstChild("HumanoidRootPart") or model:FindFirstChildWhichIsA("BasePart")
 	return part and part.Position
@@ -1058,7 +1006,6 @@ do
 		end))
 	end
 
-	-- Ưu tiên 1: model gắn tag. Ưu tiên 2: folder dự phòng.
 	function EnemyRegistry.getModels()
 		local models = {}
 		for model in taggedModels do
@@ -1157,9 +1104,6 @@ do
 	end
 end
 
-----------------------------------------------------------------------
--- 12. AUTO FARM
-----------------------------------------------------------------------
 local AutoFarm = {}
 do
 	local janitor = Janitor.new()
@@ -1268,9 +1212,6 @@ do
 	end
 end
 
-----------------------------------------------------------------------
--- 13. AUTO LOOT
-----------------------------------------------------------------------
 local AutoLoot = {}
 do
 	local janitor = Janitor.new()
@@ -1396,9 +1337,6 @@ do
 	end
 end
 
-----------------------------------------------------------------------
--- 14. PLAYER ESP
-----------------------------------------------------------------------
 local PlayerEsp = {}
 do
 	local COLORS = CONFIG.ESP.Colors
@@ -1579,9 +1517,6 @@ do
 	end
 end
 
-----------------------------------------------------------------------
--- 15. ĐĂNG KÝ TÍNH NĂNG
-----------------------------------------------------------------------
 StateManager.register("FixLag", { label = "Fix Lag", enable = FixLag.enable, disable = FixLag.disable })
 StateManager.register("FullBright", { label = "Full Bright", enable = FullBright.enable, disable = FullBright.disable })
 StateManager.register("SpeedWalk", { label = "Speed Walk", enable = SpeedWalk.enable, disable = SpeedWalk.disable })
@@ -1601,9 +1536,6 @@ StateManager.register("AutoLoot", {
 })
 StateManager.register("PlayerESP", { label = "Player ESP", enable = PlayerEsp.enable, disable = PlayerEsp.disable })
 
-----------------------------------------------------------------------
--- 16. GIAO DIỆN (dark, mượt)
-----------------------------------------------------------------------
 local interfaceJanitor = Janitor.new()
 local activeTweens = setmetatable({}, { __mode = "k" })
 
@@ -2042,7 +1974,13 @@ local function createAboutPage(scroller)
 		linkBox:CaptureFocus()
 		linkBox.SelectionStart = 1
 		linkBox.CursorPosition = #linkBox.Text + 1
-		notify("Đã chọn liên kết Telegram, hãy sao chép (Ctrl+C / giữ để copy)", "info")
+		local setCB = setclipboard or toclipboard or (syn and syn.write_clipboard)
+		if setCB then
+			pcall(setCB, CONFIG.Developer.TelegramUrl)
+			notify("Đã sao chép liên kết Telegram vào bộ nhớ tạm!", "success")
+		else
+			notify("Đã chọn liên kết Telegram, hãy bấm Ctrl+C để sao chép", "info")
+		end
 	end)
 
 	local intro = createSection(scroller, "Giới thiệu", 2)
@@ -2128,7 +2066,6 @@ local function buildFeaturesPage(scroller)
 	local opposingToggle = createToggleRow(esp, "Chỉ hiện đối thủ (khác đội)", function() end)
 	local opposingOnly = CONFIG.ESP.HideTeammates
 	opposingToggle.setState(opposingOnly)
-	esp:FindFirstChildWhichIsA("TextButton", false).Activated:Connect(function() end)
 	return opposingToggle
 end
 
@@ -2174,7 +2111,6 @@ local function buildInterface()
 		clampPosition(window.Position.X.Offset, window.Position.Y.Offset)
 	end
 
-	-- Thanh tiêu đề
 	local titleBar = create("Frame", { Size = UDim2.new(1, 0, 0, TITLE), BackgroundColor3 = THEME.Card, Parent = window })
 	createText({ Text = "Utility Menu", Font = THEME.FontBold, TextSize = 17, Size = UDim2.fromOffset(104, TITLE), Position = UDim2.fromOffset(14, 0), Parent = titleBar })
 	local badge = create("Frame", { Size = UDim2.fromOffset(40, 18), Position = UDim2.fromOffset(120, 11), BackgroundColor3 = THEME.Accent, Parent = titleBar })
@@ -2193,7 +2129,6 @@ local function buildInterface()
 	local minimizeButton = createTitleButton("-", -68)
 	local closeButton = createTitleButton("X", -36)
 
-	-- Tab
 	local tabBar = create("Frame", { Size = UDim2.new(1, -16, 0, 28), Position = UDim2.fromOffset(8, 46), BackgroundTransparency = 1, Parent = window })
 	local body = create("Frame", { Size = UDim2.new(1, -16, 1, -106), Position = UDim2.fromOffset(8, 80), BackgroundTransparency = 1, Parent = window })
 	local footer = createText({
@@ -2233,7 +2168,6 @@ local function buildInterface()
 	createTab("about", "Giới thiệu", UDim2.new(0.5, 3, 0, 0))
 	selectTab("features")
 
-	-- Tùy chọn ESP: chỉ hiện đối thủ
 	local opposingOnly = CONFIG.ESP.HideTeammates
 	local opposingRow = nil
 	for _, descendant in featuresPage:GetDescendants() do
@@ -2249,7 +2183,6 @@ local function buildInterface()
 		end)
 	end
 
-	-- Hiện / ẩn / thu gọn
 	local function setMenuVisible(visible)
 		menuVisible = visible
 		fadeToken += 1
@@ -2288,7 +2221,6 @@ local function buildInterface()
 	end)
 	makeDraggable(titleBar, window, clampPosition)
 
-	-- Nút mở menu (launcher)
 	local launcher = create("TextButton", {
 		Name = "Launcher", Size = UDim2.fromOffset(44, 44), AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 12, 0.5, 0),
 		Text = "", Parent = screenGui,
@@ -2317,9 +2249,6 @@ local function buildInterface()
 	return screenGui, cancelNotifications
 end
 
-----------------------------------------------------------------------
--- 17. KHỞI ĐỘNG & DỌN DẸP
-----------------------------------------------------------------------
 local coreJanitor = Janitor.new()
 EnemyRegistry.start(coreJanitor)
 LootRegistry.start(coreJanitor)
