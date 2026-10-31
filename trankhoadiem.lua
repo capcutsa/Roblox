@@ -54,7 +54,7 @@ local welcomeFrame = Instance.new("Frame")
 welcomeFrame.Name = "WelcomeFrame"
 welcomeFrame.Size = UDim2.new(0, 450, 0, 280)
 welcomeFrame.Position = UDim2.new(0.5, -225, 0.5, -140)
-welcomeFrame.BackgroundColor3 = Color3.fromRGB(15, 12, 25)
+welcomeFrame.BackgroundColor3 = Color3.fromRGB(15, 10, 10)
 welcomeFrame.BorderSizePixel = 0
 welcomeFrame.Visible = true
 welcomeFrame.Parent = ScreenGui
@@ -64,7 +64,7 @@ welcomeCorner.CornerRadius = UDim.new(0, 8)
 welcomeCorner.Parent = welcomeFrame
 
 local welcomeStroke = Instance.new("UIStroke")
-welcomeStroke.Color = Color3.fromRGB(140, 40, 220)
+welcomeStroke.Color = Color3.fromRGB(200, 30, 30)
 welcomeStroke.Thickness = 2
 welcomeStroke.Parent = welcomeFrame
 
@@ -73,7 +73,7 @@ welcomeTitle.Size = UDim2.new(1, 0, 0, 40)
 welcomeTitle.Position = UDim2.new(0, 0, 0, 15)
 welcomeTitle.BackgroundTransparency = 1
 welcomeTitle.Text = "KHOADIEM HUB V1.0"
-welcomeTitle.TextColor3 = Color3.fromRGB(220, 180, 255)
+welcomeTitle.TextColor3 = Color3.fromRGB(255, 120, 120)
 welcomeTitle.TextSize = 20
 welcomeTitle.Font = Enum.Font.Code
 welcomeTitle.Parent = welcomeFrame
@@ -81,9 +81,9 @@ welcomeTitle.Parent = welcomeFrame
 local infoBox = Instance.new("TextLabel")
 infoBox.Size = UDim2.new(1, -40, 0, 160)
 infoBox.Position = UDim2.new(0, 20, 0, 60)
-infoBox.BackgroundColor3 = Color3.fromRGB(22, 18, 38)
+infoBox.BackgroundColor3 = Color3.fromRGB(25, 12, 12)
 infoBox.BorderSizePixel = 0
-infoBox.TextColor3 = Color3.fromRGB(200, 200, 200)
+infoBox.TextColor3 = Color3.fromRGB(220, 200, 200)
 infoBox.TextSize = 13
 infoBox.Font = Enum.Font.Code
 infoBox.TextXAlignment = Enum.TextXAlignment.Left
@@ -151,30 +151,30 @@ welcomeFrame:Destroy()
 
 local mainButton = Instance.new("TextButton")
 mainButton.Name = "MainButton"
-mainButton.Size = UDim2.new(0, 120, 0, 36)
-mainButton.Position = UDim2.new(0, 20, 0, 20)
-mainButton.BackgroundColor3 = Color3.fromRGB(20, 16, 35)
+mainButton.Size = UDim2.new(0, 50, 0, 50)
+mainButton.Position = UDim2.new(0, 30, 0, 30)
+mainButton.BackgroundColor3 = Color3.fromRGB(20, 10, 10)
 mainButton.BorderSizePixel = 0
-mainButton.Text = "KHOADIEM HUB"
-mainButton.TextColor3 = Color3.fromRGB(210, 170, 255)
-mainButton.TextSize = 13
+mainButton.Text = "KD"
+mainButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+mainButton.TextSize = 14
 mainButton.Font = Enum.Font.Code
 mainButton.Parent = ScreenGui
 
 local mainBtnCorner = Instance.new("UICorner")
-mainBtnCorner.CornerRadius = UDim.new(0, 6)
+mainBtnCorner.CornerRadius = UDim.new(1, 0)
 mainBtnCorner.Parent = mainButton
 
 local mainBtnStroke = Instance.new("UIStroke")
-mainBtnStroke.Color = Color3.fromRGB(120, 40, 200)
-mainBtnStroke.Thickness = 1.5
+mainBtnStroke.Color = Color3.fromRGB(200, 30, 30)
+mainBtnStroke.Thickness = 2
 mainBtnStroke.Parent = mainButton
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 650, 0, 440)
 mainFrame.Position = UDim2.new(0.5, -325, 0.5, -220)
-mainFrame.BackgroundColor3 = Color3.fromRGB(12, 10, 22)
+mainFrame.BackgroundColor3 = Color3.fromRGB(12, 8, 8)
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
 mainFrame.Parent = ScreenGui
@@ -184,7 +184,7 @@ mainFrameCorner.CornerRadius = UDim.new(0, 8)
 mainFrameCorner.Parent = mainFrame
 
 local mainFrameStroke = Instance.new("UIStroke")
-mainFrameStroke.Color = Color3.fromRGB(130, 40, 210)
+mainFrameStroke.Color = Color3.fromRGB(200, 30, 30)
 mainFrameStroke.Thickness = 2
 mainFrameStroke.Parent = mainFrame
 
@@ -195,7 +195,7 @@ end)
 local topBar = Instance.new("Frame")
 topBar.Name = "TopBar"
 topBar.Size = UDim2.new(1, 0, 0, 35)
-topBar.BackgroundColor3 = Color3.fromRGB(18, 14, 32)
+topBar.BackgroundColor3 = Color3.fromRGB(20, 10, 10)
 topBar.BorderSizePixel = 0
 topBar.Parent = mainFrame
 
@@ -208,7 +208,7 @@ topBarTitle.Size = UDim2.new(1, -100, 1, 0)
 topBarTitle.Position = UDim2.new(0, 15, 0, 0)
 topBarTitle.BackgroundTransparency = 1
 topBarTitle.Text = "KHOADIEM HUB V1.0 - Dev: Tran Khoa Diem"
-topBarTitle.TextColor3 = Color3.fromRGB(210, 170, 255)
+topBarTitle.TextColor3 = Color3.fromRGB(255, 120, 120)
 topBarTitle.TextSize = 13
 topBarTitle.Font = Enum.Font.Code
 topBarTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -217,10 +217,10 @@ topBarTitle.Parent = topBar
 local closeButton = Instance.new("TextButton")
 closeButton.Size = UDim2.new(0, 30, 0, 30)
 closeButton.Position = UDim2.new(1, -35, 0, 2.5)
-closeButton.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
+closeButton.BackgroundColor3 = Color3.fromRGB(40, 15, 15)
 closeButton.BorderSizePixel = 0
 closeButton.Text = "X"
-closeButton.TextColor3 = Color3.fromRGB(220, 120, 120)
+closeButton.TextColor3 = Color3.fromRGB(255, 120, 120)
 closeButton.TextSize = 14
 closeButton.Font = Enum.Font.Code
 closeButton.Parent = topBar
@@ -237,9 +237,9 @@ local tabList = Instance.new("ScrollingFrame")
 tabList.Name = "TabList"
 tabList.Size = UDim2.new(0, 150, 1, -45)
 tabList.Position = UDim2.new(0, 5, 0, 40)
-tabList.BackgroundColor3 = Color3.fromRGB(15, 12, 28)
+tabList.BackgroundColor3 = Color3.fromRGB(15, 8, 8)
 tabList.BorderSizePixel = 0
-tabList.CanvasSize = UDim2.new(0, 0, 0, 350)
+tabList.CanvasSize = UDim2.new(0, 0, 0, 400)
 tabList.ScrollBarThickness = 3
 tabList.Parent = mainFrame
 
@@ -270,7 +270,7 @@ local function createTabContent(name)
     scroller.Name = name .. "Content"
     scroller.Size = UDim2.new(1, 0, 1, 0)
     scroller.BackgroundTransparency = 1
-    scroller.CanvasSize = UDim2.new(0, 0, 0, 950)
+    scroller.CanvasSize = UDim2.new(0, 0, 0, 1050)
     scroller.ScrollBarThickness = 4
     scroller.Visible = false
     scroller.Parent = containerFrame
@@ -286,10 +286,10 @@ end
 local function createButton(parent, text, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 32)
-    btn.BackgroundColor3 = Color3.fromRGB(22, 17, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 12, 12)
     btn.BorderSizePixel = 0
     btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(200, 180, 240)
+    btn.TextColor3 = Color3.fromRGB(240, 180, 180)
     btn.TextSize = 13
     btn.Font = Enum.Font.Code
     btn.Parent = parent
@@ -306,7 +306,7 @@ local function createToggle(parent, text, defaultState, callback)
     local state = defaultState
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -10, 0, 32)
-    frame.BackgroundColor3 = Color3.fromRGB(22, 17, 40)
+    frame.BackgroundColor3 = Color3.fromRGB(25, 12, 12)
     frame.BorderSizePixel = 0
     frame.Parent = parent
 
@@ -319,7 +319,7 @@ local function createToggle(parent, text, defaultState, callback)
     label.Position = UDim2.new(0, 10, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = text
-    label.TextColor3 = Color3.fromRGB(200, 180, 240)
+    label.TextColor3 = Color3.fromRGB(240, 180, 180)
     label.TextSize = 13
     label.Font = Enum.Font.Code
     label.TextXAlignment = Enum.TextXAlignment.Left
@@ -328,7 +328,7 @@ local function createToggle(parent, text, defaultState, callback)
     local indicator = Instance.new("TextButton")
     indicator.Size = UDim2.new(0, 36, 0, 20)
     indicator.Position = UDim2.new(1, -44, 0.5, -10)
-    indicator.BackgroundColor3 = state and Color3.fromRGB(90, 30, 160) or Color3.fromRGB(35, 25, 55)
+    indicator.BackgroundColor3 = state and Color3.fromRGB(180, 30, 30) or Color3.fromRGB(40, 20, 20)
     indicator.BorderSizePixel = 0
     indicator.Text = state and "ON" or "OFF"
     indicator.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -342,7 +342,7 @@ local function createToggle(parent, text, defaultState, callback)
 
     indicator.MouseButton1Click:Connect(function()
         state = not state
-        indicator.BackgroundColor3 = state and Color3.fromRGB(90, 30, 160) or Color3.fromRGB(35, 25, 55)
+        indicator.BackgroundColor3 = state and Color3.fromRGB(180, 30, 30) or Color3.fromRGB(40, 20, 20)
         indicator.Text = state and "ON" or "OFF"
         callback(state)
     end)
@@ -354,7 +354,7 @@ local function createSlider(parent, text, min, max, default, callback)
     local value = default
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -10, 0, 50)
-    frame.BackgroundColor3 = Color3.fromRGB(22, 17, 40)
+    frame.BackgroundColor3 = Color3.fromRGB(25, 12, 12)
     frame.BorderSizePixel = 0
     frame.Parent = parent
 
@@ -367,7 +367,7 @@ local function createSlider(parent, text, min, max, default, callback)
     label.Position = UDim2.new(0, 10, 0, 5)
     label.BackgroundTransparency = 1
     label.Text = text .. ": " .. tostring(value)
-    label.TextColor3 = Color3.fromRGB(200, 180, 240)
+    label.TextColor3 = Color3.fromRGB(240, 180, 180)
     label.TextSize = 13
     label.Font = Enum.Font.Code
     label.TextXAlignment = Enum.TextXAlignment.Left
@@ -376,7 +376,7 @@ local function createSlider(parent, text, min, max, default, callback)
     local sliderBg = Instance.new("TextButton")
     sliderBg.Size = UDim2.new(1, -20, 0, 12)
     sliderBg.Position = UDim2.new(0, 10, 0, 30)
-    sliderBg.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(40, 20, 20)
     sliderBg.BorderSizePixel = 0
     sliderBg.Text = ""
     sliderBg.Parent = frame
@@ -387,7 +387,7 @@ local function createSlider(parent, text, min, max, default, callback)
 
     local sliderFill = Instance.new("Frame")
     sliderFill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
-    sliderFill.BackgroundColor3 = Color3.fromRGB(120, 40, 210)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
     sliderFill.BorderSizePixel = 0
     sliderFill.Parent = sliderBg
 
@@ -429,10 +429,10 @@ end
 local function createTabButton(name, scroller)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 30)
-    btn.BackgroundColor3 = Color3.fromRGB(22, 17, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 12, 12)
     btn.BorderSizePixel = 0
     btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(200, 180, 240)
+    btn.TextColor3 = Color3.fromRGB(240, 180, 180)
     btn.TextSize = 13
     btn.Font = Enum.Font.Code
     btn.Parent = tabList
@@ -447,7 +447,7 @@ local function createTabButton(name, scroller)
     end)
 end
 
-local tabNames = {"Movement", "Combat", "ESP", "World", "Spectate & TP", "Visuals", "Other"}
+local tabNames = {"Movement", "Combat", "ESP", "World", "Spectate & TP", "Visuals & FPS", "Other"}
 local scrollers = {}
 
 for i, name in ipairs(tabNames) do
@@ -500,7 +500,7 @@ createSlider(movementTab, "Fly Speed", 10, 200, 50, function(val)
 end)
 
 local noclipEnabled = false
-createToggle(movementTab, "Noclip", false, function(state)
+createToggle(movementTab, "Noclip / Walk Through Walls", false, function(state)
     noclipEnabled = state
 end)
 
@@ -545,18 +545,20 @@ createToggle(espTab, "ESP Health", false, function(state) espHealthEnabled = sta
 createToggle(espTab, "ESP Distance", false, function(state) espDistanceEnabled = state end)
 createToggle(espTab, "ESP Lines", false, function(state) espLinesEnabled = state end)
 
-local espObjects = {}
+local espCache = {}
 RunService.RenderStepped:Connect(function()
-    for _, obj in pairs(espObjects) do
-        if obj then
-            pcall(function() obj:Remove() end)
+    for _, item in pairs(espCache) do
+        if item and item.Remove then
+            pcall(function() item:Remove() end)
         end
     end
-    espObjects = {}
+    espCache = {}
 
     if not (espBoxEnabled or espNameEnabled or espHealthEnabled or espDistanceEnabled or espLinesEnabled) then
         return
     end
+
+    if not Drawing then return end
 
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") then
@@ -575,10 +577,10 @@ RunService.RenderStepped:Connect(function()
                     box.Visible = true
                     box.Size = Vector2.new(width, height)
                     box.Position = Vector2.new(pos.X - width / 2, topPos.Y)
-                    box.Color = Color3.fromRGB(150, 50, 255)
+                    box.Color = Color3.fromRGB(220, 40, 40)
                     box.Thickness = 1.5
                     box.Filled = false
-                    table.insert(espObjects, box)
+                    table.insert(espCache, box)
                 end
 
                 if espLinesEnabled then
@@ -586,9 +588,9 @@ RunService.RenderStepped:Connect(function()
                     line.Visible = true
                     line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                     line.To = Vector2.new(pos.X, pos.Y)
-                    line.Color = Color3.fromRGB(150, 50, 255)
+                    line.Color = Color3.fromRGB(220, 40, 40)
                     line.Thickness = 1
-                    table.insert(espObjects, line)
+                    table.insert(espCache, line)
                 end
 
                 if espNameEnabled or espHealthEnabled or espDistanceEnabled then
@@ -601,11 +603,11 @@ RunService.RenderStepped:Connect(function()
                     txt.Visible = true
                     txt.Text = infoText
                     txt.Size = 13
-                    txt.Color = Color3.fromRGB(220, 180, 255)
+                    txt.Color = Color3.fromRGB(255, 150, 150)
                     txt.Center = true
                     txt.Outline = true
                     txt.Position = Vector2.new(pos.X, topPos.Y - 18)
-                    table.insert(espObjects, txt)
+                    table.insert(espCache, txt)
                 end
             end
         end
@@ -641,7 +643,7 @@ createToggle(worldTab, "Shield & Fire Aura", false, function(state)
             part.Size = Vector3.new(6, 6, 6)
             part.Shape = Enum.PartType.Ball
             part.Material = Enum.Material.Neon
-            part.Color = Color3.fromRGB(150, 50, 255)
+            part.Color = Color3.fromRGB(220, 40, 40)
             part.Transparency = 0.6
             part.CanCollide = false
             part.Parent = LocalPlayer.Character
@@ -660,34 +662,42 @@ createToggle(worldTab, "Shield & Fire Aura", false, function(state)
     end
 end)
 
-local spectateTarget = nil
-local spectateIndex = 1
-
-createButton(spectateTab, "Cycle Spectate Next Player", function()
+local selectedTargetPlayer = nil
+createButton(spectateTab, "Select Next Player to Target", function()
     local players = Players:GetPlayers()
-    spectateIndex = spectateIndex % #players + 1
-    local target = players[spectateIndex]
-    if target == LocalPlayer then
-        spectateIndex = spectateIndex % #players + 1
-        target = players[spectateIndex]
+    for i, p in ipairs(players) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            if selectedTargetPlayer == nil or selectedTargetPlayer == p then
+                selectedTargetPlayer = players[(i % #players) + 1]
+                if selectedTargetPlayer == LocalPlayer then
+                    selectedTargetPlayer = players[((i + 1) % #players) + 1]
+                end
+                break
+            end
+        end
     end
-    spectateTarget = target
-    if spectateTarget and spectateTarget.Character and spectateTarget.Character:FindFirstChild("Humanoid") then
-        Camera.CameraSubject = spectateTarget.Character.Humanoid
+    if selectedTargetPlayer then
+        print("Selected Target: " .. selectedTargetPlayer.Name)
+    end
+end)
+
+createButton(spectateTab, "Spectate Selected Player Camera", function()
+    if selectedTargetPlayer and selectedTargetPlayer.Character and selectedTargetPlayer.Character:FindFirstChild("Humanoid") then
+        Camera.CameraSubject = selectedTargetPlayer.Character.Humanoid
     end
 end)
 
 createButton(spectateTab, "Reset Camera to Self", function()
-    spectateTarget = nil
+    selectedTargetPlayer = nil
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         Camera.CameraSubject = LocalPlayer.Character.Humanoid
     end
 end)
 
-createButton(spectateTab, "Teleport to Spectated User", function()
-    if spectateTarget and spectateTarget.Character and spectateTarget.Character:FindFirstChild("HumanoidRootPart") then
+createButton(spectateTab, "Teleport to Selected Player", function()
+    if selectedTargetPlayer and selectedTargetPlayer.Character and selectedTargetPlayer.Character:FindFirstChild("HumanoidRootPart") then
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = spectateTarget.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+            LocalPlayer.Character.HumanoidRootPart.CFrame = selectedTargetPlayer.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
         end
     end
 end)
@@ -712,12 +722,30 @@ createToggle(visualsTab, "X-Ray Wallhack", false, function(state)
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("BasePart") and not obj:IsDescendantOf(LocalPlayer.Character) then
             if state then
-                obj.LocalTransparencyModifier = 0.5
+                obj.LocalTransparencyModifier = 0.6
             else
                 obj.LocalTransparencyModifier = 0
             end
         end
     end
+end)
+
+createButton(visualsTab, "FPS Boost / Fix Lag All", function()
+    pcall(function()
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.Reflectance = 0
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 1
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") or v:IsA("Smoke") then
+                v.Enabled = false
+            end
+        end
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 999999
+        print("Lag fixed / FPS Boosted successfully!")
+    end)
 end)
 
 local autoChatEnabled = false
@@ -743,7 +771,7 @@ createButton(otherTab, "About Developer Tran Khoa Diem", function()
     local aboutGui = Instance.new("Frame")
     aboutGui.Size = UDim2.new(0, 380, 0, 200)
     aboutGui.Position = UDim2.new(0.5, -190, 0.5, -100)
-    aboutGui.BackgroundColor3 = Color3.fromRGB(15, 12, 25)
+    aboutGui.BackgroundColor3 = Color3.fromRGB(15, 8, 8)
     aboutGui.BorderSizePixel = 0
     aboutGui.Parent = ScreenGui
 
@@ -752,7 +780,7 @@ createButton(otherTab, "About Developer Tran Khoa Diem", function()
     corner.Parent = aboutGui
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(140, 40, 220)
+    stroke.Color = Color3.fromRGB(200, 30, 30)
     stroke.Thickness = 2
     stroke.Parent = aboutGui
 
@@ -761,7 +789,7 @@ createButton(otherTab, "About Developer Tran Khoa Diem", function()
     lbl.Position = UDim2.new(0, 10, 0, 10)
     lbl.BackgroundTransparency = 1
     lbl.Text = "Hub Name: KhoaDiemHub\nDeveloper: Trần Khoa Điềm\nTelegram: @TranKhoaDiem\nVersion: v1.0\n\nThe ultimate universal script for all Roblox games with advanced custom features."
-    lbl.TextColor3 = Color3.fromRGB(220, 200, 255)
+    lbl.TextColor3 = Color3.fromRGB(255, 200, 200)
     lbl.TextSize = 13
     lbl.Font = Enum.Font.Code
     lbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -772,7 +800,7 @@ createButton(otherTab, "About Developer Tran Khoa Diem", function()
     local closeBtn = Instance.new("TextButton")
     closeBtn.Size = UDim2.new(0, 90, 0, 30)
     closeBtn.Position = UDim2.new(0.5, -45, 1, -35)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(40, 15, 15)
     closeBtn.BorderSizePixel = 0
     closeBtn.Text = "Close"
     closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
