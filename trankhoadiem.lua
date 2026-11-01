@@ -10,7 +10,7 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "KhoaDiemHub"
+ScreenGui.Name = "KhoaDiemHubModern"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
@@ -50,24 +50,24 @@ local function getDeviceType()
     end
 end
 
--- MÀN HÌNH CHÀO MỪNG (LOG GIỚI THIỆU - KHÔNG HIỆN TÊN Ở TIÊU ĐỀ, CHỈ CÓ TRONG GIỚI THIỆU)
+-- MÀN HÌNH CHÀO MỪNG HIỆN ĐẠI (ĐỜI MỚI)
 local welcomeFrame = Instance.new("Frame")
 welcomeFrame.Name = "WelcomeFrame"
-welcomeFrame.Size = UDim2.new(0, 520, 0, 320)
-welcomeFrame.Position = UDim2.new(0.5, -260, 0.5, -160)
-welcomeFrame.BackgroundColor3 = Color3.fromRGB(18, 10, 24)
+welcomeFrame.Size = UDim2.new(0, 500, 0, 300)
+welcomeFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
+welcomeFrame.BackgroundColor3 = Color3.fromRGB(16, 10, 26)
 welcomeFrame.BackgroundTransparency = 1
 welcomeFrame.BorderSizePixel = 0
 welcomeFrame.Visible = true
 welcomeFrame.Parent = ScreenGui
 
 local welcomeCorner = Instance.new("UICorner")
-welcomeCorner.CornerRadius = UDim.new(0, 16)
+welcomeCorner.CornerRadius = UDim.new(0, 20)
 welcomeCorner.Parent = welcomeFrame
 
 local welcomeStroke = Instance.new("UIStroke")
-welcomeStroke.Color = Color3.fromRGB(255, 40, 130)
-welcomeStroke.Thickness = 2.5
+welcomeStroke.Color = Color3.fromRGB(255, 45, 140)
+welcomeStroke.Thickness = 2
 welcomeStroke.Transparency = 1
 welcomeStroke.Parent = welcomeFrame
 
@@ -75,47 +75,42 @@ local welcomeTitle = Instance.new("TextLabel")
 welcomeTitle.Size = UDim2.new(1, 0, 0, 40)
 welcomeTitle.Position = UDim2.new(0, 0, 0, 15)
 welcomeTitle.BackgroundTransparency = 1
-welcomeTitle.Text = "KHOADIEMHUB - PRO EDITION"
-welcomeTitle.TextColor3 = Color3.fromRGB(255, 100, 180)
-welcomeTitle.TextSize = 19
-welcomeTitle.Font = Enum.Font.Code
+welcomeTitle.Text = "KHOADIEMHUB"
+welcomeTitle.TextColor3 = Color3.fromRGB(255, 120, 200)
+welcomeTitle.TextSize = 22
+welcomeTitle.Font = Enum.Font.GothamBold
 welcomeTitle.TextTransparency = 1
 welcomeTitle.Parent = welcomeFrame
 
 local welcomeSub = Instance.new("TextLabel")
 welcomeSub.Size = UDim2.new(1, 0, 0, 25)
-welcomeSub.Position = UDim2.new(0, 0, 0, 52)
+welcomeSub.Position = UDim2.new(0, 0, 0, 50)
 welcomeSub.BackgroundTransparency = 1
 welcomeSub.Text = "Xin chào mọi người!"
-welcomeSub.TextColor3 = Color3.fromRGB(220, 160, 200)
+welcomeSub.TextColor3 = Color3.fromRGB(200, 160, 220)
 welcomeSub.TextSize = 13
-welcomeSub.Font = Enum.Font.Code
+welcomeSub.Font = Enum.Font.Gotham
 welcomeSub.TextTransparency = 1
 welcomeSub.Parent = welcomeFrame
 
--- SCROLLING FRAME ĐỂ KHÔNG BỊ TRÀN CHỮ
 local infoScroller = Instance.new("ScrollingFrame")
-infoScroller.Size = UDim2.new(1, -40, 0, 180)
+infoScroller.Size = UDim2.new(1, -40, 0, 170)
 infoScroller.Position = UDim2.new(0, 20, 0, 85)
-infoScroller.BackgroundColor3 = Color3.fromRGB(28, 14, 36)
+infoScroller.BackgroundColor3 = Color3.fromRGB(26, 14, 42)
 infoScroller.BackgroundTransparency = 1
 infoScroller.BorderSizePixel = 0
-infoScroller.CanvasSize = UDim2.new(0, 0, 0, 270)
-infoScroller.ScrollBarThickness = 4
+infoScroller.CanvasSize = UDim2.new(0, 0, 0, 250)
+infoScroller.ScrollBarThickness = 3
 infoScroller.Parent = welcomeFrame
 
-local infoScrollerCorner = Instance.new("UICorner")
-infoScrollerCorner.CornerRadius = UDim.new(0, 10)
-infoScrollerCorner.Parent = infoScroller
-
 local infoBox = Instance.new("TextLabel")
-infoBox.Size = UDim2.new(1, -15, 0, 250)
+infoBox.Size = UDim2.new(1, -15, 0, 240)
 infoBox.Position = UDim2.new(0, 10, 0, 10)
 infoBox.BackgroundTransparency = 1
 infoBox.BorderSizePixel = 0
-infoBox.TextColor3 = Color3.fromRGB(235, 190, 220)
+infoBox.TextColor3 = Color3.fromRGB(230, 200, 230)
 infoBox.TextSize = 12
-infoBox.Font = Enum.Font.Code
+infoBox.Font = Enum.Font.Gotham
 infoBox.TextXAlignment = Enum.TextXAlignment.Left
 infoBox.TextYAlignment = Enum.TextYAlignment.Top
 infoBox.TextWrapped = true
@@ -151,7 +146,7 @@ pcall(function()
 end)
 
 infoBox.Text = string.format(
-    "Trạng thái: Phiên bản Beta đang phát triển, chưa hoạt động ổn định.\nTài khoản: %s (%s)\nTrò chơi đang chơi: %s\nThời gian: %s\nThiết bị: %s | Executor: %s\nLevel: %s\nGiới thiệu: Script được phát triển bởi Trần Khoa Điềm\nLiên hệ Telegram: @TranKhoaDiem",
+    "Trạng thái: Phiên bản Beta đang phát triển, chưa ổn định hoàn toàn.\nTài khoản: %s (%s)\nTrò chơi đang chơi: %s\nThời gian: %s\nThiết bị: %s | Executor: %s\nLevel: %s\nGiới thiệu: Script được phát triển bởi Trần Khoa Điềm\nLiên hệ Telegram: @TranKhoaDiem",
     LocalPlayer.Name,
     LocalPlayer.DisplayName,
     gameName,
@@ -161,30 +156,30 @@ infoBox.Text = string.format(
     levelStr
 )
 
-TweenService:Create(welcomeFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
-TweenService:Create(welcomeStroke, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Transparency = 0}):Play()
-TweenService:Create(welcomeTitle, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
-TweenService:Create(welcomeSub, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
-TweenService:Create(infoBox, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0}):Play()
-TweenService:Create(infoScroller, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+TweenService:Create(welcomeFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+TweenService:Create(welcomeStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Transparency = 0}):Play()
+TweenService:Create(welcomeTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+TweenService:Create(welcomeSub, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+TweenService:Create(infoBox, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0}):Play()
+TweenService:Create(infoScroller, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
 
-task.wait(4.0)
+task.wait(3.5)
 
-TweenService:Create(welcomeFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1}):Play()
-TweenService:Create(welcomeStroke, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Transparency = 1}):Play()
-TweenService:Create(welcomeTitle, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
-TweenService:Create(welcomeSub, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
-TweenService:Create(infoBox, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1}):Play()
-TweenService:Create(infoScroller, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
-task.wait(0.6)
+TweenService:Create(welcomeFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1}):Play()
+TweenService:Create(welcomeStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Transparency = 1}):Play()
+TweenService:Create(welcomeTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
+TweenService:Create(welcomeSub, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
+TweenService:Create(infoBox, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1}):Play()
+TweenService:Create(infoScroller, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
+task.wait(0.5)
 welcomeFrame:Destroy()
 
 -- NÚT MENU DÙNG ẢNH khoadiem.jpeg
 local mainButton = Instance.new("ImageButton")
 mainButton.Name = "MainButtonImg"
-mainButton.Size = UDim2.new(0, 60, 0, 60)
-mainButton.Position = UDim2.new(0, 25, 0, 25)
-mainButton.BackgroundColor3 = Color3.fromRGB(20, 10, 30)
+mainButton.Size = UDim2.new(0, 58, 0, 58)
+mainButton.Position = UDim2.new(0, 30, 0, 30)
+mainButton.BackgroundColor3 = Color3.fromRGB(20, 10, 35)
 mainButton.BorderSizePixel = 0
 
 pcall(function()
@@ -205,101 +200,101 @@ mainBtnCorner.CornerRadius = UDim.new(1, 0)
 mainBtnCorner.Parent = mainButton
 
 local mainBtnStroke = Instance.new("UIStroke")
-mainBtnStroke.Color = Color3.fromRGB(255, 40, 130)
-mainBtnStroke.Thickness = 3
+mainBtnStroke.Color = Color3.fromRGB(255, 45, 140)
+mainBtnStroke.Thickness = 2.5
 mainBtnStroke.Parent = mainButton
 
--- GIAO DIỆN CHÍNH MỚI (PHONG CÁCH FLOATING CARD HIỆN ĐẠI, BO TRÒN SANG TRỌNG)
+-- GIAO DIỆN CHÍNH (PHONG CÁCH ĐỜI MỚI SANG TRỌNG)
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 740, 0, 490)
-mainFrame.Position = UDim2.new(0.5, -370, 0.5, -245)
-mainFrame.BackgroundColor3 = Color3.fromRGB(14, 8, 20)
+mainFrame.Size = UDim2.new(0, 750, 0, 500)
+mainFrame.Position = UDim2.new(0.5, -375, 0.5, -250)
+mainFrame.BackgroundColor3 = Color3.fromRGB(12, 8, 20)
 mainFrame.BackgroundTransparency = 1
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
 mainFrame.Parent = ScreenGui
 
 local mainFrameCorner = Instance.new("UICorner")
-mainFrameCorner.CornerRadius = UDim.new(0, 18)
+mainFrameCorner.CornerRadius = UDim.new(0, 20)
 mainFrameCorner.Parent = mainFrame
 
 local mainFrameStroke = Instance.new("UIStroke")
-mainFrameStroke.Color = Color3.fromRGB(255, 40, 130)
-mainFrameStroke.Thickness = 3
+mainFrameStroke.Color = Color3.fromRGB(255, 45, 140)
+mainFrameStroke.Thickness = 2.5
 mainFrameStroke.Transparency = 1
 mainFrameStroke.Parent = mainFrame
 
 mainButton.MouseButton1Click:Connect(function()
     if mainFrame.Visible then
-        TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
-        TweenService:Create(mainFrameStroke, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Transparency = 1}):Play()
-        task.wait(0.3)
+        TweenService:Create(mainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
+        TweenService:Create(mainFrameStroke, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Transparency = 1}):Play()
+        task.wait(0.25)
         mainFrame.Visible = false
     else
         mainFrame.Visible = true
         mainFrame.BackgroundTransparency = 1
         mainFrameStroke.Transparency = 1
-        TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
-        TweenService:Create(mainFrameStroke, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Transparency = 0}):Play()
+        TweenService:Create(mainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+        TweenService:Create(mainFrameStroke, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Transparency = 0}):Play()
     end
 end)
 
--- THANH TIÊU ĐỀ TRÊN CÙNG
+-- THANH TIÊU ĐỀ
 local topBar = Instance.new("Frame")
 topBar.Name = "TopBar"
-topBar.Size = UDim2.new(1, 0, 0, 48)
-topBar.BackgroundColor3 = Color3.fromRGB(25, 12, 38)
+topBar.Size = UDim2.new(1, 0, 0, 50)
+topBar.BackgroundColor3 = Color3.fromRGB(22, 12, 38)
 topBar.BorderSizePixel = 0
 topBar.Parent = mainFrame
 
 local topBarCorner = Instance.new("UICorner")
-topBarCorner.CornerRadius = UDim.new(0, 18)
+topBarCorner.CornerRadius = UDim.new(0, 20)
 topBarCorner.Parent = topBar
 
 local topBarTitle = Instance.new("TextLabel")
 topBarTitle.Size = UDim2.new(1, -120, 1, 0)
-topBarTitle.Position = UDim2.new(0, 20, 0, 0)
+topBarTitle.Position = UDim2.new(0, 24, 0, 0)
 topBarTitle.BackgroundTransparency = 1
-topBarTitle.Text = "KhoaDiemHub - Giao Diện Mới | Tác giả: Trần Khoa Điềm"
-topBarTitle.TextColor3 = Color3.fromRGB(255, 130, 200)
+topBarTitle.Text = "KhoaDiemHub • Bản Đời Mới | Tác giả: Trần Khoa Điềm"
+topBarTitle.TextColor3 = Color3.fromRGB(255, 140, 210)
 topBarTitle.TextSize = 13
-topBarTitle.Font = Enum.Font.Code
+topBarTitle.Font = Enum.Font.GothamBold
 topBarTitle.TextXAlignment = Enum.TextXAlignment.Left
 topBarTitle.Parent = topBar
 
 local closeButton = Instance.new("TextButton")
 closeButton.Size = UDim2.new(0, 36, 0, 36)
-closeButton.Position = UDim2.new(1, -44, 0, 6)
-closeButton.BackgroundColor3 = Color3.fromRGB(55, 18, 40)
+closeButton.Position = UDim2.new(1, -44, 0, 7)
+closeButton.BackgroundColor3 = Color3.fromRGB(60, 20, 50)
 closeButton.BorderSizePixel = 0
-closeButton.Text = "X"
+closeButton.Text = "✕"
 closeButton.TextColor3 = Color3.fromRGB(255, 120, 160)
-closeButton.TextSize = 15
-closeButton.Font = Enum.Font.Code
+closeButton.TextSize = 14
+closeButton.Font = Enum.Font.GothamBold
 closeButton.Parent = topBar
 
 local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 10)
+closeCorner.CornerRadius = UDim.new(0, 12)
 closeCorner.Parent = closeButton
 
 closeButton.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
 end)
 
--- DANH SÁCH TAB BÊN TRÁI
+-- TAB LIST BÊN TRÁI
 local tabList = Instance.new("ScrollingFrame")
 tabList.Name = "TabList"
-tabList.Size = UDim2.new(0, 185, 1, -62)
-tabList.Position = UDim2.new(0, 8, 0, 54)
-tabList.BackgroundColor3 = Color3.fromRGB(10, 5, 15)
+tabList.Size = UDim2.new(0, 190, 1, -66)
+tabList.Position = UDim2.new(0, 8, 0, 58)
+tabList.BackgroundColor3 = Color3.fromRGB(10, 6, 16)
 tabList.BorderSizePixel = 0
 tabList.CanvasSize = UDim2.new(0, 0, 0, 480)
-tabList.ScrollBarThickness = 3
+tabList.ScrollBarThickness = 2
 tabList.Parent = mainFrame
 
 local tabListCorner = Instance.new("UICorner")
-tabListCorner.CornerRadius = UDim.new(0, 12)
+tabListCorner.CornerRadius = UDim.new(0, 14)
 tabListCorner.Parent = tabList
 
 local tabListLayout = Instance.new("UIListLayout")
@@ -309,8 +304,8 @@ tabListLayout.Parent = tabList
 
 local containerFrame = Instance.new("Frame")
 containerFrame.Name = "ContainerFrame"
-containerFrame.Size = UDim2.new(1, -203, 1, -62)
-containerFrame.Position = UDim2.new(0, 197, 0, 54)
+containerFrame.Size = UDim2.new(1, -210, 1, -66)
+containerFrame.Position = UDim2.new(0, 204, 0, 58)
 containerFrame.BackgroundTransparency = 1
 containerFrame.Parent = mainFrame
 
@@ -325,14 +320,14 @@ local function createTabContent(name)
     scroller.Name = name .. "Content"
     scroller.Size = UDim2.new(1, 0, 1, 0)
     scroller.BackgroundTransparency = 1
-    scroller.CanvasSize = UDim2.new(0, 0, 0, 1250)
+    scroller.CanvasSize = UDim2.new(0, 0, 0, 1200)
     scroller.ScrollBarThickness = 4
     scroller.Visible = false
     scroller.Parent = containerFrame
 
     local layout = Instance.new("UIListLayout")
     layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 8)
+    layout.Padding = UDim.new(0, 10)
     layout.Parent = scroller
 
     return scroller
@@ -340,17 +335,17 @@ end
 
 local function createButton(parent, text, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -12, 0, 38)
-    btn.BackgroundColor3 = Color3.fromRGB(25, 12, 38)
+    btn.Size = UDim2.new(1, -12, 0, 42)
+    btn.BackgroundColor3 = Color3.fromRGB(24, 14, 40)
     btn.BorderSizePixel = 0
     btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(255, 170, 220)
+    btn.TextColor3 = Color3.fromRGB(255, 180, 230)
     btn.TextSize = 12
-    btn.Font = Enum.Font.Code
+    btn.Font = Enum.Font.GothamMedium
     btn.Parent = parent
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = btn
 
     btn.MouseButton1Click:Connect(callback)
@@ -360,44 +355,44 @@ end
 local function createToggle(parent, text, defaultState, callback)
     local state = defaultState
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -12, 0, 38)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 12, 38)
+    frame.Size = UDim2.new(1, -12, 0, 42)
+    frame.BackgroundColor3 = Color3.fromRGB(24, 14, 40)
     frame.BorderSizePixel = 0
     frame.Parent = parent
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = frame
 
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -65, 1, 0)
+    label.Size = UDim2.new(1, -70, 1, 0)
     label.Position = UDim2.new(0, 14, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = text
-    label.TextColor3 = Color3.fromRGB(255, 170, 220)
+    label.TextColor3 = Color3.fromRGB(255, 180, 230)
     label.TextSize = 12
-    label.Font = Enum.Font.Code
+    label.Font = Enum.Font.GothamMedium
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = frame
 
     local indicator = Instance.new("TextButton")
-    indicator.Size = UDim2.new(0, 46, 0, 22)
-    indicator.Position = UDim2.new(1, -54, 0.5, -11)
-    indicator.BackgroundColor3 = state and Color3.fromRGB(255, 40, 130) or Color3.fromRGB(50, 20, 65)
+    indicator.Size = UDim2.new(0, 48, 0, 24)
+    indicator.Position = UDim2.new(1, -56, 0.5, -12)
+    indicator.BackgroundColor3 = state and Color3.fromRGB(255, 45, 140) or Color3.fromRGB(50, 22, 70)
     indicator.BorderSizePixel = 0
     indicator.Text = state and "BẬT" or "TẮT"
     indicator.TextColor3 = Color3.fromRGB(255, 255, 255)
-    indicator.TextSize = 11
-    indicator.Font = Enum.Font.Code
+    indicator.TextSize = 10
+    indicator.Font = Enum.Font.GothamBold
     indicator.Parent = frame
 
     local indCorner = Instance.new("UICorner")
-    indCorner.CornerRadius = UDim.new(0, 6)
+    indCorner.CornerRadius = UDim.new(0, 8)
     indCorner.Parent = indicator
 
     indicator.MouseButton1Click:Connect(function()
         state = not state
-        indicator.BackgroundColor3 = state and Color3.fromRGB(255, 40, 130) or Color3.fromRGB(50, 20, 65)
+        indicator.BackgroundColor3 = state and Color3.fromRGB(255, 45, 140) or Color3.fromRGB(50, 22, 70)
         indicator.Text = state and "BẬT" or "TẮT"
         callback(state)
     end)
@@ -408,13 +403,13 @@ end
 local function createSlider(parent, text, min, max, default, callback)
     local value = default
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -12, 0, 58)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 12, 38)
+    frame.Size = UDim2.new(1, -12, 0, 60)
+    frame.BackgroundColor3 = Color3.fromRGB(24, 14, 40)
     frame.BorderSizePixel = 0
     frame.Parent = parent
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = frame
 
     local label = Instance.new("TextLabel")
@@ -422,32 +417,32 @@ local function createSlider(parent, text, min, max, default, callback)
     label.Position = UDim2.new(0, 14, 0, 6)
     label.BackgroundTransparency = 1
     label.Text = text .. ": " .. tostring(value)
-    label.TextColor3 = Color3.fromRGB(255, 170, 220)
+    label.TextColor3 = Color3.fromRGB(255, 180, 230)
     label.TextSize = 12
-    label.Font = Enum.Font.Code
+    label.Font = Enum.Font.GothamMedium
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = frame
 
     local sliderBg = Instance.new("TextButton")
-    sliderBg.Size = UDim2.new(1, -28, 0, 12)
-    sliderBg.Position = UDim2.new(0, 14, 0, 36)
-    sliderBg.BackgroundColor3 = Color3.fromRGB(50, 20, 65)
+    sliderBg.Size = UDim2.new(1, -28, 0, 10)
+    sliderBg.Position = UDim2.new(0, 14, 0, 38)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(50, 22, 70)
     sliderBg.BorderSizePixel = 0
     sliderBg.Text = ""
     sliderBg.Parent = frame
 
     local sliderCorner = Instance.new("UICorner")
-    sliderCorner.CornerRadius = UDim.new(0, 6)
+    sliderCorner.CornerRadius = UDim.new(0, 5)
     sliderCorner.Parent = sliderBg
 
     local sliderFill = Instance.new("Frame")
     sliderFill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
-    sliderFill.BackgroundColor3 = Color3.fromRGB(255, 40, 130)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(255, 45, 140)
     sliderFill.BorderSizePixel = 0
     sliderFill.Parent = sliderBg
 
     local fillCorner = Instance.new("UICorner")
-    fillCorner.CornerRadius = UDim.new(0, 6)
+    fillCorner.CornerRadius = UDim.new(0, 5)
     fillCorner.Parent = sliderFill
 
     local dragging = false
@@ -483,13 +478,13 @@ end
 
 local function createTabButton(name, scroller)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -12, 0, 36)
-    btn.BackgroundColor3 = Color3.fromRGB(25, 12, 38)
+    btn.Size = UDim2.new(1, -12, 0, 38)
+    btn.BackgroundColor3 = Color3.fromRGB(24, 14, 40)
     btn.BorderSizePixel = 0
     btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(255, 170, 220)
+    btn.TextColor3 = Color3.fromRGB(255, 180, 230)
     btn.TextSize = 12
-    btn.Font = Enum.Font.Code
+    btn.Font = Enum.Font.GothamMedium
     btn.Parent = tabList
 
     local corner = Instance.new("UICorner")
@@ -566,7 +561,7 @@ local aimSmoothness = 6
 createToggle(combatTab, "Tự động bám mượt (Smooth Aim)", false, function(state)
     smoothAimEnabled = state
 end)
-createSlider(combatTab, "Độ trễ mượt camera (Càng cao càng mượt)", 1, 20, 6, function(val)
+createSlider(combatTab, "Độ trễ mượt camera", 1, 20, 6, function(val)
     aimSmoothness = val
 end)
 
@@ -628,7 +623,7 @@ RunService.RenderStepped:Connect(function()
                     box.Visible = true
                     box.Size = Vector2.new(width, height)
                     box.Position = Vector2.new(pos.X - width / 2, topPos.Y)
-                    box.Color = Color3.fromRGB(255, 40, 130)
+                    box.Color = Color3.fromRGB(255, 45, 140)
                     box.Thickness = 1.5
                     box.Filled = false
                     table.insert(espDrawingCache, box)
@@ -639,7 +634,7 @@ RunService.RenderStepped:Connect(function()
                     line.Visible = true
                     line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                     line.To = Vector2.new(pos.X, pos.Y)
-                    line.Color = Color3.fromRGB(255, 40, 130)
+                    line.Color = Color3.fromRGB(255, 45, 140)
                     line.Thickness = 1
                     table.insert(espDrawingCache, line)
                 end
@@ -654,7 +649,7 @@ RunService.RenderStepped:Connect(function()
                     txt.Visible = true
                     txt.Text = infoText
                     txt.Size = 12
-                    txt.Color = Color3.fromRGB(255, 175, 220)
+                    txt.Color = Color3.fromRGB(255, 185, 230)
                     txt.Center = true
                     txt.Outline = true
                     txt.Position = Vector2.new(pos.X, topPos.Y - 18)
@@ -679,14 +674,14 @@ createToggle(worldTab, "Lá chắn bảo vệ & Hào quang lửa", false, functi
             local fire = Instance.new("Fire")
             fire.Name = "HubShieldFire"
             fire.Size = 9
-            fire.Color = Color3.fromRGB(255, 40, 130)
+            fire.Color = Color3.fromRGB(255, 45, 140)
             fire.Parent = LocalPlayer.Character.HumanoidRootPart
             local part = Instance.new("Part")
             part.Name = "HubShieldBall"
             part.Size = Vector3.new(6, 6, 6)
             part.Shape = Enum.PartType.Ball
             part.Material = Enum.Material.Neon
-            part.Color = Color3.fromRGB(255, 40, 130)
+            part.Color = Color3.fromRGB(255, 45, 140)
             part.Transparency = 0.5
             part.CanCollide = false
             part.Parent = LocalPlayer.Character
@@ -801,7 +796,7 @@ end)
 
 -- 7. KHÁC & HƯỚNG DẪN
 local autoChatEnabled = false
-local chatMessages = {"KhoaDiemHub Pro đang hoạt động!", "Trần Khoa Điềm là lập trình viên xuất sắc nhất", "Universal Roblox Hub"}
+local chatMessages = {"KhoaDiemHub phiên bản mới đang hoạt động!", "Trần Khoa Điềm là lập trình viên xuất sắc nhất", "Universal Roblox Hub"}
 createToggle(otherTab, "Tự động nhắn tin kênh chung", false, function(state)
     autoChatEnabled = state
 end)
@@ -823,17 +818,17 @@ createButton(otherTab, "Xem hướng dẫn sử dụng", function()
     local guideGui = Instance.new("Frame")
     guideGui.Size = UDim2.new(0, 460, 0, 280)
     guideGui.Position = UDim2.new(0.5, -230, 0.5, -140)
-    guideGui.BackgroundColor3 = Color3.fromRGB(14, 8, 20)
+    guideGui.BackgroundColor3 = Color3.fromRGB(16, 10, 26)
     guideGui.BorderSizePixel = 0
     guideGui.Parent = ScreenGui
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 16)
+    corner.CornerRadius = UDim.new(0, 18)
     corner.Parent = guideGui
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 40, 130)
-    stroke.Thickness = 2.5
+    stroke.Color = Color3.fromRGB(255, 45, 140)
+    stroke.Thickness = 2
     stroke.Parent = guideGui
 
     local scroller = Instance.new("ScrollingFrame")
@@ -849,9 +844,9 @@ createButton(otherTab, "Xem hướng dẫn sử dụng", function()
     lbl.Position = UDim2.new(0, 0, 0, 0)
     lbl.BackgroundTransparency = 1
     lbl.Text = "HƯỚNG DẪN SỬ DỤNG KHOADIEMHUB:\n\n1. Di chuyển: Điều chỉnh tốc độ chạy, bật nhảy cao, bay tự do và bật Noclip để đi xuyên tường dễ dàng.\n2. Chiến đấu: Kích hoạt Tự động bám mượt (Smooth Aim) ưu tiên mục tiêu gần nhất. Giúp lia góc nhìn tự nhiên, dễ dàng đổi mục tiêu khi cần thiết.\n3. Xuyên tường (ESP): Hiển thị khung hộp, tên, HP và khoảng cách của người chơi.\n4. Thế giới: Bật bất tử, khiên bảo vệ và kháng dung nham.\n5. Dịch chuyển & Cam: Theo dõi camera hoặc dịch chuyển đến người chơi.\n6. Đồ họa: Sáng màn hình, X-Ray và tăng FPS giảm lag.\n\nTác giả: Trần Khoa Điềm | Telegram: @TranKhoaDiem"
-    lbl.TextColor3 = Color3.fromRGB(255, 180, 225)
+    lbl.TextColor3 = Color3.fromRGB(255, 180, 230)
     lbl.TextSize = 12
-    lbl.Font = Enum.Font.Code
+    lbl.Font = Enum.Font.Gotham
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.TextYAlignment = Enum.TextYAlignment.Top
     lbl.TextWrapped = true
@@ -860,16 +855,16 @@ createButton(otherTab, "Xem hướng dẫn sử dụng", function()
     local closeBtn = Instance.new("TextButton")
     closeBtn.Size = UDim2.new(0, 130, 0, 38)
     closeBtn.Position = UDim2.new(0.5, -65, 1, -48)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(55, 18, 40)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(60, 20, 50)
     closeBtn.BorderSizePixel = 0
     closeBtn.Text = "Đóng hướng dẫn"
     closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     closeBtn.TextSize = 12
-    closeBtn.Font = Enum.Font.Code
+    closeBtn.Font = Enum.Font.GothamBold
     closeBtn.Parent = guideGui
 
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.CornerRadius = UDim.new(0, 10)
     btnCorner.Parent = closeBtn
 
     closeBtn.MouseButton1Click:Connect(function()
@@ -881,27 +876,27 @@ createButton(otherTab, "Thông tin tác giả", function()
     local aboutGui = Instance.new("Frame")
     aboutGui.Size = UDim2.new(0, 440, 0, 250)
     aboutGui.Position = UDim2.new(0.5, -220, 0.5, -125)
-    aboutGui.BackgroundColor3 = Color3.fromRGB(14, 8, 20)
+    aboutGui.BackgroundColor3 = Color3.fromRGB(16, 10, 26)
     aboutGui.BorderSizePixel = 0
     aboutGui.Parent = ScreenGui
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 16)
+    corner.CornerRadius = UDim.new(0, 18)
     corner.Parent = aboutGui
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 40, 130)
-    stroke.Thickness = 2.5
+    stroke.Color = Color3.fromRGB(255, 45, 140)
+    stroke.Thickness = 2
     stroke.Parent = aboutGui
 
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1, -28, 1, -60)
     lbl.Position = UDim2.new(0, 14, 0, 14)
     lbl.BackgroundTransparency = 1
-    lbl.Text = "Tên Script: KhoaDiemHub\nTác giả / Lập trình viên: Trần Khoa Điềm\nLiên hệ Telegram: @TranKhoaDiem\nTrạng thái: Phiên bản Beta đang phát triển.\n\nGiao diện độc quyền thiết kế riêng theo phong cách hiện đại đen hồng, hỗ trợ đầy đủ tiếng Việt có dấu, ảnh logo cục bộ khoadiem.jpeg và Smooth Aim thông minh."
-    lbl.TextColor3 = Color3.fromRGB(255, 180, 225)
+    lbl.Text = "Tên Script: KhoaDiemHub\nTác giả / Lập trình viên: Trần Khoa Điềm\nLiên hệ Telegram: @TranKhoaDiem\nTrạng thái: Phiên bản giao diện đời mới cao cấp.\n\nGiao diện độc quyền thiết kế tối tân với phong cách hiện đại đen hồng, hỗ trợ đầy đủ tiếng Việt có dấu, ảnh logo cục bộ khoadiem.jpeg và Smooth Aim thông minh."
+    lbl.TextColor3 = Color3.fromRGB(255, 180, 230)
     lbl.TextSize = 12
-    lbl.Font = Enum.Font.Code
+    lbl.Font = Enum.Font.Gotham
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.TextYAlignment = Enum.TextYAlignment.Top
     lbl.TextWrapped = true
@@ -910,16 +905,16 @@ createButton(otherTab, "Thông tin tác giả", function()
     local closeBtn = Instance.new("TextButton")
     closeBtn.Size = UDim2.new(0, 120, 0, 36)
     closeBtn.Position = UDim2.new(0.5, -60, 1, -44)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(55, 18, 40)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(60, 20, 50)
     closeBtn.BorderSizePixel = 0
     closeBtn.Text = "Đóng"
     closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     closeBtn.TextSize = 12
-    closeBtn.Font = Enum.Font.Code
+    closeBtn.Font = Enum.Font.GothamBold
     closeBtn.Parent = aboutGui
 
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.CornerRadius = UDim.new(0, 10)
     btnCorner.Parent = closeBtn
 
     closeBtn.MouseButton1Click:Connect(function()
@@ -927,7 +922,7 @@ createButton(otherTab, "Thông tin tác giả", function()
     end)
 end)
 
--- VÒNG LẶP XỬ LÝ TÍNH NĂNG (MOVEMENT, NOCLIP, AIM, LAVA, WATER)
+-- VÒNG LẶP XỬ LÝ TÍNH NĂNG
 RunService.RenderStepped:Connect(function()
     local char = LocalPlayer.Character
     if not char then return end
