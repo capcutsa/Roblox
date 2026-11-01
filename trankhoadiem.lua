@@ -9,12 +9,12 @@ local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
-if CoreGui:FindFirstChild("KhoaDiemHubProV3") then
-    CoreGui.KhoaDiemHubProV3:Destroy()
+if CoreGui:FindFirstChild("KhoaDiemHubUltimateV4") then
+    CoreGui.KhoaDiemHubUltimateV4:Destroy()
 end
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "KhoaDiemHubProV3"
+ScreenGui.Name = "KhoaDiemHubUltimateV4"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
@@ -90,20 +90,20 @@ end
 
 local introFrame = Instance.new("Frame")
 introFrame.Name = "IntroFrame"
-introFrame.Size = UDim2.new(0, 440, 0, 240)
-introFrame.Position = UDim2.new(0.5, -220, 0.5, -120)
-introFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+introFrame.Size = UDim2.new(0, 460, 0, 260)
+introFrame.Position = UDim2.new(0.5, -230, 0.5, -130)
+introFrame.BackgroundColor3 = Color3.fromRGB(18, 12, 28)
 introFrame.BackgroundTransparency = 1
 introFrame.BorderSizePixel = 0
 introFrame.Parent = ScreenGui
 
 local introCorner = Instance.new("UICorner")
-introCorner.CornerRadius = UDim.new(0, 16)
+introCorner.CornerRadius = UDim.new(0, 20)
 introCorner.Parent = introFrame
 
 local introStroke = Instance.new("UIStroke")
-introStroke.Color = Color3.fromRGB(255, 60, 120)
-introStroke.Thickness = 2
+introStroke.Color = Color3.fromRGB(140, 80, 255)
+introStroke.Thickness = 2.5
 introStroke.Transparency = 1
 introStroke.Parent = introFrame
 
@@ -111,28 +111,28 @@ local introTitle = Instance.new("TextLabel")
 introTitle.Size = UDim2.new(1, 0, 0, 40)
 introTitle.Position = UDim2.new(0, 0, 0, 20)
 introTitle.BackgroundTransparency = 1
-introTitle.Text = "KHOADIEMHUB PRO V3"
-introTitle.TextColor3 = Color3.fromRGB(255, 100, 160)
+introTitle.Text = "KHOADIEMHUB ULTIMATE V4"
+introTitle.TextColor3 = Color3.fromRGB(180, 120, 255)
 introTitle.TextSize = 20
 introTitle.Font = Enum.Font.GothamBold
 introTitle.TextTransparency = 1
 introTitle.Parent = introFrame
 
 local introScroller = Instance.new("ScrollingFrame")
-introScroller.Size = UDim2.new(1, -40, 0, 140)
-introScroller.Position = UDim2.new(0, 20, 0, 75)
-introScroller.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+introScroller.Size = UDim2.new(1, -44, 0, 150)
+introScroller.Position = UDim2.new(0, 22, 0, 75)
+introScroller.BackgroundColor3 = Color3.fromRGB(26, 16, 40)
 introScroller.BackgroundTransparency = 1
 introScroller.BorderSizePixel = 0
-introScroller.CanvasSize = UDim2.new(0, 0, 0, 200)
+introScroller.CanvasSize = UDim2.new(0, 0, 0, 220)
 introScroller.ScrollBarThickness = 2
 introScroller.Parent = introFrame
 
 local introText = Instance.new("TextLabel")
-introText.Size = UDim2.new(1, -12, 0, 180)
-introText.Position = UDim2.new(0, 6, 0, 6)
+introText.Size = UDim2.new(1, -14, 0, 200)
+introText.Position = UDim2.new(0, 7, 0, 7)
 introText.BackgroundTransparency = 1
-introText.TextColor3 = Color3.fromRGB(220, 220, 235)
+introText.TextColor3 = Color3.fromRGB(220, 200, 240)
 introText.TextSize = 12
 introText.Font = Enum.Font.GothamMedium
 introText.TextXAlignment = Enum.TextXAlignment.Left
@@ -160,17 +160,17 @@ pcall(function()
 end)
 
 introText.Text = string.format(
-    "Trạng thái: Khởi động hệ thống Pro V3 thành công!\nTài khoản: %s (%s)\nGame: %s\nThời gian: %s\nThiết bị: %s | Executor: %s\nLevel: %s\nTác giả: Trần Khoa Điềm | Telegram: @TranKhoaDiem",
+    "Trạng thái: Tải hệ thống Ultimate V4 thành công!\nTài khoản: %s (%s)\nGame: %s\nThời gian: %s\nThiết bị: %s | Executor: %s\nLevel: %s\nTác giả: Trần Khoa Điềm | Telegram: @TranKhoaDiem",
     LocalPlayer.Name, LocalPlayer.DisplayName, gameName, currentTime, getDeviceType(), getExecutorName(), levelStr
 )
 
-TweenService:Create(introFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0.05}):Play()
-TweenService:Create(introStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Transparency = 0}):Play()
-TweenService:Create(introTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
-TweenService:Create(introScroller, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0.4}):Play()
-TweenService:Create(introText, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+TweenService:Create(introFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0.05}):Play()
+TweenService:Create(introStroke, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Transparency = 0}):Play()
+TweenService:Create(introTitle, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+TweenService:Create(introScroller, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0.4}):Play()
+TweenService:Create(introText, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 
-task.wait(3.0)
+task.wait(3.2)
 
 TweenService:Create(introFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1}):Play()
 TweenService:Create(introStroke, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Transparency = 1}):Play()
@@ -180,13 +180,13 @@ task.wait(0.4)
 introFrame:Destroy()
 
 local mainButton = Instance.new("ImageButton")
-mainButton.Name = "MainButtonPro"
-mainButton.Size = UDim2.new(0, 50, 0, 50)
+mainButton.Name = "MainButtonUltimate"
+mainButton.Size = UDim2.new(0, 52, 0, 52)
 mainButton.Position = UDim2.new(0, 25, 0, 25)
-mainButton.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+mainButton.BackgroundColor3 = Color3.fromRGB(18, 12, 28)
 mainButton.BorderSizePixel = 0
 mainButton.Image = defaultSvgIcon
-mainButton.ImageColor3 = Color3.fromRGB(255, 80, 150)
+mainButton.ImageColor3 = Color3.fromRGB(160, 100, 255)
 mainButton.Parent = ScreenGui
 
 makeDraggable(mainButton)
@@ -196,69 +196,69 @@ mainBtnCorner.CornerRadius = UDim.new(1, 0)
 mainBtnCorner.Parent = mainButton
 
 local mainBtnStroke = Instance.new("UIStroke")
-mainBtnStroke.Color = Color3.fromRGB(255, 80, 150)
+mainBtnStroke.Color = Color3.fromRGB(140, 80, 255)
 mainBtnStroke.Thickness = 2.5
 mainBtnStroke.Parent = mainButton
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 680, 0, 420)
-mainFrame.Position = UDim2.new(0.5, -340, 0.5, -210)
-mainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
+mainFrame.Size = UDim2.new(0, 720, 0, 460)
+mainFrame.Position = UDim2.new(0.5, -360, 0.5, -230)
+mainFrame.BackgroundColor3 = Color3.fromRGB(12, 8, 20)
 mainFrame.BackgroundTransparency = 1
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
 mainFrame.Parent = ScreenGui
 
 local mainFrameCorner = Instance.new("UICorner")
-mainFrameCorner.CornerRadius = UDim.new(0, 16)
+mainFrameCorner.CornerRadius = UDim.new(0, 18)
 mainFrameCorner.Parent = mainFrame
 
 local mainFrameStroke = Instance.new("UIStroke")
-mainFrameStroke.Color = Color3.fromRGB(255, 80, 150)
-mainFrameStroke.Thickness = 2
+mainFrameStroke.Color = Color3.fromRGB(140, 80, 255)
+mainFrameStroke.Thickness = 2.5
 mainFrameStroke.Transparency = 1
 mainFrameStroke.Parent = mainFrame
 
 local topBar = Instance.new("Frame")
 topBar.Name = "TopBar"
-topBar.Size = UDim2.new(1, 0, 0, 46)
-topBar.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+topBar.Size = UDim2.new(1, 0, 0, 50)
+topBar.BackgroundColor3 = Color3.fromRGB(22, 14, 36)
 topBar.BorderSizePixel = 0
 topBar.Parent = mainFrame
 
 makeDraggable(mainFrame, topBar)
 
 local topBarCorner = Instance.new("UICorner")
-topBarCorner.CornerRadius = UDim.new(0, 16)
+topBarCorner.CornerRadius = UDim.new(0, 18)
 topBarCorner.Parent = topBar
 
 local topIcon = Instance.new("ImageLabel")
-topIcon.Size = UDim2.new(0, 26, 0, 26)
-topIcon.Position = UDim2.new(0, 14, 0, 10)
+topIcon.Size = UDim2.new(0, 28, 0, 28)
+topIcon.Position = UDim2.new(0, 16, 0, 11)
 topIcon.BackgroundTransparency = 1
 topIcon.Image = defaultSvgIcon
-topIcon.ImageColor3 = Color3.fromRGB(255, 80, 150)
+topIcon.ImageColor3 = Color3.fromRGB(160, 100, 255)
 topIcon.Parent = topBar
 
 local topBarTitle = Instance.new("TextLabel")
-topBarTitle.Size = UDim2.new(1, -110, 1, 0)
-topBarTitle.Position = UDim2.new(0, 48, 0, 0)
+topBarTitle.Size = UDim2.new(1, -120, 1, 0)
+topBarTitle.Position = UDim2.new(0, 54, 0, 0)
 topBarTitle.BackgroundTransparency = 1
-topBarTitle.Text = "KhoaDiemHub Pro V3 • Ultimate Edition"
-topBarTitle.TextColor3 = Color3.fromRGB(245, 245, 250)
+topBarTitle.Text = "KhoaDiemHub Ultimate V4 • Purple Matrix"
+topBarTitle.TextColor3 = Color3.fromRGB(240, 230, 255)
 topBarTitle.TextSize = 13
 topBarTitle.Font = Enum.Font.GothamBold
 topBarTitle.TextXAlignment = Enum.TextXAlignment.Left
 topBarTitle.Parent = topBar
 
 local closeButton = Instance.new("TextButton")
-closeButton.Size = UDim2.new(0, 32, 0, 32)
-closeButton.Position = UDim2.new(1, -38, 0, 7)
-closeButton.BackgroundColor3 = Color3.fromRGB(45, 20, 30)
+closeButton.Size = UDim2.new(0, 34, 0, 34)
+closeButton.Position = UDim2.new(1, -42, 0, 8)
+closeButton.BackgroundColor3 = Color3.fromRGB(50, 20, 60)
 closeButton.BorderSizePixel = 0
 closeButton.Text = "✕"
-closeButton.TextColor3 = Color3.fromRGB(255, 100, 140)
+closeButton.TextColor3 = Color3.fromRGB(255, 120, 180)
 closeButton.TextSize = 14
 closeButton.Font = Enum.Font.GothamBold
 closeButton.Parent = topBar
@@ -273,32 +273,32 @@ end)
 
 mainButton.MouseButton1Click:Connect(function()
     if mainFrame.Visible then
-        TweenService:Create(mainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
-        TweenService:Create(mainFrameStroke, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Transparency = 1}):Play()
-        task.wait(0.2)
+        TweenService:Create(mainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
+        TweenService:Create(mainFrameStroke, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Transparency = 1}):Play()
+        task.wait(0.25)
         mainFrame.Visible = false
     else
         mainFrame.Visible = true
         mainFrame.BackgroundTransparency = 1
         mainFrameStroke.Transparency = 1
-        TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0.02}):Play()
-        TweenService:Create(mainFrameStroke, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Transparency = 0}):Play()
+        TweenService:Create(mainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0.02}):Play()
+        TweenService:Create(mainFrameStroke, TweenInfo.new(0.35, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Transparency = 0}):Play()
     end
 end)
 
 local tabList = Instance.new("ScrollingFrame")
 tabList.Name = "TabList"
-tabList.Size = UDim2.new(0, 160, 1, -58)
-tabList.Position = UDim2.new(0, 10, 0, 52)
-tabList.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
+tabList.Size = UDim2.new(0, 175, 1, -64)
+tabList.Position = UDim2.new(0, 12, 0, 58)
+tabList.BackgroundColor3 = Color3.fromRGB(15, 10, 25)
 tabList.BackgroundTransparency = 0.3
 tabList.BorderSizePixel = 0
-tabList.CanvasSize = UDim2.new(0, 0, 0, 380)
+tabList.CanvasSize = UDim2.new(0, 0, 0, 440)
 tabList.ScrollBarThickness = 2
 tabList.Parent = mainFrame
 
 local tabListCorner = Instance.new("UICorner")
-tabListCorner.CornerRadius = UDim.new(0, 12)
+tabListCorner.CornerRadius = UDim.new(0, 14)
 tabListCorner.Parent = tabList
 
 local tabListLayout = Instance.new("UIListLayout")
@@ -308,8 +308,8 @@ tabListLayout.Parent = tabList
 
 local containerFrame = Instance.new("Frame")
 containerFrame.Name = "ContainerFrame"
-containerFrame.Size = UDim2.new(1, -182, 1, -58)
-containerFrame.Position = UDim2.new(0, 174, 0, 52)
+containerFrame.Size = UDim2.new(1, -202, 1, -64)
+containerFrame.Position = UDim2.new(0, 198, 0, 58)
 containerFrame.BackgroundTransparency = 1
 containerFrame.Parent = mainFrame
 
@@ -324,7 +324,7 @@ local function createTabContent(name)
     scroller.Name = name .. "Content"
     scroller.Size = UDim2.new(1, 0, 1, 0)
     scroller.BackgroundTransparency = 1
-    scroller.CanvasSize = UDim2.new(0, 0, 0, 1100)
+    scroller.CanvasSize = UDim2.new(0, 0, 0, 1400)
     scroller.ScrollBarThickness = 3
     scroller.Visible = false
     scroller.Parent = containerFrame
@@ -339,11 +339,11 @@ end
 
 local function createButton(parent, text, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -10, 0, 38)
-    btn.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+    btn.Size = UDim2.new(1, -12, 0, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(24, 15, 40)
     btn.BorderSizePixel = 0
     btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(230, 230, 245)
+    btn.TextColor3 = Color3.fromRGB(235, 215, 255)
     btn.TextSize = 12
     btn.Font = Enum.Font.GothamMedium
     btn.Parent = parent
@@ -359,8 +359,8 @@ end
 local function createToggle(parent, text, defaultState, callback)
     local state = defaultState
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -10, 0, 38)
-    frame.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+    frame.Size = UDim2.new(1, -12, 0, 40)
+    frame.BackgroundColor3 = Color3.fromRGB(24, 15, 40)
     frame.BorderSizePixel = 0
     frame.Parent = parent
 
@@ -369,23 +369,23 @@ local function createToggle(parent, text, defaultState, callback)
     corner.Parent = frame
 
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -65, 1, 0)
-    label.Position = UDim2.new(0, 12, 0, 0)
+    label.Size = UDim2.new(1, -70, 1, 0)
+    label.Position = UDim2.new(0, 14, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = text
-    label.TextColor3 = Color3.fromRGB(230, 230, 245)
+    label.TextColor3 = Color3.fromRGB(235, 215, 255)
     label.TextSize = 12
     label.Font = Enum.Font.GothamMedium
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = frame
 
     local indicator = Instance.new("TextButton")
-    indicator.Size = UDim2.new(0, 46, 0, 22)
-    indicator.Position = UDim2.new(1, -54, 0.5, -11)
-    indicator.BackgroundColor3 = state and Color3.fromRGB(255, 80, 150) or Color3.fromRGB(40, 40, 55)
+    indicator.Size = UDim2.new(0, 48, 0, 24)
+    indicator.Position = UDim2.new(1, -56, 0.5, -12)
+    indicator.BackgroundColor3 = state and Color3.fromRGB(140, 80, 255) or Color3.fromRGB(45, 25, 75)
     indicator.BorderSizePixel = 0
     indicator.Text = state and "ON" or "OFF"
-    indicator.TextColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(170, 170, 190)
+    indicator.TextColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(180, 160, 210)
     indicator.TextSize = 11
     indicator.Font = Enum.Font.GothamBold
     indicator.Parent = frame
@@ -396,8 +396,8 @@ local function createToggle(parent, text, defaultState, callback)
 
     indicator.MouseButton1Click:Connect(function()
         state = not state
-        indicator.BackgroundColor3 = state and Color3.fromRGB(255, 80, 150) or Color3.fromRGB(40, 40, 55)
-        indicator.TextColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(170, 170, 190)
+        indicator.BackgroundColor3 = state and Color3.fromRGB(140, 80, 255) or Color3.fromRGB(45, 25, 75)
+        indicator.TextColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(180, 160, 210)
         indicator.Text = state and "ON" or "OFF"
         callback(state)
     end)
@@ -408,8 +408,8 @@ end
 local function createSlider(parent, text, min, max, default, callback)
     local value = default
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -10, 0, 54)
-    frame.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+    frame.Size = UDim2.new(1, -12, 0, 58)
+    frame.BackgroundColor3 = Color3.fromRGB(24, 15, 40)
     frame.BorderSizePixel = 0
     frame.Parent = parent
 
@@ -418,20 +418,20 @@ local function createSlider(parent, text, min, max, default, callback)
     corner.Parent = frame
 
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -24, 0, 22)
-    label.Position = UDim2.new(0, 12, 0, 5)
+    label.Size = UDim2.new(1, -28, 0, 22)
+    label.Position = UDim2.new(0, 14, 0, 6)
     label.BackgroundTransparency = 1
     label.Text = text .. ": " .. tostring(value)
-    label.TextColor3 = Color3.fromRGB(230, 230, 245)
+    label.TextColor3 = Color3.fromRGB(235, 215, 255)
     label.TextSize = 12
     label.Font = Enum.Font.GothamMedium
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = frame
 
     local sliderBg = Instance.new("TextButton")
-    sliderBg.Size = UDim2.new(1, -24, 0, 10)
-    sliderBg.Position = UDim2.new(0, 12, 0, 34)
-    sliderBg.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    sliderBg.Size = UDim2.new(1, -28, 0, 10)
+    sliderBg.Position = UDim2.new(0, 14, 0, 36)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(45, 25, 75)
     sliderBg.BorderSizePixel = 0
     sliderBg.Text = ""
     sliderBg.Parent = frame
@@ -442,7 +442,7 @@ local function createSlider(parent, text, min, max, default, callback)
 
     local sliderFill = Instance.new("Frame")
     sliderFill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
-    sliderFill.BackgroundColor3 = Color3.fromRGB(255, 80, 150)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(140, 80, 255)
     sliderFill.BorderSizePixel = 0
     sliderFill.Parent = sliderBg
 
@@ -483,11 +483,11 @@ end
 
 local function createTabButton(name, scroller)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -10, 0, 36)
-    btn.BackgroundColor3 = Color3.fromRGB(22, 22, 32)
+    btn.Size = UDim2.new(1, -12, 0, 38)
+    btn.BackgroundColor3 = Color3.fromRGB(24, 15, 40)
     btn.BorderSizePixel = 0
     btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(210, 210, 230)
+    btn.TextColor3 = Color3.fromRGB(215, 195, 245)
     btn.TextSize = 11
     btn.Font = Enum.Font.GothamMedium
     btn.Parent = tabList
@@ -502,7 +502,7 @@ local function createTabButton(name, scroller)
     end)
 end
 
-local tabNames = {"Di chuyển", "Chiến đấu & Aim", "Xuyên tường ESP", "Thế giới & Khác", "Dịch chuyển", "Đồ họa & FPS", "Thông tin"}
+local tabNames = {"Nhân vật & Di chuyển", "Chiến đấu & Aim", "Xuyên tường ESP", "Thế giới & Môi trường", "Dịch chuyển (Teleport)", "Đồ họa & Tiện ích", "Thông tin & Hướng dẫn"}
 local scrollers = {}
 
 for i, name in ipairs(tabNames) do
@@ -513,44 +513,47 @@ end
 
 scrollers[1].Visible = true
 
-local movementTab = scrollers[1]
+local charTab = scrollers[1]
 local combatTab = scrollers[2]
 local espTab = scrollers[3]
 local worldTab = scrollers[4]
-local spectateTab = scrollers[5]
+local tpTab = scrollers[5]
 local visualsTab = scrollers[6]
 local otherTab = scrollers[7]
 
 local walkSpeedEnabled = false
 local walkSpeedVal = 16
-createToggle(movementTab, "Tốc độ chạy", false, function(state)
+createToggle(charTab, "Tốc độ chạy siêu tốc", false, function(state)
     walkSpeedEnabled = state
     if not state and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
     end
 end)
-createSlider(movementTab, "Mức độ tốc độ", 16, 300, 16, function(val) walkSpeedVal = val end)
+createSlider(charTab, "Mức độ tốc độ", 16, 350, 16, function(val) walkSpeedVal = val end)
 
 local jumpPowerEnabled = false
 local jumpPowerVal = 50
-createToggle(movementTab, "Nhảy cao", false, function(state)
+createToggle(charTab, "Nhảy cao đặc biệt", false, function(state)
     jumpPowerEnabled = state
     if not state and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = 50
     end
 end)
-createSlider(movementTab, "Mức độ nhảy", 50, 600, 50, function(val) jumpPowerVal = val end)
+createSlider(charTab, "Mức độ nhảy cao", 50, 700, 50, function(val) jumpPowerVal = val end)
 
 local flyEnabled = false
 local flySpeed = 50
-createToggle(movementTab, "Bay tự do (Flight)", false, function(state) flyEnabled = state end)
-createSlider(movementTab, "Tốc độ bay", 10, 250, 50, function(val) flySpeed = val end)
+createToggle(charTab, "Chế độ bay tự do (Fly)", false, function(state) flyEnabled = state end)
+createSlider(charTab, "Tốc độ bay", 10, 300, 50, function(val) flySpeed = val end)
 
 local noclipEnabled = false
-createToggle(movementTab, "Đi xuyên tường (Noclip)", false, function(state) noclipEnabled = state end)
+createToggle(charTab, "Đi xuyên mọi tường (Noclip)", false, function(state) noclipEnabled = state end)
 
 local infJumpEnabled = false
-createToggle(movementTab, "Nhảy vô hạn giữa không trung", false, function(state) infJumpEnabled = state end)
+createToggle(charTab, "Nhảy vô hạn giữa không trung", false, function(state) infJumpEnabled = state end)
+
+local bnitSpeed = false
+createToggle(charTab, "Tự động lướt (Bunny Hop)", false, function(state) bnitSpeed = state end)
 
 local smoothAimEnabled = false
 local aimSmoothness = 6
@@ -568,7 +571,12 @@ createButton(combatTab, "Bộ phận ngắm: Đầu (Ấn để đổi)", functi
 end)
 
 local triggerBotEnabled = false
-createToggle(combatTab, "Tự động đánh / Bắn (Triggerbot)", false, function(state) triggerBotEnabled = state end)
+createToggle(combatTab, "Tự động bắn/đánh mục tiêu (Triggerbot)", false, function(state) triggerBotEnabled = state end)
+
+local fovCircleEnabled = false
+local fovRadius = 120
+createToggle(combatTab, "Vòng tròn tầm nhìn (FOV Circle)", false, function(state) fovCircleEnabled = state end)
+createSlider(combatTab, "Bán kính vòng FOV", 40, 400, 120, function(val) fovRadius = val end)
 
 local espBoxEnabled = false
 local espNameEnabled = false
@@ -579,26 +587,26 @@ local espChamsEnabled = false
 
 createToggle(espTab, "Khung ESP 2D (Box)", false, function(state) espBoxEnabled = state end)
 createToggle(espTab, "Hiển thị tên người chơi", false, function(state) espNameEnabled = state end)
-createToggle(espTab, "Hiển thị thanh HP trực tiếp", false, function(state) espHealthEnabled = state end)
+createToggle(espTab, "Hiển thị thanh HP", false, function(state) espHealthEnabled = state end)
 createToggle(espTab, "Hiển thị khoảng cách (Mét)", false, function(state) espDistanceEnabled = state end)
 createToggle(espTab, "Đường chỉ hướng (Tracer Line)", false, function(state) espLinesEnabled = state end)
-createToggle(espTab, "Highlight xuyên wall (Chams)", false, function(state)
+createToggle(espTab, "Highlight xuyên tường (Chams)", false, function(state)
     espChamsEnabled = state
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character then
             if state then
-                if not p.Character:FindFirstChild("HubChamsV3") then
+                if not p.Character:FindFirstChild("HubChamsUltimate") then
                     local hl = Instance.new("Highlight")
-                    hl.Name = "HubChamsV3"
-                    hl.FillColor = Color3.fromRGB(255, 80, 150)
+                    hl.Name = "HubChamsUltimate"
+                    hl.FillColor = Color3.fromRGB(140, 80, 255)
                     hl.OutlineColor = Color3.fromRGB(255, 255, 255)
                     hl.FillTransparency = 0.4
                     hl.AlwaysOnTop = true
                     hl.Parent = p.Character
                 end
             else
-                if p.Character:FindFirstChild("HubChamsV3") then
-                    p.Character.HubChamsV3:Destroy()
+                if p.Character:FindFirstChild("HubChamsUltimate") then
+                    p.Character.HubChamsUltimate:Destroy()
                 end
             end
         end
@@ -632,7 +640,7 @@ RunService.RenderStepped:Connect(function()
                     box.Visible = true
                     box.Size = Vector2.new(width, height)
                     box.Position = Vector2.new(pos.X - width / 2, topPos.Y)
-                    box.Color = Color3.fromRGB(255, 80, 150)
+                    box.Color = Color3.fromRGB(140, 80, 255)
                     box.Thickness = 1.5
                     box.Filled = false
                     table.insert(espDrawingCache, box)
@@ -643,7 +651,7 @@ RunService.RenderStepped:Connect(function()
                     line.Visible = true
                     line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                     line.To = Vector2.new(pos.X, pos.Y)
-                    line.Color = Color3.fromRGB(255, 80, 150)
+                    line.Color = Color3.fromRGB(140, 80, 255)
                     line.Thickness = 1
                     table.insert(espDrawingCache, line)
                 end
@@ -658,7 +666,7 @@ RunService.RenderStepped:Connect(function()
                     txt.Visible = true
                     txt.Text = infoText
                     txt.Size = 11
-                    txt.Color = Color3.fromRGB(255, 200, 230)
+                    txt.Color = Color3.fromRGB(220, 190, 255)
                     txt.Center = true
                     txt.Outline = true
                     txt.Position = Vector2.new(pos.X, topPos.Y - 16)
@@ -670,10 +678,10 @@ RunService.RenderStepped:Connect(function()
 end)
 
 local godMode = false
-createToggle(worldTab, "Bất tử (Auto Full Health)", false, function(state) godMode = state end)
+createToggle(worldTab, "Bất tử hoàn toàn (Godmode)", false, function(state) godMode = state end)
 
 local lavaImmune = false
-createToggle(worldTab, "Kháng dung nham & Hố độc", false, function(state) lavaImmune = state end)
+createToggle(worldTab, "Kháng dung nham & Hố tử thần", false, function(state) lavaImmune = state end)
 
 local waterWalk = false
 createToggle(worldTab, "Đi trên mặt nước (Water Walk)", false, function(state) waterWalk = state end)
@@ -682,17 +690,15 @@ local autoClicker = false
 createToggle(worldTab, "Tự động Click chuột liên tục", false, function(state) autoClicker = state end)
 task.spawn(function()
     while true do
-        task.wait(0.05)
+        task.wait(0.04)
         if autoClicker then
-            pcall(function()
-                mouse1click()
-            end)
+            pcall(function() mouse1click() end)
         end
     end
 end)
 
 local selectedTargetPlayer = nil
-createButton(spectateTab, "Chọn mục tiêu kế tiếp", function()
+createButton(tpTab, "Chọn mục tiêu tiếp theo", function()
     local players = Players:GetPlayers()
     for i, p in ipairs(players) do
         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
@@ -707,25 +713,41 @@ createButton(spectateTab, "Chọn mục tiêu kế tiếp", function()
     end
 end)
 
-createButton(spectateTab, "Theo dõi Camera người chơi", function()
+createButton(tpTab, "Theo dõi Camera người chơi", function()
     if selectedTargetPlayer and selectedTargetPlayer.Character and selectedTargetPlayer.Character:FindFirstChild("Humanoid") then
         Camera.CameraSubject = selectedTargetPlayer.Character.Humanoid
     end
 end)
 
-createButton(spectateTab, "Quay lại Camera bản thân", function()
+createButton(tpTab, "Đặt lại Camera về bản thân", function()
     selectedTargetPlayer = nil
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         Camera.CameraSubject = LocalPlayer.Character.Humanoid
     end
 end)
 
-createButton(spectateTab, "Dịch chuyển đến người chơi", function()
+createButton(tpTab, "Dịch chuyển tức thời đến người chơi", function()
     if selectedTargetPlayer and selectedTargetPlayer.Character and selectedTargetPlayer.Character:FindFirstChild("HumanoidRootPart") then
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
             LocalPlayer.Character.HumanoidRootPart.CFrame = selectedTargetPlayer.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
         end
     end
+end)
+
+createButton(tpTab, "Lưu vị trí hiện tại (Save Pos)", function()
+    pcall(function()
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            getgenv().SavedHubPosition = LocalPlayer.Character.HumanoidRootPart.CFrame
+        end
+    end)
+end)
+
+createButton(tpTab, "Quay lại vị trí đã lưu (Load Pos)", function()
+    pcall(function()
+        if getgenv().SavedHubPosition and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = getgenv().SavedHubPosition
+        end
+    end)
 end)
 
 createToggle(visualsTab, "Sáng toàn bản đồ (Fullbright)", false, function(state)
@@ -756,31 +778,31 @@ createButton(visualsTab, "Tăng FPS & Xóa hiệu ứng lag", function()
     end)
 end)
 
-createButton(otherTab, "Thông tin & Hướng dẫn sử dụng", function()
+createButton(otherTab, "Xem hướng dẫn sử dụng chi tiết", function()
     local guideGui = Instance.new("Frame")
-    guideGui.Size = UDim2.new(0, 420, 0, 260)
-    guideGui.Position = UDim2.new(0.5, -210, 0.5, -130)
-    guideGui.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+    guideGui.Size = UDim2.new(0, 440, 0, 280)
+    guideGui.Position = UDim2.new(0.5, -220, 0.5, -140)
+    guideGui.BackgroundColor3 = Color3.fromRGB(18, 12, 28)
     guideGui.BorderSizePixel = 0
     guideGui.Parent = ScreenGui
 
     makeDraggable(guideGui)
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 16)
+    corner.CornerRadius = UDim.new(0, 18)
     corner.Parent = guideGui
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 80, 150)
+    stroke.Color = Color3.fromRGB(140, 80, 255)
     stroke.Thickness = 2
     stroke.Parent = guideGui
 
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, -24, 1, -56)
-    lbl.Position = UDim2.new(0, 12, 0, 12)
+    lbl.Size = UDim2.new(1, -28, 1, -64)
+    lbl.Position = UDim2.new(0, 14, 0, 14)
     lbl.BackgroundTransparency = 1
-    lbl.Text = "HƯỚNG DẪN KHOADIEMHUB PRO V3:\n\n1. Di chuyển: Noclip xuyên tường, bay tự do, nhảy vô hạn.\n2. Chiến đấu & Aim: Đã sửa hoàn toàn lỗi tự động ngắm. Chỉ bám mục tiêu khi bạn bấm BẬT.\n3. ESP: Cải tiến toàn diện khung Box, Chams & HP bar cực kỳ ổn định.\n4. Khác: Tự động click chuột, tối ưu FPS hoàn hảo.\n\nTác giả: Trần Khoa Điềm | Telegram: @TranKhoaDiem"
-    lbl.TextColor3 = Color3.fromRGB(230, 230, 245)
+    lbl.Text = "HƯỚNG DẪN KHOADIEMHUB ULTIMATE V4:\n\n1. Nhân vật: Tốc độ chạy siêu tốc, bay tự do, nhảy vô hạn, b-hop và noclip.\n2. Chiến đấu & Aim: Smooth Aim mượt mà, chỉ bám khi bạn BẬT.\n3. Xuyên tường ESP: Box, Tracer, HP bar & Chams Highlight.\n4. Thế giới & Khác: Godmode, kháng dung nham, tự động click.\n5. Dịch chuyển: Teleport người chơi, lưu và tải vị trí tiện lợi.\n\nTác giả: Trần Khoa Điềm | Telegram: @TranKhoaDiem"
+    lbl.TextColor3 = Color3.fromRGB(230, 210, 250)
     lbl.TextSize = 11
     lbl.Font = Enum.Font.GothamMedium
     lbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -789,9 +811,9 @@ createButton(otherTab, "Thông tin & Hướng dẫn sử dụng", function()
     lbl.Parent = guideGui
 
     local closeBtn = Instance.new("TextButton")
-    closeBtn.Size = UDim2.new(0, 110, 0, 32)
-    closeBtn.Position = UDim2.new(0.5, -55, 1, -40)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(45, 20, 30)
+    closeBtn.Size = UDim2.new(0, 120, 0, 36)
+    closeBtn.Position = UDim2.new(0.5, -60, 1, -44)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(50, 20, 60)
     closeBtn.BorderSizePixel = 0
     closeBtn.Text = "Đóng bảng"
     closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -821,6 +843,9 @@ RunService.RenderStepped:Connect(function()
         if walkSpeedEnabled then humanoid.WalkSpeed = walkSpeedVal end
         if jumpPowerEnabled then humanoid.JumpPower = jumpPowerVal end
         if godMode then humanoid.Health = humanoid.MaxHealth end
+        if bnitSpeed and humanoid.MoveDirection.Magnitude > 0 then
+            rootPart.Velocity = Vector3.new(humanoid.MoveDirection.X * walkSpeedVal, rootPart.Velocity.Y, humanoid.MoveDirection.Z * walkSpeedVal)
+        end
     end
 
     if noclipEnabled and char then
