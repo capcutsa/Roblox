@@ -9,8 +9,13 @@ local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
+-- XÓA GUI CŨ NẾU TỒN TẠI
+if CoreGui:FindFirstChild("KhoaDiemHubNeo") then
+    CoreGui.KhoaDiemHubNeo:Destroy()
+end
+
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "KhoaDiemHubModern"
+ScreenGui.Name = "KhoaDiemHubNeo"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
@@ -21,101 +26,130 @@ if not ScreenGui.Parent then
     ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 end
 
+-- TẢI VÀ XỬ LÝ ANH AVATAR (HỖ TRỢ LINK TIKTOK & TỰ ĐỘNG BẢO VỆ NẾU DIE LINK)
+local avatarImageUrl = "https://p16-common-sign.tiktokcdn.com/tos-maliva-avt-0068/a335fecb9a7f08c741fee6456d896364~tplv-tiktokx-cropcenter:1080:1080.jpeg?dr=14579&refresh_token=33b982b1&x-expires=1793674800&x-signature=iAN9qEpUwXTx5NIGhyi25ZQTgFg%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=81f88b70&idc=my2"
+local finalImageAsset = "rbxassetid://6031091004" -- Icon SVG dự phòng chất lượng cao
+
+pcall(function()
+    if writefile and getcustomasset then
+        local fileName = "khoadiem_avatar.jpeg"
+        if not isfile or not isfile(fileName) then
+            local requestFunc = (syn and syn.request) or (http and http.request) or request
+            if requestFunc then
+                local res = requestFunc({Url = avatarImageUrl, Method = "GET"})
+                if res and res.StatusCode == 200 and res.Body then
+                    writefile(fileName, res.Body)
+                end
+            end
+        end
+        if isfile and isfile(fileName) then
+            finalImageAsset = getcustomasset(fileName)
+        end
+    end
+end)
+
 local function getExecutorName()
     if identifyexecutor then
         local name, ver = identifyexecutor()
         return name .. " " .. tostring(ver)
-    elseif syn then
-        return "Synapse X"
-    elseif KRNL_LOADED then
-        return "KRNL"
-    elseif Fluxus then
-        return "Fluxus"
-    elseif Delta then
-        return "Delta"
-    elseif Hydrogen then
-        return "Hydrogen"
-    else
-        return "Unknown Executor"
+    elseif syn then return "Synapse X"
+    elseif KRNL_LOADED then return "KRNL"
+    elseif Fluxus then return "Fluxus"
+    elseif Delta then return "Delta"
+    elseif Hydrogen then return "Hydrogen"
+    else return "Unknown Executor"
     end
 end
 
 local function getDeviceType()
     if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
-        return "Điện thoại / Máy tính bảng"
+        return "Điện thoại / Tablet"
     elseif UserInputService.KeyboardEnabled and UserInputService.MouseEnabled then
-        return "Máy tính cá nhân (PC)"
+        return "Máy tính (PC)"
     else
         return "Khác / Console"
     end
 end
 
--- MÀN HÌNH CHÀO MỪNG HIỆN ĐẠI (ĐỜI MỚI)
-local welcomeFrame = Instance.new("Frame")
-welcomeFrame.Name = "WelcomeFrame"
-welcomeFrame.Size = UDim2.new(0, 500, 0, 300)
-welcomeFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
-welcomeFrame.BackgroundColor3 = Color3.fromRGB(16, 10, 26)
-welcomeFrame.BackgroundTransparency = 1
-welcomeFrame.BorderSizePixel = 0
-welcomeFrame.Visible = true
-welcomeFrame.Parent = ScreenGui
+-- =======================================================
+-- 1. MÀN HÌNH MỞ ĐẦU (INTRO SCREEN SANG TRỌNG CỰC ĐẸP)
+-- =======================================================
+local introFrame = Instance.new("Frame")
+introFrame.Name = "IntroFrame"
+introFrame.Size = UDim2.new(0, 480, 0, 260)
+introFrame.Position = UDim2.new(0.5, -240, 0.5, -130)
+introFrame.BackgroundColor3 = Color3.fromRGB(15, 10, 25)
+introFrame.BackgroundTransparency = 1
+introFrame.BorderSizePixel = 0
+introFrame.Parent = ScreenGui
 
-local welcomeCorner = Instance.new("UICorner")
-welcomeCorner.CornerRadius = UDim.new(0, 20)
-welcomeCorner.Parent = welcomeFrame
+local introCorner = Instance.new("UICorner")
+introCorner.CornerRadius = UDim.new(0, 24)
+introCorner.Parent = introFrame
 
-local welcomeStroke = Instance.new("UIStroke")
-welcomeStroke.Color = Color3.fromRGB(255, 45, 140)
-welcomeStroke.Thickness = 2
-welcomeStroke.Transparency = 1
-welcomeStroke.Parent = welcomeFrame
+local introStroke = Instance.new("UIStroke")
+introStroke.Color = Color3.fromRGB(255, 50, 150)
+introStroke.Thickness = 2.5
+introStroke.Transparency = 1
+introStroke.Parent = introFrame
 
-local welcomeTitle = Instance.new("TextLabel")
-welcomeTitle.Size = UDim2.new(1, 0, 0, 40)
-welcomeTitle.Position = UDim2.new(0, 0, 0, 15)
-welcomeTitle.BackgroundTransparency = 1
-welcomeTitle.Text = "KHOADIEMHUB"
-welcomeTitle.TextColor3 = Color3.fromRGB(255, 120, 200)
-welcomeTitle.TextSize = 22
-welcomeTitle.Font = Enum.Font.GothamBold
-welcomeTitle.TextTransparency = 1
-welcomeTitle.Parent = welcomeFrame
+-- Avatar tròn ở Intro
+local avatarImg = Instance.new("ImageLabel")
+avatarImg.Size = UDim2.new(0, 70, 0, 70)
+avatarImg.Position = UDim2.new(0.5, -35, 0, 20)
+avatarImg.BackgroundColor3 = Color3.fromRGB(25, 15, 35)
+avatarImg.BorderSizePixel = 0
+avatarImg.Image = finalImageAsset
+avatarImg.ImageTransparency = 1
+avatarImg.Parent = introFrame
 
-local welcomeSub = Instance.new("TextLabel")
-welcomeSub.Size = UDim2.new(1, 0, 0, 25)
-welcomeSub.Position = UDim2.new(0, 0, 0, 50)
-welcomeSub.BackgroundTransparency = 1
-welcomeSub.Text = "Xin chào mọi người!"
-welcomeSub.TextColor3 = Color3.fromRGB(200, 160, 220)
-welcomeSub.TextSize = 13
-welcomeSub.Font = Enum.Font.Gotham
-welcomeSub.TextTransparency = 1
-welcomeSub.Parent = welcomeFrame
+local avatarCorner = Instance.new("UICorner")
+avatarCorner.CornerRadius = UDim.new(1, 0)
+avatarCorner.Parent = avatarImg
 
-local infoScroller = Instance.new("ScrollingFrame")
-infoScroller.Size = UDim2.new(1, -40, 0, 170)
-infoScroller.Position = UDim2.new(0, 20, 0, 85)
-infoScroller.BackgroundColor3 = Color3.fromRGB(26, 14, 42)
-infoScroller.BackgroundTransparency = 1
-infoScroller.BorderSizePixel = 0
-infoScroller.CanvasSize = UDim2.new(0, 0, 0, 250)
-infoScroller.ScrollBarThickness = 3
-infoScroller.Parent = welcomeFrame
+local avatarStroke = Instance.new("UIStroke")
+avatarStroke.Color = Color3.fromRGB(255, 80, 180)
+avatarStroke.Thickness = 2
+avatarStroke.Transparency = 1
+avatarStroke.Parent = avatarImg
 
-local infoBox = Instance.new("TextLabel")
-infoBox.Size = UDim2.new(1, -15, 0, 240)
-infoBox.Position = UDim2.new(0, 10, 0, 10)
-infoBox.BackgroundTransparency = 1
-infoBox.BorderSizePixel = 0
-infoBox.TextColor3 = Color3.fromRGB(230, 200, 230)
-infoBox.TextSize = 12
-infoBox.Font = Enum.Font.Gotham
-infoBox.TextXAlignment = Enum.TextXAlignment.Left
-infoBox.TextYAlignment = Enum.TextYAlignment.Top
-infoBox.TextWrapped = true
-infoBox.TextTransparency = 1
-infoBox.Parent = infoScroller
+local introTitle = Instance.new("TextLabel")
+introTitle.Size = UDim2.new(1, 0, 0, 30)
+introTitle.Position = UDim2.new(0, 0, 0, 98)
+introTitle.BackgroundTransparency = 1
+introTitle.Text = "KHOADIEMHUB NEO"
+introTitle.TextColor3 = Color3.fromRGB(255, 120, 210)
+introTitle.TextSize = 20
+introTitle.Font = Enum.Font.GothamBold
+introTitle.TextTransparency = 1
+introTitle.Parent = introFrame
+
+local introScroller = Instance.new("ScrollingFrame")
+introScroller.Size = UDim2.new(1, -40, 0, 110)
+introScroller.Position = UDim2.new(0, 20, 0, 132)
+introScroller.BackgroundColor3 = Color3.fromRGB(22, 12, 36)
+introScroller.BackgroundTransparency = 1
+introScroller.BorderSizePixel = 0
+introScroller.CanvasSize = UDim2.new(0, 0, 0, 200)
+introScroller.ScrollBarThickness = 2
+introScroller.Parent = introFrame
+
+local introScrollerCorner = Instance.new("UICorner")
+introScrollerCorner.CornerRadius = UDim.new(0, 12)
+introScrollerCorner.Parent = introScroller
+
+local introText = Instance.new("TextLabel")
+introText.Size = UDim2.new(1, -16, 0, 190)
+introText.Position = UDim2.new(0, 8, 0, 8)
+introText.BackgroundTransparency = 1
+introText.TextColor3 = Color3.fromRGB(235, 200, 235)
+introText.TextSize = 12
+introText.Font = Enum.Font.Gotham
+introText.TextXAlignment = Enum.TextXAlignment.Left
+introText.TextYAlignment = Enum.TextYAlignment.Top
+introText.TextWrapped = true
+introText.TextTransparency = 1
+introText.Parent = introScroller
 
 local currentTime = os.date("%d/%m/%Y %H:%M:%S")
 local currentPlaceId = game.PlaceId
@@ -123,76 +157,52 @@ local gameName = "Roblox Place " .. tostring(currentPlaceId)
 pcall(function()
     local MarketplaceService = game:GetService("MarketplaceService")
     local info = MarketplaceService:GetProductInfo(currentPlaceId)
-    if info and info.Name then
-        gameName = info.Name
-    end
+    if info and info.Name then gameName = info.Name end
 end)
 
 local levelStr = "Không có"
 pcall(function()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Data") then
-        local data = LocalPlayer.Character.Data
-        if data:FindFirstChild("Level") then
-            levelStr = tostring(data.Level.Value)
-        end
-    elseif LocalPlayer:FindFirstChild("leaderstats") then
-        local stats = LocalPlayer.leaderstats
-        if stats:FindFirstChild("Level") then
-            levelStr = tostring(stats.Level.Value)
-        elseif stats:FindFirstChild("Lvl") then
-            levelStr = tostring(stats.Lvl.Value)
-        end
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Data") and LocalPlayer.Character.Data:FindFirstChild("Level") then
+        levelStr = tostring(LocalPlayer.Character.Data.Level.Value)
+    elseif LocalPlayer:FindFirstChild("leaderstats") and LocalPlayer.leaderstats:FindFirstChild("Level") then
+        levelStr = tostring(LocalPlayer.leaderstats.Level.Value)
     end
 end)
 
-infoBox.Text = string.format(
-    "Trạng thái: Phiên bản Beta đang phát triển, chưa ổn định hoàn toàn.\nTài khoản: %s (%s)\nTrò chơi đang chơi: %s\nThời gian: %s\nThiết bị: %s | Executor: %s\nLevel: %s\nGiới thiệu: Script được phát triển bởi Trần Khoa Điềm\nLiên hệ Telegram: @TranKhoaDiem",
-    LocalPlayer.Name,
-    LocalPlayer.DisplayName,
-    gameName,
-    currentTime,
-    getDeviceType(),
-    getExecutorName(),
-    levelStr
+introText.Text = string.format(
+    "Trạng thái: Khởi chạy thành công hệ thống NEO!\nTài khoản: %s (%s)\nGame: %s\nThời gian: %s\nThiết bị: %s | Executor: %s\nLevel: %s\nTác giả: Trần Khoa Điềm | Telegram: @TranKhoaDiem",
+    LocalPlayer.Name, LocalPlayer.DisplayName, gameName, currentTime, getDeviceType(), getExecutorName(), levelStr
 )
 
-TweenService:Create(welcomeFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
-TweenService:Create(welcomeStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Transparency = 0}):Play()
-TweenService:Create(welcomeTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
-TweenService:Create(welcomeSub, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
-TweenService:Create(infoBox, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0, TextTransparency = 0}):Play()
-TweenService:Create(infoScroller, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+-- ANIMATION MỞ MÀN MỚI
+TweenService:Create(introFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0.05}):Play()
+TweenService:Create(introStroke, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Transparency = 0}):Play()
+TweenService:Create(avatarImg, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {ImageTransparency = 0}):Play()
+TweenService:Create(avatarStroke, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Transparency = 0}):Play()
+TweenService:Create(introTitle, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+TweenService:Create(introScroller, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0.5}):Play()
+TweenService:Create(introText, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 
 task.wait(3.5)
 
-TweenService:Create(welcomeFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1}):Play()
-TweenService:Create(welcomeStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Transparency = 1}):Play()
-TweenService:Create(welcomeTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
-TweenService:Create(welcomeSub, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
-TweenService:Create(infoBox, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {BackgroundTransparency = 1, TextTransparency = 1}):Play()
-TweenService:Create(infoScroller, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
-task.wait(0.5)
-welcomeFrame:Destroy()
+TweenService:Create(introFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1}):Play()
+TweenService:Create(introStroke, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Transparency = 1}):Play()
+TweenService:Create(avatarImg, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {ImageTransparency = 1}):Play()
+TweenService:Create(introTitle, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
+TweenService:Create(introText, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
+task.wait(0.4)
+introFrame:Destroy()
 
--- NÚT MENU DÙNG ẢNH khoadiem.jpeg
+-- =======================================================
+-- 2. NÚT MỞ MENU & GIAO DIỆN NEO MỚI HOÀN TOÀN
+-- =======================================================
 local mainButton = Instance.new("ImageButton")
-mainButton.Name = "MainButtonImg"
-mainButton.Size = UDim2.new(0, 58, 0, 58)
-mainButton.Position = UDim2.new(0, 30, 0, 30)
-mainButton.BackgroundColor3 = Color3.fromRGB(20, 10, 35)
+mainButton.Name = "MainButtonNeo"
+mainButton.Size = UDim2.new(0, 56, 0, 56)
+mainButton.Position = UDim2.new(0, 25, 0, 25)
+mainButton.BackgroundColor3 = Color3.fromRGB(20, 10, 30)
 mainButton.BorderSizePixel = 0
-
-pcall(function()
-    if getcustomasset and isfile and isfile("khoadiem.jpeg") then
-        mainButton.Image = getcustomasset("khoadiem.jpeg")
-    else
-        mainButton.Image = "rbxassetid://6031091004"
-    end
-end)
-if mainButton.Image == "" then
-    mainButton.Image = "rbxassetid://6031091004"
-end
-
+mainButton.Image = finalImageAsset
 mainButton.Parent = ScreenGui
 
 local mainBtnCorner = Instance.new("UICorner")
@@ -200,16 +210,16 @@ mainBtnCorner.CornerRadius = UDim.new(1, 0)
 mainBtnCorner.Parent = mainButton
 
 local mainBtnStroke = Instance.new("UIStroke")
-mainBtnStroke.Color = Color3.fromRGB(255, 45, 140)
+mainBtnStroke.Color = Color3.fromRGB(255, 50, 150)
 mainBtnStroke.Thickness = 2.5
 mainBtnStroke.Parent = mainButton
 
--- GIAO DIỆN CHÍNH (PHONG CÁCH ĐỜI MỚI SANG TRỌNG)
+-- GIAO DIỆN CHÍNH (NEO GLASS STYLE)
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 750, 0, 500)
-mainFrame.Position = UDim2.new(0.5, -375, 0.5, -250)
-mainFrame.BackgroundColor3 = Color3.fromRGB(12, 8, 20)
+mainFrame.Size = UDim2.new(0, 760, 0, 480)
+mainFrame.Position = UDim2.new(0.5, -380, 0.5, -240)
+mainFrame.BackgroundColor3 = Color3.fromRGB(14, 9, 22)
 mainFrame.BackgroundTransparency = 1
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -220,7 +230,7 @@ mainFrameCorner.CornerRadius = UDim.new(0, 20)
 mainFrameCorner.Parent = mainFrame
 
 local mainFrameStroke = Instance.new("UIStroke")
-mainFrameStroke.Color = Color3.fromRGB(255, 45, 140)
+mainFrameStroke.Color = Color3.fromRGB(255, 50, 150)
 mainFrameStroke.Thickness = 2.5
 mainFrameStroke.Transparency = 1
 mainFrameStroke.Parent = mainFrame
@@ -235,16 +245,16 @@ mainButton.MouseButton1Click:Connect(function()
         mainFrame.Visible = true
         mainFrame.BackgroundTransparency = 1
         mainFrameStroke.Transparency = 1
-        TweenService:Create(mainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+        TweenService:Create(mainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0.05}):Play()
         TweenService:Create(mainFrameStroke, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Transparency = 0}):Play()
     end
 end)
 
--- THANH TIÊU ĐỀ
+-- TOPBAR
 local topBar = Instance.new("Frame")
 topBar.Name = "TopBar"
-topBar.Size = UDim2.new(1, 0, 0, 50)
-topBar.BackgroundColor3 = Color3.fromRGB(22, 12, 38)
+topBar.Size = UDim2.new(1, 0, 0, 52)
+topBar.BackgroundColor3 = Color3.fromRGB(22, 12, 36)
 topBar.BorderSizePixel = 0
 topBar.Parent = mainFrame
 
@@ -252,12 +262,23 @@ local topBarCorner = Instance.new("UICorner")
 topBarCorner.CornerRadius = UDim.new(0, 20)
 topBarCorner.Parent = topBar
 
+local topAvatar = Instance.new("ImageLabel")
+topAvatar.Size = UDim2.new(0, 36, 0, 36)
+topAvatar.Position = UDim2.new(0, 12, 0, 8)
+topAvatar.BackgroundTransparency = 1
+topAvatar.Image = finalImageAsset
+topAvatar.Parent = topBar
+
+local topAvatarCorner = Instance.new("UICorner")
+topAvatarCorner.CornerRadius = UDim.new(1, 0)
+topAvatarCorner.Parent = topAvatar
+
 local topBarTitle = Instance.new("TextLabel")
 topBarTitle.Size = UDim2.new(1, -120, 1, 0)
-topBarTitle.Position = UDim2.new(0, 24, 0, 0)
+topBarTitle.Position = UDim2.new(0, 56, 0, 0)
 topBarTitle.BackgroundTransparency = 1
-topBarTitle.Text = "KhoaDiemHub • Bản Đời Mới | Tác giả: Trần Khoa Điềm"
-topBarTitle.TextColor3 = Color3.fromRGB(255, 140, 210)
+topBarTitle.Text = "KhoaDiemHub Neo • Bản Đời Mới | Trần Khoa Điềm"
+topBarTitle.TextColor3 = Color3.fromRGB(255, 140, 220)
 topBarTitle.TextSize = 13
 topBarTitle.Font = Enum.Font.GothamBold
 topBarTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -265,31 +286,32 @@ topBarTitle.Parent = topBar
 
 local closeButton = Instance.new("TextButton")
 closeButton.Size = UDim2.new(0, 36, 0, 36)
-closeButton.Position = UDim2.new(1, -44, 0, 7)
+closeButton.Position = UDim2.new(1, -44, 0, 8)
 closeButton.BackgroundColor3 = Color3.fromRGB(60, 20, 50)
 closeButton.BorderSizePixel = 0
 closeButton.Text = "✕"
-closeButton.TextColor3 = Color3.fromRGB(255, 120, 160)
+closeButton.TextColor3 = Color3.fromRGB(255, 120, 170)
 closeButton.TextSize = 14
 closeButton.Font = Enum.Font.GothamBold
 closeButton.Parent = topBar
 
 local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 12)
+closeCorner.CornerRadius = UDim.new(0, 10)
 closeCorner.Parent = closeButton
 
 closeButton.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
 end)
 
--- TAB LIST BÊN TRÁI
+-- TAB NAVIGATION (CỘT BÊN TRÁI HÌNH CARD TRÒN)
 local tabList = Instance.new("ScrollingFrame")
 tabList.Name = "TabList"
-tabList.Size = UDim2.new(0, 190, 1, -66)
-tabList.Position = UDim2.new(0, 8, 0, 58)
-tabList.BackgroundColor3 = Color3.fromRGB(10, 6, 16)
+tabList.Size = UDim2.new(0, 180, 1, -66)
+tabList.Position = UDim2.new(0, 10, 0, 58)
+tabList.BackgroundColor3 = Color3.fromRGB(10, 6, 18)
+tabList.BackgroundTransparency = 0.3
 tabList.BorderSizePixel = 0
-tabList.CanvasSize = UDim2.new(0, 0, 0, 480)
+tabList.CanvasSize = UDim2.new(0, 0, 0, 420)
 tabList.ScrollBarThickness = 2
 tabList.Parent = mainFrame
 
@@ -304,8 +326,8 @@ tabListLayout.Parent = tabList
 
 local containerFrame = Instance.new("Frame")
 containerFrame.Name = "ContainerFrame"
-containerFrame.Size = UDim2.new(1, -210, 1, -66)
-containerFrame.Position = UDim2.new(0, 204, 0, 58)
+containerFrame.Size = UDim2.new(1, -204, 1, -66)
+containerFrame.Position = UDim2.new(0, 196, 0, 58)
 containerFrame.BackgroundTransparency = 1
 containerFrame.Parent = mainFrame
 
@@ -320,14 +342,14 @@ local function createTabContent(name)
     scroller.Name = name .. "Content"
     scroller.Size = UDim2.new(1, 0, 1, 0)
     scroller.BackgroundTransparency = 1
-    scroller.CanvasSize = UDim2.new(0, 0, 0, 1200)
-    scroller.ScrollBarThickness = 4
+    scroller.CanvasSize = UDim2.new(0, 0, 0, 1150)
+    scroller.ScrollBarThickness = 3
     scroller.Visible = false
     scroller.Parent = containerFrame
 
     local layout = Instance.new("UIListLayout")
     layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 10)
+    layout.Padding = UDim.new(0, 8)
     layout.Parent = scroller
 
     return scroller
@@ -335,11 +357,11 @@ end
 
 local function createButton(parent, text, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -12, 0, 42)
-    btn.BackgroundColor3 = Color3.fromRGB(24, 14, 40)
+    btn.Size = UDim2.new(1, -10, 0, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(24, 14, 42)
     btn.BorderSizePixel = 0
     btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(255, 180, 230)
+    btn.TextColor3 = Color3.fromRGB(255, 185, 235)
     btn.TextSize = 12
     btn.Font = Enum.Font.GothamMedium
     btn.Parent = parent
@@ -355,8 +377,8 @@ end
 local function createToggle(parent, text, defaultState, callback)
     local state = defaultState
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -12, 0, 42)
-    frame.BackgroundColor3 = Color3.fromRGB(24, 14, 40)
+    frame.Size = UDim2.new(1, -10, 0, 40)
+    frame.BackgroundColor3 = Color3.fromRGB(24, 14, 42)
     frame.BorderSizePixel = 0
     frame.Parent = parent
 
@@ -365,20 +387,20 @@ local function createToggle(parent, text, defaultState, callback)
     corner.Parent = frame
 
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -70, 1, 0)
+    label.Size = UDim2.new(1, -65, 1, 0)
     label.Position = UDim2.new(0, 14, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = text
-    label.TextColor3 = Color3.fromRGB(255, 180, 230)
+    label.TextColor3 = Color3.fromRGB(255, 185, 235)
     label.TextSize = 12
     label.Font = Enum.Font.GothamMedium
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = frame
 
     local indicator = Instance.new("TextButton")
-    indicator.Size = UDim2.new(0, 48, 0, 24)
-    indicator.Position = UDim2.new(1, -56, 0.5, -12)
-    indicator.BackgroundColor3 = state and Color3.fromRGB(255, 45, 140) or Color3.fromRGB(50, 22, 70)
+    indicator.Size = UDim2.new(0, 46, 0, 22)
+    indicator.Position = UDim2.new(1, -54, 0.5, -11)
+    indicator.BackgroundColor3 = state and Color3.fromRGB(255, 50, 150) or Color3.fromRGB(50, 20, 70)
     indicator.BorderSizePixel = 0
     indicator.Text = state and "BẬT" or "TẮT"
     indicator.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -392,7 +414,7 @@ local function createToggle(parent, text, defaultState, callback)
 
     indicator.MouseButton1Click:Connect(function()
         state = not state
-        indicator.BackgroundColor3 = state and Color3.fromRGB(255, 45, 140) or Color3.fromRGB(50, 22, 70)
+        indicator.BackgroundColor3 = state and Color3.fromRGB(255, 50, 150) or Color3.fromRGB(50, 20, 70)
         indicator.Text = state and "BẬT" or "TẮT"
         callback(state)
     end)
@@ -403,8 +425,8 @@ end
 local function createSlider(parent, text, min, max, default, callback)
     local value = default
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -12, 0, 60)
-    frame.BackgroundColor3 = Color3.fromRGB(24, 14, 40)
+    frame.Size = UDim2.new(1, -10, 0, 58)
+    frame.BackgroundColor3 = Color3.fromRGB(24, 14, 42)
     frame.BorderSizePixel = 0
     frame.Parent = parent
 
@@ -417,7 +439,7 @@ local function createSlider(parent, text, min, max, default, callback)
     label.Position = UDim2.new(0, 14, 0, 6)
     label.BackgroundTransparency = 1
     label.Text = text .. ": " .. tostring(value)
-    label.TextColor3 = Color3.fromRGB(255, 180, 230)
+    label.TextColor3 = Color3.fromRGB(255, 185, 235)
     label.TextSize = 12
     label.Font = Enum.Font.GothamMedium
     label.TextXAlignment = Enum.TextXAlignment.Left
@@ -425,8 +447,8 @@ local function createSlider(parent, text, min, max, default, callback)
 
     local sliderBg = Instance.new("TextButton")
     sliderBg.Size = UDim2.new(1, -28, 0, 10)
-    sliderBg.Position = UDim2.new(0, 14, 0, 38)
-    sliderBg.BackgroundColor3 = Color3.fromRGB(50, 22, 70)
+    sliderBg.Position = UDim2.new(0, 14, 0, 36)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(50, 20, 70)
     sliderBg.BorderSizePixel = 0
     sliderBg.Text = ""
     sliderBg.Parent = frame
@@ -437,7 +459,7 @@ local function createSlider(parent, text, min, max, default, callback)
 
     local sliderFill = Instance.new("Frame")
     sliderFill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
-    sliderFill.BackgroundColor3 = Color3.fromRGB(255, 45, 140)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(255, 50, 150)
     sliderFill.BorderSizePixel = 0
     sliderFill.Parent = sliderBg
 
@@ -478,12 +500,12 @@ end
 
 local function createTabButton(name, scroller)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -12, 0, 38)
-    btn.BackgroundColor3 = Color3.fromRGB(24, 14, 40)
+    btn.Size = UDim2.new(1, -12, 0, 36)
+    btn.BackgroundColor3 = Color3.fromRGB(24, 14, 42)
     btn.BorderSizePixel = 0
     btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(255, 180, 230)
-    btn.TextSize = 12
+    btn.TextColor3 = Color3.fromRGB(255, 185, 235)
+    btn.TextSize = 11
     btn.Font = Enum.Font.GothamMedium
     btn.Parent = tabList
 
@@ -516,7 +538,9 @@ local spectateTab = scrollers[5]
 local visualsTab = scrollers[6]
 local otherTab = scrollers[7]
 
--- 1. DI CHUYỂN
+-- =======================================================
+-- 3. KHỞI TẠO TÍNH NĂNG (AIM TẮT MẶC ĐỊNH FIX TRIỆT ĐỂ)
+-- =======================================================
 local walkSpeedEnabled = false
 local walkSpeedVal = 16
 createToggle(movementTab, "Tốc độ chạy", false, function(state)
@@ -525,9 +549,7 @@ createToggle(movementTab, "Tốc độ chạy", false, function(state)
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
     end
 end)
-createSlider(movementTab, "Mức độ tốc độ", 16, 250, 16, function(val)
-    walkSpeedVal = val
-end)
+createSlider(movementTab, "Mức độ tốc độ", 16, 250, 16, function(val) walkSpeedVal = val end)
 
 local jumpPowerEnabled = false
 local jumpPowerVal = 50
@@ -537,25 +559,17 @@ createToggle(movementTab, "Nhảy cao", false, function(state)
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = 50
     end
 end)
-createSlider(movementTab, "Mức độ nhảy cao", 50, 500, 50, function(val)
-    jumpPowerVal = val
-end)
+createSlider(movementTab, "Mức độ nhảy cao", 50, 500, 50, function(val) jumpPowerVal = val end)
 
 local flyEnabled = false
 local flySpeed = 50
-createToggle(movementTab, "Chế độ bay tự do", false, function(state)
-    flyEnabled = state
-end)
-createSlider(movementTab, "Tốc độ bay", 10, 200, 50, function(val)
-    flySpeed = val
-end)
+createToggle(movementTab, "Chế độ bay tự do", false, function(state) flyEnabled = state end)
+createSlider(movementTab, "Tốc độ bay", 10, 200, 50, function(val) flySpeed = val end)
 
 local noclipEnabled = false
-createToggle(movementTab, "Đi xuyên tường (Noclip)", false, function(state)
-    noclipEnabled = state
-end)
+createToggle(movementTab, "Đi xuyên tường (Noclip)", false, function(state) noclipEnabled = state end)
 
--- 2. CHIẾN ĐẤU (SMOOTH AIM MƯỢT ƯU TIÊN GẦN NHẤT)
+-- FIX AIM LỖI: ĐẢM BẢO BIẾN LUÔN BẰNG FALSE MẶC ĐỊNH
 local smoothAimEnabled = false
 local aimSmoothness = 6
 createToggle(combatTab, "Tự động bám mượt (Smooth Aim)", false, function(state)
@@ -573,12 +587,7 @@ createButton(combatTab, "Bộ phận ngắm: Đầu (Đổi)", function()
     selectedBodyPart = bodyPartsList[bpIndex]
 end)
 
-local triggerBot = false
-createToggle(combatTab, "Tự động tấn công (Triggerbot)", false, function(state)
-    triggerBot = state
-end)
-
--- 3. ESP
+-- ESP TÍNH NĂNG
 local espBoxEnabled = false
 local espNameEnabled = false
 local espHealthEnabled = false
@@ -594,16 +603,11 @@ createToggle(espTab, "Kẻ đường chỉ hướng (Tracer)", false, function(s
 local espDrawingCache = {}
 RunService.RenderStepped:Connect(function()
     for _, item in pairs(espDrawingCache) do
-        if item and item.Remove then
-            pcall(function() item:Remove() end)
-        end
+        if item and item.Remove then pcall(function() item:Remove() end) end
     end
     espDrawingCache = {}
 
-    if not (espBoxEnabled or espNameEnabled or espHealthEnabled or espDistanceEnabled or espLinesEnabled) then
-        return
-    end
-
+    if not (espBoxEnabled or espNameEnabled or espHealthEnabled or espDistanceEnabled or espLinesEnabled) then return end
     if not Drawing then return end
 
     for _, p in ipairs(Players:GetPlayers()) do
@@ -623,7 +627,7 @@ RunService.RenderStepped:Connect(function()
                     box.Visible = true
                     box.Size = Vector2.new(width, height)
                     box.Position = Vector2.new(pos.X - width / 2, topPos.Y)
-                    box.Color = Color3.fromRGB(255, 45, 140)
+                    box.Color = Color3.fromRGB(255, 50, 150)
                     box.Thickness = 1.5
                     box.Filled = false
                     table.insert(espDrawingCache, box)
@@ -634,7 +638,7 @@ RunService.RenderStepped:Connect(function()
                     line.Visible = true
                     line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                     line.To = Vector2.new(pos.X, pos.Y)
-                    line.Color = Color3.fromRGB(255, 45, 140)
+                    line.Color = Color3.fromRGB(255, 50, 150)
                     line.Thickness = 1
                     table.insert(espDrawingCache, line)
                 end
@@ -649,7 +653,7 @@ RunService.RenderStepped:Connect(function()
                     txt.Visible = true
                     txt.Text = infoText
                     txt.Size = 12
-                    txt.Color = Color3.fromRGB(255, 185, 230)
+                    txt.Color = Color3.fromRGB(255, 185, 235)
                     txt.Center = true
                     txt.Outline = true
                     txt.Position = Vector2.new(pos.X, topPos.Y - 18)
@@ -660,57 +664,16 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 4. THẾ GIỚI
+-- THẾ GIỚI & DỊCH CHUYỂN
 local godMode = false
-createToggle(worldTab, "Bất tử hoàn toàn", false, function(state)
-    godMode = state
-end)
-
-local shieldEnabled = false
-createToggle(worldTab, "Lá chắn bảo vệ & Hào quang lửa", false, function(state)
-    shieldEnabled = state
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        if state then
-            local fire = Instance.new("Fire")
-            fire.Name = "HubShieldFire"
-            fire.Size = 9
-            fire.Color = Color3.fromRGB(255, 45, 140)
-            fire.Parent = LocalPlayer.Character.HumanoidRootPart
-            local part = Instance.new("Part")
-            part.Name = "HubShieldBall"
-            part.Size = Vector3.new(6, 6, 6)
-            part.Shape = Enum.PartType.Ball
-            part.Material = Enum.Material.Neon
-            part.Color = Color3.fromRGB(255, 45, 140)
-            part.Transparency = 0.5
-            part.CanCollide = false
-            part.Parent = LocalPlayer.Character
-            local weld = Instance.new("WeldConstraint")
-            weld.Part0 = part
-            weld.Part1 = LocalPlayer.Character.HumanoidRootPart
-            weld.Parent = part
-        else
-            if LocalPlayer.Character.HumanoidRootPart:FindFirstChild("HubShieldFire") then
-                LocalPlayer.Character.HumanoidRootPart.HubShieldFire:Destroy()
-            end
-            if LocalPlayer.Character:FindFirstChild("HubShieldBall") then
-                LocalPlayer.Character.HubShieldBall:Destroy()
-            end
-        end
-    end
-end)
+createToggle(worldTab, "Bất tử hoàn toàn", false, function(state) godMode = state end)
 
 local lavaImmune = false
-createToggle(worldTab, "Kháng dung nham & Hố tử thần", false, function(state)
-    lavaImmune = state
-end)
+createToggle(worldTab, "Kháng dung nham & Hố tử thần", false, function(state) lavaImmune = state end)
 
 local waterWalk = false
-createToggle(worldTab, "Đi trên mặt nước", false, function(state)
-    waterWalk = state
-end)
+createToggle(worldTab, "Đi trên mặt nước", false, function(state) waterWalk = state end)
 
--- 5. DỊCH CHUYỂN & CAM
 local selectedTargetPlayer = nil
 createButton(spectateTab, "Chọn người chơi tiếp theo", function()
     local players = Players:GetPlayers()
@@ -748,10 +711,8 @@ createButton(spectateTab, "Dịch chuyển đến người chơi", function()
     end
 end)
 
--- 6. ĐỒ HỌA & FPS
-local fullBright = false
+-- ĐỒ HỌA
 createToggle(visualsTab, "Sáng toàn bản đồ (Fullbright)", false, function(state)
-    fullBright = state
     if state then
         Lighting.Brightness = 2
         Lighting.ClockTime = 14
@@ -763,20 +724,6 @@ createToggle(visualsTab, "Sáng toàn bản đồ (Fullbright)", false, function
     end
 end)
 
-local xrayEnabled = false
-createToggle(visualsTab, "Nhìn xuyên tường (X-Ray)", false, function(state)
-    xrayEnabled = state
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and not obj:IsDescendantOf(LocalPlayer.Character) then
-            if state then
-                obj.LocalTransparencyModifier = 0.6
-            else
-                obj.LocalTransparencyModifier = 0
-            end
-        end
-    end
-end)
-
 createButton(visualsTab, "Tăng FPS & Giảm lag toàn bộ", function()
     pcall(function()
         for _, v in ipairs(Workspace:GetDescendants()) do
@@ -785,122 +732,43 @@ createButton(visualsTab, "Tăng FPS & Giảm lag toàn bộ", function()
                 v.Reflectance = 0
             elseif v:IsA("Decal") or v:IsA("Texture") then
                 v.Transparency = 1
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") or v:IsA("Smoke") then
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
                 v.Enabled = false
             end
         end
         Lighting.GlobalShadows = false
-        Lighting.FogEnd = 999999
-    end)
-end)
-
--- 7. KHÁC & HƯỚNG DẪN
-local autoChatEnabled = false
-local chatMessages = {"KhoaDiemHub phiên bản mới đang hoạt động!", "Trần Khoa Điềm là lập trình viên xuất sắc nhất", "Universal Roblox Hub"}
-createToggle(otherTab, "Tự động nhắn tin kênh chung", false, function(state)
-    autoChatEnabled = state
-end)
-
-createButton(otherTab, "Mở Telegram: @TranKhoaDiem", function()
-    pcall(function()
-        if setclipboard then
-            setclipboard("https://t.me/TranKhoaDiem")
-        end
-        if syn and syn.request then
-            syn.request({Url = "https://t.me/TranKhoaDiem", Method = "GET"})
-        elseif request then
-            request({Url = "https://t.me/TranKhoaDiem", Method = "GET"})
-        end
     end)
 end)
 
 createButton(otherTab, "Xem hướng dẫn sử dụng", function()
     local guideGui = Instance.new("Frame")
-    guideGui.Size = UDim2.new(0, 460, 0, 280)
-    guideGui.Position = UDim2.new(0.5, -230, 0.5, -140)
-    guideGui.BackgroundColor3 = Color3.fromRGB(16, 10, 26)
+    guideGui.Size = UDim2.new(0, 440, 0, 260)
+    guideGui.Position = UDim2.new(0.5, -220, 0.5, -130)
+    guideGui.BackgroundColor3 = Color3.fromRGB(15, 10, 25)
     guideGui.BorderSizePixel = 0
     guideGui.Parent = ScreenGui
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 18)
+    corner.CornerRadius = UDim.new(0, 16)
     corner.Parent = guideGui
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 45, 140)
+    stroke.Color = Color3.fromRGB(255, 50, 150)
     stroke.Thickness = 2
     stroke.Parent = guideGui
 
-    local scroller = Instance.new("ScrollingFrame")
-    scroller.Size = UDim2.new(1, -28, 1, -80)
-    scroller.Position = UDim2.new(0, 14, 0, 14)
-    scroller.BackgroundTransparency = 1
-    scroller.CanvasSize = UDim2.new(0, 0, 0, 360)
-    scroller.ScrollBarThickness = 3
-    scroller.Parent = guideGui
-
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, -10, 0, 340)
-    lbl.Position = UDim2.new(0, 0, 0, 0)
+    lbl.Size = UDim2.new(1, -24, 1, -60)
+    lbl.Position = UDim2.new(0, 12, 0, 12)
     lbl.BackgroundTransparency = 1
-    lbl.Text = "HƯỚNG DẪN SỬ DỤNG KHOADIEMHUB:\n\n1. Di chuyển: Điều chỉnh tốc độ chạy, bật nhảy cao, bay tự do và bật Noclip để đi xuyên tường dễ dàng.\n2. Chiến đấu: Kích hoạt Tự động bám mượt (Smooth Aim) ưu tiên mục tiêu gần nhất. Giúp lia góc nhìn tự nhiên, dễ dàng đổi mục tiêu khi cần thiết.\n3. Xuyên tường (ESP): Hiển thị khung hộp, tên, HP và khoảng cách của người chơi.\n4. Thế giới: Bật bất tử, khiên bảo vệ và kháng dung nham.\n5. Dịch chuyển & Cam: Theo dõi camera hoặc dịch chuyển đến người chơi.\n6. Đồ họa: Sáng màn hình, X-Ray và tăng FPS giảm lag.\n\nTác giả: Trần Khoa Điềm | Telegram: @TranKhoaDiem"
-    lbl.TextColor3 = Color3.fromRGB(255, 180, 230)
+    lbl.Text = "HƯỚNG DẪN KHOADIEMHUB NEO:\n\n1. Di chuyển: Chỉnh tốc độ, nhảy cao, bay tự do và Noclip đi xuyên tường.\n2. Chiến đấu: Smooth Aim (Bám mượt ưu tiên gần nhất) ĐÃ ĐƯỢC FIX HOÀN TOÀN - Chỉ hoạt động khi bạn bấm BẬT.\n3. ESP & Đồ họa: Xuyên tường, soi HP và giảm lag tăng FPS.\n\nTác giả: Trần Khoa Điềm | Telegram: @TranKhoaDiem"
+    lbl.TextColor3 = Color3.fromRGB(255, 185, 235)
     lbl.TextSize = 12
     lbl.Font = Enum.Font.Gotham
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.TextYAlignment = Enum.TextYAlignment.Top
     lbl.TextWrapped = true
-    lbl.Parent = scroller
-
-    local closeBtn = Instance.new("TextButton")
-    closeBtn.Size = UDim2.new(0, 130, 0, 38)
-    closeBtn.Position = UDim2.new(0.5, -65, 1, -48)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(60, 20, 50)
-    closeBtn.BorderSizePixel = 0
-    closeBtn.Text = "Đóng hướng dẫn"
-    closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeBtn.TextSize = 12
-    closeBtn.Font = Enum.Font.GothamBold
-    closeBtn.Parent = guideGui
-
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 10)
-    btnCorner.Parent = closeBtn
-
-    closeBtn.MouseButton1Click:Connect(function()
-        guideGui:Destroy()
-    end)
-end)
-
-createButton(otherTab, "Thông tin tác giả", function()
-    local aboutGui = Instance.new("Frame")
-    aboutGui.Size = UDim2.new(0, 440, 0, 250)
-    aboutGui.Position = UDim2.new(0.5, -220, 0.5, -125)
-    aboutGui.BackgroundColor3 = Color3.fromRGB(16, 10, 26)
-    aboutGui.BorderSizePixel = 0
-    aboutGui.Parent = ScreenGui
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 18)
-    corner.Parent = aboutGui
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 45, 140)
-    stroke.Thickness = 2
-    stroke.Parent = aboutGui
-
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, -28, 1, -60)
-    lbl.Position = UDim2.new(0, 14, 0, 14)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = "Tên Script: KhoaDiemHub\nTác giả / Lập trình viên: Trần Khoa Điềm\nLiên hệ Telegram: @TranKhoaDiem\nTrạng thái: Phiên bản giao diện đời mới cao cấp.\n\nGiao diện độc quyền thiết kế tối tân với phong cách hiện đại đen hồng, hỗ trợ đầy đủ tiếng Việt có dấu, ảnh logo cục bộ khoadiem.jpeg và Smooth Aim thông minh."
-    lbl.TextColor3 = Color3.fromRGB(255, 180, 230)
-    lbl.TextSize = 12
-    lbl.Font = Enum.Font.Gotham
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.TextYAlignment = Enum.TextYAlignment.Top
-    lbl.TextWrapped = true
-    lbl.Parent = aboutGui
+    lbl.Parent = guideGui
 
     local closeBtn = Instance.new("TextButton")
     closeBtn.Size = UDim2.new(0, 120, 0, 36)
@@ -909,20 +777,19 @@ createButton(otherTab, "Thông tin tác giả", function()
     closeBtn.BorderSizePixel = 0
     closeBtn.Text = "Đóng"
     closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeBtn.TextSize = 12
     closeBtn.Font = Enum.Font.GothamBold
-    closeBtn.Parent = aboutGui
+    closeBtn.Parent = guideGui
 
     local btnCorner = Instance.new("UICorner")
     btnCorner.CornerRadius = UDim.new(0, 10)
     btnCorner.Parent = closeBtn
 
-    closeBtn.MouseButton1Click:Connect(function()
-        aboutGui:Destroy()
-    end)
+    closeBtn.MouseButton1Click:Connect(function() guideGui:Destroy() end)
 end)
 
--- VÒNG LẶP XỬ LÝ TÍNH NĂNG
+-- =======================================================
+-- 4. VÒNG LẶP RENDERSTEPPED (ĐÃ ĐỐI CHIẾU FIX AIM RÕ RÀNG)
+-- =======================================================
 RunService.RenderStepped:Connect(function()
     local char = LocalPlayer.Character
     if not char then return end
@@ -930,22 +797,14 @@ RunService.RenderStepped:Connect(function()
     local rootPart = char:FindFirstChild("HumanoidRootPart")
 
     if humanoid then
-        if walkSpeedEnabled then
-            humanoid.WalkSpeed = walkSpeedVal
-        end
-        if jumpPowerEnabled then
-            humanoid.JumpPower = jumpPowerVal
-        end
-        if godMode then
-            humanoid.Health = humanoid.MaxHealth
-        end
+        if walkSpeedEnabled then humanoid.WalkSpeed = walkSpeedVal end
+        if jumpPowerEnabled then humanoid.JumpPower = jumpPowerVal end
+        if godMode then humanoid.Health = humanoid.MaxHealth end
     end
 
     if noclipEnabled and char then
         for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
+            if part:IsA("BasePart") then part.CanCollide = false end
         end
     end
 
@@ -960,7 +819,8 @@ RunService.RenderStepped:Connect(function()
         rootPart.CFrame = rootPart.CFrame + (moveVec * (flySpeed * 0.05))
     end
 
-    if smoothAimEnabled then
+    -- CHỈ BÁM AIM KHI TÍNH NĂNG ĐÃ ĐƯỢC BẬT (CHẮC CHẮN 100%)
+    if smoothAimEnabled == true then
         local closestTarget = nil
         local shortestDist = math.huge
         local mousePos = UserInputService:GetMouseLocation()
@@ -998,25 +858,6 @@ RunService.RenderStepped:Connect(function()
             if obj:IsA("BasePart") and (obj.Name:lower():find("water") or obj.Material == Enum.Material.Water) then
                 obj.CanCollide = true
             end
-        end
-    end
-end)
-
-task.spawn(function()
-    while true do
-        task.wait(10)
-        if autoChatEnabled then
-            pcall(function()
-                local textService = game:GetService("TextChatService")
-                if textService.ChatInputBarConfiguration then
-                    local channel = textService.TextChannels.RBXGeneral
-                    if channel then
-                        channel:SendAsync(chatMessages[math.random(1, #chatMessages)])
-                    end
-                else
-                    game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents"):FindFirstChild("SayMessageRequest"):FireServer(chatMessages[math.random(1, #chatMessages)], "All")
-                end
-            end)
         end
     end
 end)
