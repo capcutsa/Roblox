@@ -10,12 +10,12 @@ local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
-if CoreGui:FindFirstChild("KhoaDiemAppleV7") then
-    CoreGui.KhoaDiemAppleV7:Destroy()
+if CoreGui:FindFirstChild("KhoaDiemAppleV8") then
+    CoreGui.KhoaDiemAppleV8:Destroy()
 end
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "KhoaDiemAppleV7"
+ScreenGui.Name = "KhoaDiemAppleV8"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
@@ -57,11 +57,11 @@ end
 local mainButton = Instance.new("ImageButton")
 mainButton.Name = "AppleMenuButton"
 mainButton.Size = UDim2.new(0, 52, 0, 52)
-mainButton.Position = UDim2.new(0, 20, 0, 20)
-mainButton.BackgroundColor3 = Color3.fromRGB(18, 12, 24)
+mainButton.Position = UDim2.new(0, 25, 0, 25)
+mainButton.BackgroundColor3 = Color3.fromRGB(15, 12, 22)
 mainButton.BorderSizePixel = 0
 mainButton.Image = appleIconAsset
-mainButton.ImageColor3 = Color3.fromRGB(255, 80, 120)
+mainButton.ImageColor3 = Color3.fromRGB(255, 90, 140)
 mainButton.Parent = ScreenGui
 
 makeDraggable(mainButton)
@@ -71,7 +71,7 @@ btnCorner.CornerRadius = UDim.new(1, 0)
 btnCorner.Parent = mainButton
 
 local btnStroke = Instance.new("UIStroke")
-btnStroke.Color = Color3.fromRGB(255, 80, 120)
+btnStroke.Color = Color3.fromRGB(255, 90, 140)
 btnStroke.Thickness = 2.5
 btnStroke.Parent = mainButton
 
@@ -90,7 +90,7 @@ mainCorner.CornerRadius = UDim.new(0, 18)
 mainCorner.Parent = mainFrame
 
 local mainStroke = Instance.new("UIStroke")
-mainStroke.Color = Color3.fromRGB(255, 80, 120)
+mainStroke.Color = Color3.fromRGB(255, 90, 140)
 mainStroke.Thickness = 2
 mainStroke.Transparency = 1
 mainStroke.Parent = mainFrame
@@ -98,7 +98,7 @@ mainStroke.Parent = mainFrame
 local topBar = Instance.new("Frame")
 topBar.Name = "TopBar"
 topBar.Size = UDim2.new(1, 0, 0, 48)
-topBar.BackgroundColor3 = Color3.fromRGB(22, 16, 32)
+topBar.BackgroundColor3 = Color3.fromRGB(20, 14, 30)
 topBar.BorderSizePixel = 0
 topBar.Parent = mainFrame
 
@@ -113,14 +113,14 @@ topAppleIcon.Size = UDim2.new(0, 26, 0, 26)
 topAppleIcon.Position = UDim2.new(0, 16, 0, 11)
 topAppleIcon.BackgroundTransparency = 1
 topAppleIcon.Image = appleIconAsset
-topAppleIcon.ImageColor3 = Color3.fromRGB(255, 80, 120)
+topAppleIcon.ImageColor3 = Color3.fromRGB(255, 90, 140)
 topAppleIcon.Parent = topBar
 
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -120, 1, 0)
 titleLabel.Position = UDim2.new(0, 52, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "KhoaDiemHub • Apple Glass Edition"
+titleLabel.Text = "KhoaDiemHub • Apple Pro Edition"
 titleLabel.TextColor3 = Color3.fromRGB(255, 230, 240)
 titleLabel.TextSize = 13
 titleLabel.Font = Enum.Font.GothamBold
@@ -163,7 +163,7 @@ local sidebar = Instance.new("ScrollingFrame")
 sidebar.Name = "Sidebar"
 sidebar.Size = UDim2.new(0, 170, 1, -60)
 sidebar.Position = UDim2.new(0, 10, 0, 54)
-sidebar.BackgroundColor3 = Color3.fromRGB(18, 14, 26)
+sidebar.BackgroundColor3 = Color3.fromRGB(16, 12, 24)
 sidebar.BorderSizePixel = 0
 sidebar.CanvasSize = UDim2.new(0, 0, 0, 420)
 sidebar.ScrollBarThickness = 2
@@ -210,7 +210,7 @@ end
 local function createButton(parent, text, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -12, 0, 38)
-    btn.BackgroundColor3 = Color3.fromRGB(26, 18, 38)
+    btn.BackgroundColor3 = Color3.fromRGB(24, 16, 36)
     btn.BorderSizePixel = 0
     btn.Text = text
     btn.TextColor3 = Color3.fromRGB(240, 220, 245)
@@ -230,7 +230,7 @@ local function createToggle(parent, text, defaultState, callback)
     local state = defaultState
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -12, 0, 38)
-    frame.BackgroundColor3 = Color3.fromRGB(26, 18, 38)
+    frame.BackgroundColor3 = Color3.fromRGB(24, 16, 36)
     frame.BorderSizePixel = 0
     frame.Parent = parent
 
@@ -252,7 +252,7 @@ local function createToggle(parent, text, defaultState, callback)
     local indicator = Instance.new("TextButton")
     indicator.Size = UDim2.new(0, 44, 0, 22)
     indicator.Position = UDim2.new(1, -50, 0.5, -11)
-    indicator.BackgroundColor3 = state and Color3.fromRGB(255, 80, 120) or Color3.fromRGB(45, 28, 55)
+    indicator.BackgroundColor3 = state and Color3.fromRGB(255, 90, 140) or Color3.fromRGB(45, 25, 55)
     indicator.BorderSizePixel = 0
     indicator.Text = state and "ON" or "OFF"
     indicator.TextColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(180, 160, 200)
@@ -266,7 +266,7 @@ local function createToggle(parent, text, defaultState, callback)
 
     indicator.MouseButton1Click:Connect(function()
         state = not state
-        indicator.BackgroundColor3 = state and Color3.fromRGB(255, 80, 120) or Color3.fromRGB(45, 28, 55)
+        indicator.BackgroundColor3 = state and Color3.fromRGB(255, 90, 140) or Color3.fromRGB(45, 25, 55)
         indicator.TextColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(180, 160, 200)
         indicator.Text = state and "ON" or "OFF"
         callback(state)
@@ -279,7 +279,7 @@ local function createSlider(parent, text, min, max, default, callback)
     local value = default
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -12, 0, 54)
-    frame.BackgroundColor3 = Color3.fromRGB(26, 18, 38)
+    frame.BackgroundColor3 = Color3.fromRGB(24, 16, 36)
     frame.BorderSizePixel = 0
     frame.Parent = parent
 
@@ -301,7 +301,7 @@ local function createSlider(parent, text, min, max, default, callback)
     local sliderBg = Instance.new("TextButton")
     sliderBg.Size = UDim2.new(1, -20, 0, 8)
     sliderBg.Position = UDim2.new(0, 10, 0, 34)
-    sliderBg.BackgroundColor3 = Color3.fromRGB(45, 28, 55)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(45, 25, 55)
     sliderBg.BorderSizePixel = 0
     sliderBg.Text = ""
     sliderBg.Parent = frame
@@ -312,7 +312,7 @@ local function createSlider(parent, text, min, max, default, callback)
 
     local sliderFill = Instance.new("Frame")
     sliderFill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
-    sliderFill.BackgroundColor3 = Color3.fromRGB(255, 80, 120)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(255, 90, 140)
     sliderFill.BorderSizePixel = 0
     sliderFill.Parent = sliderBg
 
@@ -354,7 +354,7 @@ end
 local function createDropdown(parent, text, options, callback)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -12, 0, 38)
-    frame.BackgroundColor3 = Color3.fromRGB(26, 18, 38)
+    frame.BackgroundColor3 = Color3.fromRGB(24, 16, 36)
     frame.BorderSizePixel = 0
     frame.ClipsDescendants = true
     frame.Parent = parent
@@ -385,7 +385,7 @@ local function createDropdown(parent, text, options, callback)
             local optBtn = Instance.new("TextButton")
             optBtn.Size = UDim2.new(1, -20, 0, 28)
             optBtn.Position = UDim2.new(0, 10, 0, 38 + (i - 1) * 30)
-            optBtn.BackgroundColor3 = Color3.fromRGB(36, 26, 50)
+            optBtn.BackgroundColor3 = Color3.fromRGB(36, 24, 50)
             optBtn.BorderSizePixel = 0
             optBtn.Text = optName
             optBtn.TextColor3 = Color3.fromRGB(210, 190, 230)
@@ -424,7 +424,7 @@ end
 local function createTabButton(name, scroller)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -8, 0, 34)
-    btn.BackgroundColor3 = Color3.fromRGB(26, 18, 38)
+    btn.BackgroundColor3 = Color3.fromRGB(24, 16, 36)
     btn.BorderSizePixel = 0
     btn.Text = name
     btn.TextColor3 = Color3.fromRGB(200, 180, 220)
@@ -442,7 +442,7 @@ local function createTabButton(name, scroller)
     end)
 end
 
-local tabNames = {"Di chuyển", "Chiến đấu", "ESP Xuyên Tường", "Bay Theo Player", "Thế giới & Hack", "Dịch chuyển", "Đồ họa & Script"}
+local tabNames = {"Di chuyển", "Chiến đấu & Aim", "ESP Xuyên Tường", "Bay Theo Player", "Thế giới & Hack", "Dịch chuyển", "Đồ họa & Script"}
 local scrollers = {}
 
 for i, name in ipairs(tabNames) do
@@ -461,7 +461,6 @@ local worldTab = scrollers[5]
 local tpTab = scrollers[6]
 local extraTab = scrollers[7]
 
--- 1-5: DI CHUYỂN
 local walkSpeedEnabled = false
 local walkSpeedVal = 16
 createToggle(charTab, "1. Tốc độ chạy (WalkSpeed)", false, function(state)
@@ -493,11 +492,19 @@ createToggle(charTab, "4. Đi xuyên tường (Noclip)", false, function(state) 
 local infJumpEnabled = false
 createToggle(charTab, "5. Nhảy vô hạn không trung", false, function(state) infJumpEnabled = state end)
 
--- 6-10: CHIẾN ĐẤU
+-- FIX AIM CHUẨN 100%: Dùng tỷ lệ nội suy mượt, check kỹ player còn sống và target trực tiếp phần thân/đầu chính xác không lệch tâm
 local smoothAimEnabled = false
-local aimSmoothness = 6
-createToggle(combatTab, "6. Smooth AimBot (Bám mượt)", false, function(state) smoothAimEnabled = state end)
-createSlider(combatTab, "Độ Trễ Mượt Aim", 1, 20, 6, function(val) aimSmoothness = val end)
+local aimSmoothness = 5
+createToggle(combatTab, "6. Smooth AimBot (Đã fix chuẩn xác)", false, function(state) smoothAimEnabled = state end)
+createSlider(combatTab, "Độ Mượt Camera (Thấp = Nhanh)", 1, 20, 5, function(val) aimSmoothness = val end)
+
+local selectedBodyPart = "Head"
+local bodyPartsList = {"Head", "HumanoidRootPart", "UpperTorso"}
+local bpIndex = 1
+createButton(combatTab, "Bộ phận ngắm: Đầu (Bấm để đổi)", function()
+    bpIndex = bpIndex % #bodyPartsList + 1
+    selectedBodyPart = bodyPartsList[bpIndex]
+end)
 
 local triggerBot = false
 createToggle(combatTab, "7. Tự động đánh (TriggerBot)", false, function(state) triggerBot = state end)
@@ -519,7 +526,6 @@ createSlider(combatTab, "Tốc Độ Xoay", 10, 100, 30, function(val) spinSpeed
 local autoEquipWeapon = false
 createToggle(combatTab, "10. Auto Equip vũ khí khi cần", false, function(state) autoEquipWeapon = state end)
 
--- 11-16: ESP XUYÊN TƯỜNG
 local espBoxEnabled = false
 local espNameEnabled = false
 local espHealthEnabled = false
@@ -540,7 +546,7 @@ createToggle(espTab, "16. ESP Highlight Xuyên Tường (Chams)", false, functio
                 if not p.Character:FindFirstChild("AppleCham") then
                     local hl = Instance.new("Highlight")
                     hl.Name = "AppleCham"
-                    hl.FillColor = Color3.fromRGB(255, 80, 120)
+                    hl.FillColor = Color3.fromRGB(255, 90, 140)
                     hl.OutlineColor = Color3.fromRGB(255, 255, 255)
                     hl.FillTransparency = 0.4
                     hl.AlwaysOnTop = true
@@ -580,7 +586,7 @@ RunService.RenderStepped:Connect(function()
                     box.Visible = true
                     box.Size = Vector2.new(width, height)
                     box.Position = Vector2.new(pos.X - width / 2, topPos.Y)
-                    box.Color = Color3.fromRGB(255, 80, 120)
+                    box.Color = Color3.fromRGB(255, 90, 140)
                     box.Thickness = 1
                     box.Filled = false
                     table.insert(espCache, box)
@@ -591,7 +597,7 @@ RunService.RenderStepped:Connect(function()
                     line.Visible = true
                     line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                     line.To = Vector2.new(pos.X, pos.Y)
-                    line.Color = Color3.fromRGB(255, 80, 120)
+                    line.Color = Color3.fromRGB(255, 90, 140)
                     line.Thickness = 1
                     table.insert(espCache, line)
                 end
@@ -606,7 +612,7 @@ RunService.RenderStepped:Connect(function()
                     txt.Visible = true
                     txt.Text = txtInfo
                     txt.Size = 11
-                    txt.Color = Color3.fromRGB(255, 220, 235)
+                    txt.Color = Color3.fromRGB(255, 230, 240)
                     txt.Center = true
                     txt.Outline = true
                     txt.Position = Vector2.new(pos.X, topPos.Y - 16)
@@ -617,7 +623,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 17-20: BAY THEO PLAYER TRONG SERVER
 local targetFollowPlayer = nil
 local followPlayerEnabled = false
 local followDistance = 5
@@ -654,7 +659,6 @@ createButton(followTab, "Đặt lại Camera về bản thân", function()
     end
 end)
 
--- 21-25: THẾ GIỚI & HACK
 local godMode = false
 createToggle(worldTab, "21. Bất tử hoàn toàn (God Mode)", false, function(state) godMode = state end)
 
@@ -689,7 +693,6 @@ createToggle(worldTab, "25. Ẩn thân cục bộ (Semi-Invisible)", false, func
     end
 end)
 
--- 26-28: DỊCH CHUYỂN
 createButton(tpTab, "26. Dịch chuyển ngay đến Target Player", function()
     if targetFollowPlayer and targetFollowPlayer.Character and targetFollowPlayer.Character:FindFirstChild("HumanoidRootPart") then
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -714,7 +717,6 @@ createButton(tpTab, "28. Dịch chuyển về vị trí đã lưu (Load Pos)", f
     end)
 end)
 
--- 29-32: ĐỒ HỌA & SCRIPT MỞ RỘNG
 createToggle(extraTab, "29. Fullbright (Sáng bản đồ)", false, function(state)
     if state then
         Lighting.Brightness = 2
@@ -761,7 +763,6 @@ createButton(extraTab, "33. Tải Lệnh Mở Rộng (Infinite Yield)", function
     end)
 end)
 
--- SỰ KIỆN & VÒNG LẶP CHÍNH
 UserInputService.JumpRequest:Connect(function()
     if infJumpEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
@@ -797,7 +798,7 @@ RunService.RenderStepped:Connect(function()
         if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVec = moveVec + camVec end
         if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVec = moveVec - camVec end
         if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVec = moveVec - Camera.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + Camera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + Camera.CTrade.RightVector or moveVec + Camera.CFrame.RightVector end
         rootPart.CFrame = rootPart.CFrame + (moveVec * (flySpeed * 0.05))
     end
 
@@ -807,27 +808,28 @@ RunService.RenderStepped:Connect(function()
         rootPart.CFrame = rootPart.CFrame:Lerp(CFrame.new(offsetPos, targetRoot.Position), 0.2)
     end
 
+    -- FIX AIM CHUẨN XÁC HOÀN TOÀN: Tính khoảng cách gần tâm màn hình/chuột nhất và lock trực tiếp vào phần cơ thể chọn (Head/Torso)
     if smoothAimEnabled == true then
-        local targetPart = nil
+        local closestTarget = nil
         local shortestDist = math.huge
         local mousePos = UserInputService:GetMouseLocation()
 
         for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-                local part = p.Character.Head
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild(selectedBodyPart) and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                local part = p.Character[selectedBodyPart]
                 local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
                 if onScreen then
                     local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
                     if dist < shortestDist then
                         shortestDist = dist
-                        targetPart = part
+                        closestTarget = part
                     end
                 end
             end
         end
 
-        if targetPart then
-            local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
+        if closestTarget then
+            local targetCFrame = CFrame.new(Camera.CFrame.Position, closestTarget.Position)
             Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / math.max(aimSmoothness, 1))
         end
     end
