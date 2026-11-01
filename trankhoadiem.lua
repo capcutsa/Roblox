@@ -10,12 +10,12 @@ local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
-if CoreGui:FindFirstChild("KhoaDiemAppleV8") then
-    CoreGui.KhoaDiemAppleV8:Destroy()
+if CoreGui:FindFirstChild("KhoaDiemAppleV9") then
+    CoreGui.KhoaDiemAppleV9:Destroy()
 end
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "KhoaDiemAppleV8"
+ScreenGui.Name = "KhoaDiemAppleV9"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
@@ -120,7 +120,7 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -120, 1, 0)
 titleLabel.Position = UDim2.new(0, 52, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "KhoaDiemHub • Apple Pro Edition"
+titleLabel.Text = "KhoaDiemHub • Apple Pro V9"
 titleLabel.TextColor3 = Color3.fromRGB(255, 230, 240)
 titleLabel.TextSize = 13
 titleLabel.Font = Enum.Font.GothamBold
@@ -492,11 +492,10 @@ createToggle(charTab, "4. Đi xuyên tường (Noclip)", false, function(state) 
 local infJumpEnabled = false
 createToggle(charTab, "5. Nhảy vô hạn không trung", false, function(state) infJumpEnabled = state end)
 
--- FIX AIM CHUẨN 100%: Dùng tỷ lệ nội suy mượt, check kỹ player còn sống và target trực tiếp phần thân/đầu chính xác không lệch tâm
 local smoothAimEnabled = false
 local aimSmoothness = 5
-createToggle(combatTab, "6. Smooth AimBot (Đã fix chuẩn xác)", false, function(state) smoothAimEnabled = state end)
-createSlider(combatTab, "Độ Mượt Camera (Thấp = Nhanh)", 1, 20, 5, function(val) aimSmoothness = val end)
+createToggle(combatTab, "6. Smooth AimBot (Fix chuẩn xác)", false, function(state) smoothAimEnabled = state end)
+createSlider(combatTab, "Độ Mượt Camera", 1, 20, 5, function(val) aimSmoothness = val end)
 
 local selectedBodyPart = "Head"
 local bodyPartsList = {"Head", "HumanoidRootPart", "UpperTorso"}
@@ -543,9 +542,9 @@ createToggle(espTab, "16. ESP Highlight Xuyên Tường (Chams)", false, functio
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character then
             if state then
-                if not p.Character:FindFirstChild("AppleCham") then
+                if not p.Character:FindFirstChild("AppleChamV9") then
                     local hl = Instance.new("Highlight")
-                    hl.Name = "AppleCham"
+                    hl.Name = "AppleChamV9"
                     hl.FillColor = Color3.fromRGB(255, 90, 140)
                     hl.OutlineColor = Color3.fromRGB(255, 255, 255)
                     hl.FillTransparency = 0.4
@@ -553,7 +552,7 @@ createToggle(espTab, "16. ESP Highlight Xuyên Tường (Chams)", false, functio
                     hl.Parent = p.Character
                 end
             else
-                if p.Character:FindFirstChild("AppleCham") then p.Character.AppleCham:Destroy() end
+                if p.Character:FindFirstChild("AppleChamV9") then p.Character.AppleChamV9:Destroy() end
             end
         end
     end
@@ -570,7 +569,7 @@ RunService.RenderStepped:Connect(function()
     if not Drawing then return end
 
     for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") then
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
             local root = p.Character.HumanoidRootPart
             local head = p.Character:FindFirstChild("Head") or root
             local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
@@ -704,15 +703,15 @@ end)
 createButton(tpTab, "27. Lưu vị trí hiện tại (Save Pos)", function()
     pcall(function()
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            getgenv().AppleSavedPos = LocalPlayer.Character.HumanoidRootPart.CFrame
+            getgenv().AppleSavedPosV9 = LocalPlayer.Character.HumanoidRootPart.CFrame
         end
     end)
 end)
 
 createButton(tpTab, "28. Dịch chuyển về vị trí đã lưu (Load Pos)", function()
     pcall(function()
-        if getgenv().AppleSavedPos and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = getgenv().AppleSavedPos
+        if getgenv().AppleSavedPosV9 and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = getgenv().AppleSavedPosV9
         end
     end)
 end)
@@ -798,7 +797,7 @@ RunService.RenderStepped:Connect(function()
         if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVec = moveVec + camVec end
         if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVec = moveVec - camVec end
         if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVec = moveVec - Camera.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + Camera.CTrade.RightVector or moveVec + Camera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + Camera.CFrame.RightVector end
         rootPart.CFrame = rootPart.CFrame + (moveVec * (flySpeed * 0.05))
     end
 
@@ -808,7 +807,7 @@ RunService.RenderStepped:Connect(function()
         rootPart.CFrame = rootPart.CFrame:Lerp(CFrame.new(offsetPos, targetRoot.Position), 0.2)
     end
 
-    -- FIX AIM CHUẨN XÁC HOÀN TOÀN: Tính khoảng cách gần tâm màn hình/chuột nhất và lock trực tiếp vào phần cơ thể chọn (Head/Torso)
+    -- FIX ESP & AIM TRIỆT ĐỂ: Lọc cực kỳ kỹ, check player, team, khoảng cách và loại bỏ hoàn toàn lỗi vẽ tràn màn hình
     if smoothAimEnabled == true then
         local closestTarget = nil
         local shortestDist = math.huge
@@ -816,13 +815,15 @@ RunService.RenderStepped:Connect(function()
 
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild(selectedBodyPart) and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-                local part = p.Character[selectedBodyPart]
-                local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
-                if onScreen then
-                    local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-                    if dist < shortestDist then
-                        shortestDist = dist
-                        closestTarget = part
+                if not (p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team) then
+                    local part = p.Character[selectedBodyPart]
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                    if onScreen then
+                        local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                        if dist < shortestDist then
+                            shortestDist = dist
+                            closestTarget = part
+                        end
                     end
                 end
             end
