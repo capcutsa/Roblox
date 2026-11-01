@@ -9,13 +9,12 @@ local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- XÓA GUI CŨ NẾU TỒN TẠI
-if CoreGui:FindFirstChild("KhoaDiemHubNeo") then
-    CoreGui.KhoaDiemHubNeo:Destroy()
+if CoreGui:FindFirstChild("KhoaDiemHubV2") then
+    CoreGui.KhoaDiemHubV2:Destroy()
 end
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "KhoaDiemHubNeo"
+ScreenGui.Name = "KhoaDiemHubV2"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
@@ -26,27 +25,7 @@ if not ScreenGui.Parent then
     ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 end
 
--- TẢI VÀ XỬ LÝ ANH AVATAR (HỖ TRỢ LINK TIKTOK & TỰ ĐỘNG BẢO VỆ NẾU DIE LINK)
-local avatarImageUrl = "https://p16-common-sign.tiktokcdn.com/tos-maliva-avt-0068/a335fecb9a7f08c741fee6456d896364~tplv-tiktokx-cropcenter:1080:1080.jpeg?dr=14579&refresh_token=33b982b1&x-expires=1793674800&x-signature=iAN9qEpUwXTx5NIGhyi25ZQTgFg%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=81f88b70&idc=my2"
-local finalImageAsset = "rbxassetid://6031091004" -- Icon SVG dự phòng chất lượng cao
-
-pcall(function()
-    if writefile and getcustomasset then
-        local fileName = "khoadiem_avatar.jpeg"
-        if not isfile or not isfile(fileName) then
-            local requestFunc = (syn and syn.request) or (http and http.request) or request
-            if requestFunc then
-                local res = requestFunc({Url = avatarImageUrl, Method = "GET"})
-                if res and res.StatusCode == 200 and res.Body then
-                    writefile(fileName, res.Body)
-                end
-            end
-        end
-        if isfile and isfile(fileName) then
-            finalImageAsset = getcustomasset(fileName)
-        end
-    end
-end)
+local defaultSvgIcon = "rbxassetid://6031091000"
 
 local function getExecutorName()
     if identifyexecutor then
@@ -71,80 +50,104 @@ local function getDeviceType()
     end
 end
 
--- =======================================================
--- 1. MÀN HÌNH MỞ ĐẦU (INTRO SCREEN SANG TRỌNG CỰC ĐẸP)
--- =======================================================
+local function makeDraggable(guiObject, dragHandle)
+    dragHandle = dragHandle or guiObject
+    local dragging = false
+    local dragInput, dragStart, startPos
+
+    dragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = guiObject.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    dragHandle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            guiObject.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
 local introFrame = Instance.new("Frame")
 introFrame.Name = "IntroFrame"
-introFrame.Size = UDim2.new(0, 480, 0, 260)
-introFrame.Position = UDim2.new(0.5, -240, 0.5, -130)
-introFrame.BackgroundColor3 = Color3.fromRGB(15, 10, 25)
+introFrame.Size = UDim2.new(0, 420, 0, 240)
+introFrame.Position = UDim2.new(0.5, -210, 0.5, -120)
+introFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
 introFrame.BackgroundTransparency = 1
 introFrame.BorderSizePixel = 0
 introFrame.Parent = ScreenGui
 
 local introCorner = Instance.new("UICorner")
-introCorner.CornerRadius = UDim.new(0, 24)
+introCorner.CornerRadius = UDim.new(0, 16)
 introCorner.Parent = introFrame
 
 local introStroke = Instance.new("UIStroke")
-introStroke.Color = Color3.fromRGB(255, 50, 150)
-introStroke.Thickness = 2.5
+introStroke.Color = Color3.fromRGB(0, 200, 255)
+introStroke.Thickness = 2
 introStroke.Transparency = 1
 introStroke.Parent = introFrame
 
--- Avatar tròn ở Intro
-local avatarImg = Instance.new("ImageLabel")
-avatarImg.Size = UDim2.new(0, 70, 0, 70)
-avatarImg.Position = UDim2.new(0.5, -35, 0, 20)
-avatarImg.BackgroundColor3 = Color3.fromRGB(25, 15, 35)
-avatarImg.BorderSizePixel = 0
-avatarImg.Image = finalImageAsset
-avatarImg.ImageTransparency = 1
-avatarImg.Parent = introFrame
-
-local avatarCorner = Instance.new("UICorner")
-avatarCorner.CornerRadius = UDim.new(1, 0)
-avatarCorner.Parent = avatarImg
-
-local avatarStroke = Instance.new("UIStroke")
-avatarStroke.Color = Color3.fromRGB(255, 80, 180)
-avatarStroke.Thickness = 2
-avatarStroke.Transparency = 1
-avatarStroke.Parent = avatarImg
+local introIcon = Instance.new("ImageLabel")
+introIcon.Size = UDim2.new(0, 54, 0, 54)
+introIcon.Position = UDim2.new(0.5, -27, 0, 16)
+introIcon.BackgroundTransparency = 1
+introIcon.Image = defaultSvgIcon
+introIcon.ImageColor3 = Color3.fromRGB(0, 200, 255)
+introIcon.ImageTransparency = 1
+introIcon.Parent = introFrame
 
 local introTitle = Instance.new("TextLabel")
-introTitle.Size = UDim2.new(1, 0, 0, 30)
-introTitle.Position = UDim2.new(0, 0, 0, 98)
+introTitle.Size = UDim2.new(1, 0, 0, 25)
+introTitle.Position = UDim2.new(0, 0, 0, 78)
 introTitle.BackgroundTransparency = 1
-introTitle.Text = "KHOADIEMHUB NEO"
-introTitle.TextColor3 = Color3.fromRGB(255, 120, 210)
-introTitle.TextSize = 20
+introTitle.Text = "KHOADIEMHUB V2"
+introTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+introTitle.TextSize = 18
 introTitle.Font = Enum.Font.GothamBold
 introTitle.TextTransparency = 1
 introTitle.Parent = introFrame
 
 local introScroller = Instance.new("ScrollingFrame")
-introScroller.Size = UDim2.new(1, -40, 0, 110)
-introScroller.Position = UDim2.new(0, 20, 0, 132)
-introScroller.BackgroundColor3 = Color3.fromRGB(22, 12, 36)
+introScroller.Size = UDim2.new(1, -32, 0, 110)
+introScroller.Position = UDim2.new(0, 16, 0, 110)
+introScroller.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
 introScroller.BackgroundTransparency = 1
 introScroller.BorderSizePixel = 0
-introScroller.CanvasSize = UDim2.new(0, 0, 0, 200)
+introScroller.CanvasSize = UDim2.new(0, 0, 0, 190)
 introScroller.ScrollBarThickness = 2
 introScroller.Parent = introFrame
 
 local introScrollerCorner = Instance.new("UICorner")
-introScrollerCorner.CornerRadius = UDim.new(0, 12)
+introScrollerCorner.CornerRadius = UDim.new(0, 10)
 introScrollerCorner.Parent = introScroller
 
 local introText = Instance.new("TextLabel")
-introText.Size = UDim2.new(1, -16, 0, 190)
-introText.Position = UDim2.new(0, 8, 0, 8)
+introText.Size = UDim2.new(1, -12, 0, 180)
+introText.Position = UDim2.new(0, 6, 0, 6)
 introText.BackgroundTransparency = 1
-introText.TextColor3 = Color3.fromRGB(235, 200, 235)
-introText.TextSize = 12
-introText.Font = Enum.Font.Gotham
+introText.TextColor3 = Color3.fromRGB(190, 195, 210)
+introText.TextSize = 11
+introText.Font = Enum.Font.GothamMedium
 introText.TextXAlignment = Enum.TextXAlignment.Left
 introText.TextYAlignment = Enum.TextYAlignment.Top
 introText.TextWrapped = true
@@ -170,164 +173,158 @@ pcall(function()
 end)
 
 introText.Text = string.format(
-    "Trạng thái: Khởi chạy thành công hệ thống NEO!\nTài khoản: %s (%s)\nGame: %s\nThời gian: %s\nThiết bị: %s | Executor: %s\nLevel: %s\nTác giả: Trần Khoa Điềm | Telegram: @TranKhoaDiem",
+    "Trạng thái: Đã tải thành công phiên bản Neo Dark V2!\nTài khoản: %s (%s)\nGame: %s\nThời gian: %s\nThiết bị: %s | Executor: %s\nLevel: %s\nTác giả: Trần Khoa Điềm | Telegram: @TranKhoaDiem",
     LocalPlayer.Name, LocalPlayer.DisplayName, gameName, currentTime, getDeviceType(), getExecutorName(), levelStr
 )
 
--- ANIMATION MỞ MÀN MỚI
-TweenService:Create(introFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0.05}):Play()
-TweenService:Create(introStroke, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Transparency = 0}):Play()
-TweenService:Create(avatarImg, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {ImageTransparency = 0}):Play()
-TweenService:Create(avatarStroke, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Transparency = 0}):Play()
-TweenService:Create(introTitle, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
-TweenService:Create(introScroller, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0.5}):Play()
-TweenService:Create(introText, TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+TweenService:Create(introFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0.05}):Play()
+TweenService:Create(introStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Transparency = 0}):Play()
+TweenService:Create(introIcon, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {ImageTransparency = 0}):Play()
+TweenService:Create(introTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+TweenService:Create(introScroller, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0.5}):Play()
+TweenService:Create(introText, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 
-task.wait(3.5)
+task.wait(3.0)
 
-TweenService:Create(introFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1}):Play()
-TweenService:Create(introStroke, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Transparency = 1}):Play()
-TweenService:Create(avatarImg, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {ImageTransparency = 1}):Play()
-TweenService:Create(introTitle, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
-TweenService:Create(introText, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
+TweenService:Create(introFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1}):Play()
+TweenService:Create(introStroke, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Transparency = 1}):Play()
+TweenService:Create(introIcon, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {ImageTransparency = 1}):Play()
+TweenService:Create(introTitle, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
+TweenService:Create(introText, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
 task.wait(0.4)
 introFrame:Destroy()
 
--- =======================================================
--- 2. NÚT MỞ MENU & GIAO DIỆN NEO MỚI HOÀN TOÀN
--- =======================================================
 local mainButton = Instance.new("ImageButton")
-mainButton.Name = "MainButtonNeo"
-mainButton.Size = UDim2.new(0, 56, 0, 56)
-mainButton.Position = UDim2.new(0, 25, 0, 25)
-mainButton.BackgroundColor3 = Color3.fromRGB(20, 10, 30)
+mainButton.Name = "MainButtonSvg"
+mainButton.Size = UDim2.new(0, 48, 0, 48)
+mainButton.Position = UDim2.new(0, 20, 0, 20)
+mainButton.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
 mainButton.BorderSizePixel = 0
-mainButton.Image = finalImageAsset
+mainButton.Image = defaultSvgIcon
+mainButton.ImageColor3 = Color3.fromRGB(0, 200, 255)
 mainButton.Parent = ScreenGui
+
+makeDraggable(mainButton)
 
 local mainBtnCorner = Instance.new("UICorner")
 mainBtnCorner.CornerRadius = UDim.new(1, 0)
 mainBtnCorner.Parent = mainButton
 
 local mainBtnStroke = Instance.new("UIStroke")
-mainBtnStroke.Color = Color3.fromRGB(255, 50, 150)
-mainBtnStroke.Thickness = 2.5
+mainBtnStroke.Color = Color3.fromRGB(0, 200, 255)
+mainBtnStroke.Thickness = 2
 mainBtnStroke.Parent = mainButton
 
--- GIAO DIỆN CHÍNH (NEO GLASS STYLE)
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 760, 0, 480)
-mainFrame.Position = UDim2.new(0.5, -380, 0.5, -240)
-mainFrame.BackgroundColor3 = Color3.fromRGB(14, 9, 22)
+mainFrame.Size = UDim2.new(0, 620, 0, 380)
+mainFrame.Position = UDim2.new(0.5, -310, 0.5, -190)
+mainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
 mainFrame.BackgroundTransparency = 1
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
 mainFrame.Parent = ScreenGui
 
 local mainFrameCorner = Instance.new("UICorner")
-mainFrameCorner.CornerRadius = UDim.new(0, 20)
+mainFrameCorner.CornerRadius = UDim.new(0, 14)
 mainFrameCorner.Parent = mainFrame
 
 local mainFrameStroke = Instance.new("UIStroke")
-mainFrameStroke.Color = Color3.fromRGB(255, 50, 150)
-mainFrameStroke.Thickness = 2.5
+mainFrameStroke.Color = Color3.fromRGB(0, 200, 255)
+mainFrameStroke.Thickness = 1.5
 mainFrameStroke.Transparency = 1
 mainFrameStroke.Parent = mainFrame
 
-mainButton.MouseButton1Click:Connect(function()
-    if mainFrame.Visible then
-        TweenService:Create(mainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
-        TweenService:Create(mainFrameStroke, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Transparency = 1}):Play()
-        task.wait(0.25)
-        mainFrame.Visible = false
-    else
-        mainFrame.Visible = true
-        mainFrame.BackgroundTransparency = 1
-        mainFrameStroke.Transparency = 1
-        TweenService:Create(mainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0.05}):Play()
-        TweenService:Create(mainFrameStroke, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Transparency = 0}):Play()
-    end
-end)
-
--- TOPBAR
 local topBar = Instance.new("Frame")
 topBar.Name = "TopBar"
-topBar.Size = UDim2.new(1, 0, 0, 52)
-topBar.BackgroundColor3 = Color3.fromRGB(22, 12, 36)
+topBar.Size = UDim2.new(1, 0, 0, 42)
+topBar.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 topBar.BorderSizePixel = 0
 topBar.Parent = mainFrame
 
+makeDraggable(mainFrame, topBar)
+
 local topBarCorner = Instance.new("UICorner")
-topBarCorner.CornerRadius = UDim.new(0, 20)
+topBarCorner.CornerRadius = UDim.new(0, 14)
 topBarCorner.Parent = topBar
 
-local topAvatar = Instance.new("ImageLabel")
-topAvatar.Size = UDim2.new(0, 36, 0, 36)
-topAvatar.Position = UDim2.new(0, 12, 0, 8)
-topAvatar.BackgroundTransparency = 1
-topAvatar.Image = finalImageAsset
-topAvatar.Parent = topBar
-
-local topAvatarCorner = Instance.new("UICorner")
-topAvatarCorner.CornerRadius = UDim.new(1, 0)
-topAvatarCorner.Parent = topAvatar
+local topIcon = Instance.new("ImageLabel")
+topIcon.Size = UDim2.new(0, 24, 0, 24)
+topIcon.Position = UDim2.new(0, 12, 0, 9)
+topIcon.BackgroundTransparency = 1
+topIcon.Image = defaultSvgIcon
+topIcon.ImageColor3 = Color3.fromRGB(0, 200, 255)
+topIcon.Parent = topBar
 
 local topBarTitle = Instance.new("TextLabel")
-topBarTitle.Size = UDim2.new(1, -120, 1, 0)
-topBarTitle.Position = UDim2.new(0, 56, 0, 0)
+topBarTitle.Size = UDim2.new(1, -100, 1, 0)
+topBarTitle.Position = UDim2.new(0, 44, 0, 0)
 topBarTitle.BackgroundTransparency = 1
-topBarTitle.Text = "KhoaDiemHub Neo • Bản Đời Mới | Trần Khoa Điềm"
-topBarTitle.TextColor3 = Color3.fromRGB(255, 140, 220)
-topBarTitle.TextSize = 13
+topBarTitle.Text = "KhoaDiemHub V2 • Cyber Dark Edition"
+topBarTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
+topBarTitle.TextSize = 12
 topBarTitle.Font = Enum.Font.GothamBold
 topBarTitle.TextXAlignment = Enum.TextXAlignment.Left
 topBarTitle.Parent = topBar
 
 local closeButton = Instance.new("TextButton")
-closeButton.Size = UDim2.new(0, 36, 0, 36)
-closeButton.Position = UDim2.new(1, -44, 0, 8)
-closeButton.BackgroundColor3 = Color3.fromRGB(60, 20, 50)
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -36, 0, 6)
+closeButton.BackgroundColor3 = Color3.fromRGB(35, 20, 30)
 closeButton.BorderSizePixel = 0
 closeButton.Text = "✕"
-closeButton.TextColor3 = Color3.fromRGB(255, 120, 170)
-closeButton.TextSize = 14
+closeButton.TextColor3 = Color3.fromRGB(255, 90, 120)
+closeButton.TextSize = 13
 closeButton.Font = Enum.Font.GothamBold
 closeButton.Parent = topBar
 
 local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 10)
+closeCorner.CornerRadius = UDim.new(0, 8)
 closeCorner.Parent = closeButton
 
 closeButton.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
 end)
 
--- TAB NAVIGATION (CỘT BÊN TRÁI HÌNH CARD TRÒN)
+mainButton.MouseButton1Click:Connect(function()
+    if mainFrame.Visible then
+        TweenService:Create(mainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
+        TweenService:Create(mainFrameStroke, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Transparency = 1}):Play()
+        task.wait(0.2)
+        mainFrame.Visible = false
+    else
+        mainFrame.Visible = true
+        mainFrame.BackgroundTransparency = 1
+        mainFrameStroke.Transparency = 1
+        TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0.05}):Play()
+        TweenService:Create(mainFrameStroke, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Transparency = 0}):Play()
+    end
+end)
+
 local tabList = Instance.new("ScrollingFrame")
 tabList.Name = "TabList"
-tabList.Size = UDim2.new(0, 180, 1, -66)
-tabList.Position = UDim2.new(0, 10, 0, 58)
-tabList.BackgroundColor3 = Color3.fromRGB(10, 6, 18)
-tabList.BackgroundTransparency = 0.3
+tabList.Size = UDim2.new(0, 150, 1, -52)
+tabList.Position = UDim2.new(0, 8, 0, 46)
+tabList.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
+tabList.BackgroundTransparency = 0.4
 tabList.BorderSizePixel = 0
-tabList.CanvasSize = UDim2.new(0, 0, 0, 420)
+tabList.CanvasSize = UDim2.new(0, 0, 0, 340)
 tabList.ScrollBarThickness = 2
 tabList.Parent = mainFrame
 
 local tabListCorner = Instance.new("UICorner")
-tabListCorner.CornerRadius = UDim.new(0, 14)
+tabListCorner.CornerRadius = UDim.new(0, 10)
 tabListCorner.Parent = tabList
 
 local tabListLayout = Instance.new("UIListLayout")
 tabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-tabListLayout.Padding = UDim.new(0, 6)
+tabListLayout.Padding = UDim.new(0, 4)
 tabListLayout.Parent = tabList
 
 local containerFrame = Instance.new("Frame")
 containerFrame.Name = "ContainerFrame"
-containerFrame.Size = UDim2.new(1, -204, 1, -66)
-containerFrame.Position = UDim2.new(0, 196, 0, 58)
+containerFrame.Size = UDim2.new(1, -170, 1, -52)
+containerFrame.Position = UDim2.new(0, 164, 0, 46)
 containerFrame.BackgroundTransparency = 1
 containerFrame.Parent = mainFrame
 
@@ -342,14 +339,14 @@ local function createTabContent(name)
     scroller.Name = name .. "Content"
     scroller.Size = UDim2.new(1, 0, 1, 0)
     scroller.BackgroundTransparency = 1
-    scroller.CanvasSize = UDim2.new(0, 0, 0, 1150)
+    scroller.CanvasSize = UDim2.new(0, 0, 0, 950)
     scroller.ScrollBarThickness = 3
     scroller.Visible = false
     scroller.Parent = containerFrame
 
     local layout = Instance.new("UIListLayout")
     layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 8)
+    layout.Padding = UDim.new(0, 6)
     layout.Parent = scroller
 
     return scroller
@@ -357,17 +354,17 @@ end
 
 local function createButton(parent, text, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -10, 0, 40)
-    btn.BackgroundColor3 = Color3.fromRGB(24, 14, 42)
+    btn.Size = UDim2.new(1, -8, 0, 34)
+    btn.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
     btn.BorderSizePixel = 0
     btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(255, 185, 235)
-    btn.TextSize = 12
+    btn.TextColor3 = Color3.fromRGB(220, 225, 240)
+    btn.TextSize = 11
     btn.Font = Enum.Font.GothamMedium
     btn.Parent = parent
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = btn
 
     btn.MouseButton1Click:Connect(callback)
@@ -377,45 +374,46 @@ end
 local function createToggle(parent, text, defaultState, callback)
     local state = defaultState
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -10, 0, 40)
-    frame.BackgroundColor3 = Color3.fromRGB(24, 14, 42)
+    frame.Size = UDim2.new(1, -8, 0, 34)
+    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
     frame.BorderSizePixel = 0
     frame.Parent = parent
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = frame
 
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -65, 1, 0)
-    label.Position = UDim2.new(0, 14, 0, 0)
+    label.Size = UDim2.new(1, -60, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = text
-    label.TextColor3 = Color3.fromRGB(255, 185, 235)
-    label.TextSize = 12
+    label.TextColor3 = Color3.fromRGB(220, 225, 240)
+    label.TextSize = 11
     label.Font = Enum.Font.GothamMedium
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = frame
 
     local indicator = Instance.new("TextButton")
-    indicator.Size = UDim2.new(0, 46, 0, 22)
-    indicator.Position = UDim2.new(1, -54, 0.5, -11)
-    indicator.BackgroundColor3 = state and Color3.fromRGB(255, 50, 150) or Color3.fromRGB(50, 20, 70)
+    indicator.Size = UDim2.new(0, 42, 0, 20)
+    indicator.Position = UDim2.new(1, -48, 0.5, -10)
+    indicator.BackgroundColor3 = state and Color3.fromRGB(0, 200, 255) or Color3.fromRGB(35, 35, 48)
     indicator.BorderSizePixel = 0
-    indicator.Text = state and "BẬT" or "TẮT"
-    indicator.TextColor3 = Color3.fromRGB(255, 255, 255)
+    indicator.Text = state and "ON" or "OFF"
+    indicator.TextColor3 = state and Color3.fromRGB(10, 10, 14) or Color3.fromRGB(180, 180, 200)
     indicator.TextSize = 10
     indicator.Font = Enum.Font.GothamBold
     indicator.Parent = frame
 
     local indCorner = Instance.new("UICorner")
-    indCorner.CornerRadius = UDim.new(0, 8)
+    indCorner.CornerRadius = UDim.new(0, 6)
     indCorner.Parent = indicator
 
     indicator.MouseButton1Click:Connect(function()
         state = not state
-        indicator.BackgroundColor3 = state and Color3.fromRGB(255, 50, 150) or Color3.fromRGB(50, 20, 70)
-        indicator.Text = state and "BẬT" or "TẮT"
+        indicator.BackgroundColor3 = state and Color3.fromRGB(0, 200, 255) or Color3.fromRGB(35, 35, 48)
+        indicator.TextColor3 = state and Color3.fromRGB(10, 10, 14) or Color3.fromRGB(180, 180, 200)
+        indicator.Text = state and "ON" or "OFF"
         callback(state)
     end)
 
@@ -425,46 +423,46 @@ end
 local function createSlider(parent, text, min, max, default, callback)
     local value = default
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -10, 0, 58)
-    frame.BackgroundColor3 = Color3.fromRGB(24, 14, 42)
+    frame.Size = UDim2.new(1, -8, 0, 50)
+    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
     frame.BorderSizePixel = 0
     frame.Parent = parent
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
+    corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = frame
 
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -28, 0, 22)
-    label.Position = UDim2.new(0, 14, 0, 6)
+    label.Size = UDim2.new(1, -20, 0, 20)
+    label.Position = UDim2.new(0, 10, 0, 4)
     label.BackgroundTransparency = 1
     label.Text = text .. ": " .. tostring(value)
-    label.TextColor3 = Color3.fromRGB(255, 185, 235)
-    label.TextSize = 12
+    label.TextColor3 = Color3.fromRGB(220, 225, 240)
+    label.TextSize = 11
     label.Font = Enum.Font.GothamMedium
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = frame
 
     local sliderBg = Instance.new("TextButton")
-    sliderBg.Size = UDim2.new(1, -28, 0, 10)
-    sliderBg.Position = UDim2.new(0, 14, 0, 36)
-    sliderBg.BackgroundColor3 = Color3.fromRGB(50, 20, 70)
+    sliderBg.Size = UDim2.new(1, -20, 0, 8)
+    sliderBg.Position = UDim2.new(0, 10, 0, 32)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
     sliderBg.BorderSizePixel = 0
     sliderBg.Text = ""
     sliderBg.Parent = frame
 
     local sliderCorner = Instance.new("UICorner")
-    sliderCorner.CornerRadius = UDim.new(0, 5)
+    sliderCorner.CornerRadius = UDim.new(0, 4)
     sliderCorner.Parent = sliderBg
 
     local sliderFill = Instance.new("Frame")
     sliderFill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
-    sliderFill.BackgroundColor3 = Color3.fromRGB(255, 50, 150)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
     sliderFill.BorderSizePixel = 0
     sliderFill.Parent = sliderBg
 
     local fillCorner = Instance.new("UICorner")
-    fillCorner.CornerRadius = UDim.new(0, 5)
+    fillCorner.CornerRadius = UDim.new(0, 4)
     fillCorner.Parent = sliderFill
 
     local dragging = false
@@ -500,17 +498,17 @@ end
 
 local function createTabButton(name, scroller)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -12, 0, 36)
-    btn.BackgroundColor3 = Color3.fromRGB(24, 14, 42)
+    btn.Size = UDim2.new(1, -8, 0, 32)
+    btn.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
     btn.BorderSizePixel = 0
     btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(255, 185, 235)
-    btn.TextSize = 11
+    btn.TextColor3 = Color3.fromRGB(200, 205, 220)
+    btn.TextSize = 10
     btn.Font = Enum.Font.GothamMedium
     btn.Parent = tabList
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 6)
     corner.Parent = btn
 
     btn.MouseButton1Click:Connect(function()
@@ -519,7 +517,7 @@ local function createTabButton(name, scroller)
     end)
 end
 
-local tabNames = {"Di chuyển", "Chiến đấu", "Xuyên tường (ESP)", "Thế giới", "Dịch chuyển & Cam", "Đồ họa & FPS", "Khác & Hướng dẫn"}
+local tabNames = {"Di chuyển", "Chiến đấu", "Nhìn xuyên (ESP)", "Thế giới", "Dịch chuyển & Cam", "Đồ họa & FPS", "Khác & Giới thiệu"}
 local scrollers = {}
 
 for i, name in ipairs(tabNames) do
@@ -538,9 +536,6 @@ local spectateTab = scrollers[5]
 local visualsTab = scrollers[6]
 local otherTab = scrollers[7]
 
--- =======================================================
--- 3. KHỞI TẠO TÍNH NĂNG (AIM TẮT MẶC ĐỊNH FIX TRIỆT ĐỂ)
--- =======================================================
 local walkSpeedEnabled = false
 local walkSpeedVal = 16
 createToggle(movementTab, "Tốc độ chạy", false, function(state)
@@ -549,7 +544,7 @@ createToggle(movementTab, "Tốc độ chạy", false, function(state)
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
     end
 end)
-createSlider(movementTab, "Mức độ tốc độ", 16, 250, 16, function(val) walkSpeedVal = val end)
+createSlider(movementTab, "Chỉnh tốc độ", 16, 250, 16, function(val) walkSpeedVal = val end)
 
 local jumpPowerEnabled = false
 local jumpPowerVal = 50
@@ -559,46 +554,65 @@ createToggle(movementTab, "Nhảy cao", false, function(state)
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = 50
     end
 end)
-createSlider(movementTab, "Mức độ nhảy cao", 50, 500, 50, function(val) jumpPowerVal = val end)
+createSlider(movementTab, "Mức độ nhảy", 50, 500, 50, function(val) jumpPowerVal = val end)
 
 local flyEnabled = false
 local flySpeed = 50
-createToggle(movementTab, "Chế độ bay tự do", false, function(state) flyEnabled = state end)
+createToggle(movementTab, "Bay tự do", false, function(state) flyEnabled = state end)
 createSlider(movementTab, "Tốc độ bay", 10, 200, 50, function(val) flySpeed = val end)
 
 local noclipEnabled = false
 createToggle(movementTab, "Đi xuyên tường (Noclip)", false, function(state) noclipEnabled = state end)
 
--- FIX AIM LỖI: ĐẢM BẢO BIẾN LUÔN BẰNG FALSE MẶC ĐỊNH
 local smoothAimEnabled = false
 local aimSmoothness = 6
 createToggle(combatTab, "Tự động bám mượt (Smooth Aim)", false, function(state)
     smoothAimEnabled = state
 end)
-createSlider(combatTab, "Độ trễ mượt camera", 1, 20, 6, function(val)
-    aimSmoothness = val
-end)
+createSlider(combatTab, "Độ trễ mượt camera", 1, 20, 6, function(val) aimSmoothness = val end)
 
 local selectedBodyPart = "Head"
 local bodyPartsList = {"Head", "HumanoidRootPart", "UpperTorso"}
 local bpIndex = 1
-createButton(combatTab, "Bộ phận ngắm: Đầu (Đổi)", function()
+createButton(combatTab, "Bộ phận ngắm: Đầu (Ấn đổi)", function()
     bpIndex = bpIndex % #bodyPartsList + 1
     selectedBodyPart = bodyPartsList[bpIndex]
 end)
 
--- ESP TÍNH NĂNG
 local espBoxEnabled = false
 local espNameEnabled = false
 local espHealthEnabled = false
 local espDistanceEnabled = false
 local espLinesEnabled = false
+local espChamEnabled = false
 
 createToggle(espTab, "Khung ESP quanh người", false, function(state) espBoxEnabled = state end)
 createToggle(espTab, "Hiển thị tên người chơi", false, function(state) espNameEnabled = state end)
-createToggle(espTab, "Hiển thị thanh máu (HP)", false, function(state) espHealthEnabled = state end)
-createToggle(espTab, "Hiển thị khoảng cách (Mét)", false, function(state) espDistanceEnabled = state end)
-createToggle(espTab, "Kẻ đường chỉ hướng (Tracer)", false, function(state) espLinesEnabled = state end)
+createToggle(espTab, "Hiển thị thanh HP", false, function(state) espHealthEnabled = state end)
+createToggle(espTab, "Hiển thị khoảng cách (m)", false, function(state) espDistanceEnabled = state end)
+createToggle(espTab, "Kẻ đường định hướng (Tracer)", false, function(state) espLinesEnabled = state end)
+createToggle(espTab, "Chế độ Highlight xuyên wall (Chams)", false, function(state)
+    espChamEnabled = state
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            if state then
+                if not p.Character:FindFirstChild("HubCham") then
+                    local hl = Instance.new("Highlight")
+                    hl.Name = "HubCham"
+                    hl.FillColor = Color3.fromRGB(0, 200, 255)
+                    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    hl.FillTransparency = 0.5
+                    hl.AlwaysOnTop = true
+                    hl.Parent = p.Character
+                end
+            else
+                if p.Character:FindFirstChild("HubCham") then
+                    p.Character.HubCham:Destroy()
+                end
+            end
+        end
+    end
+end)
 
 local espDrawingCache = {}
 RunService.RenderStepped:Connect(function()
@@ -617,17 +631,17 @@ RunService.RenderStepped:Connect(function()
             local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
             if onScreen then
                 local dist = (Camera.CFrame.Position - root.Position).Magnitude
-                local topPos, _ = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 1, 0))
+                local topPos, _ = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 1.2, 0))
                 local bottomPos, _ = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3, 0))
                 local height = math.abs(topPos.Y - bottomPos.Y)
-                local width = height / 2
+                local width = height / 1.8
 
                 if espBoxEnabled then
                     local box = Drawing.new("Square")
                     box.Visible = true
                     box.Size = Vector2.new(width, height)
                     box.Position = Vector2.new(pos.X - width / 2, topPos.Y)
-                    box.Color = Color3.fromRGB(255, 50, 150)
+                    box.Color = Color3.fromRGB(0, 200, 255)
                     box.Thickness = 1.5
                     box.Filled = false
                     table.insert(espDrawingCache, box)
@@ -638,7 +652,7 @@ RunService.RenderStepped:Connect(function()
                     line.Visible = true
                     line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                     line.To = Vector2.new(pos.X, pos.Y)
-                    line.Color = Color3.fromRGB(255, 50, 150)
+                    line.Color = Color3.fromRGB(0, 200, 255)
                     line.Thickness = 1
                     table.insert(espDrawingCache, line)
                 end
@@ -652,11 +666,11 @@ RunService.RenderStepped:Connect(function()
                     local txt = Drawing.new("Text")
                     txt.Visible = true
                     txt.Text = infoText
-                    txt.Size = 12
-                    txt.Color = Color3.fromRGB(255, 185, 235)
+                    txt.Size = 11
+                    txt.Color = Color3.fromRGB(240, 240, 255)
                     txt.Center = true
                     txt.Outline = true
-                    txt.Position = Vector2.new(pos.X, topPos.Y - 18)
+                    txt.Position = Vector2.new(pos.X, topPos.Y - 16)
                     table.insert(espDrawingCache, txt)
                 end
             end
@@ -664,12 +678,11 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- THẾ GIỚI & DỊCH CHUYỂN
 local godMode = false
-createToggle(worldTab, "Bất tử hoàn toàn", false, function(state) godMode = state end)
+createToggle(worldTab, "Bất tử (Auto Health)", false, function(state) godMode = state end)
 
 local lavaImmune = false
-createToggle(worldTab, "Kháng dung nham & Hố tử thần", false, function(state) lavaImmune = state end)
+createToggle(worldTab, "Kháng dung nham", false, function(state) lavaImmune = state end)
 
 local waterWalk = false
 createToggle(worldTab, "Đi trên mặt nước", false, function(state) waterWalk = state end)
@@ -711,7 +724,6 @@ createButton(spectateTab, "Dịch chuyển đến người chơi", function()
     end
 end)
 
--- ĐỒ HỌA
 createToggle(visualsTab, "Sáng toàn bản đồ (Fullbright)", false, function(state)
     if state then
         Lighting.Brightness = 2
@@ -724,7 +736,7 @@ createToggle(visualsTab, "Sáng toàn bản đồ (Fullbright)", false, function
     end
 end)
 
-createButton(visualsTab, "Tăng FPS & Giảm lag toàn bộ", function()
+createButton(visualsTab, "Tăng FPS & Tối ưu hóa cực mạnh", function()
     pcall(function()
         for _, v in ipairs(Workspace:GetDescendants()) do
             if v:IsA("BasePart") then
@@ -740,40 +752,42 @@ createButton(visualsTab, "Tăng FPS & Giảm lag toàn bộ", function()
     end)
 end)
 
-createButton(otherTab, "Xem hướng dẫn sử dụng", function()
+createButton(otherTab, "Xem thông tin & Hướng dẫn", function()
     local guideGui = Instance.new("Frame")
-    guideGui.Size = UDim2.new(0, 440, 0, 260)
-    guideGui.Position = UDim2.new(0.5, -220, 0.5, -130)
-    guideGui.BackgroundColor3 = Color3.fromRGB(15, 10, 25)
+    guideGui.Size = UDim2.new(0, 400, 0, 240)
+    guideGui.Position = UDim2.new(0.5, -200, 0.5, -120)
+    guideGui.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
     guideGui.BorderSizePixel = 0
     guideGui.Parent = ScreenGui
 
+    makeDraggable(guideGui)
+
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 16)
+    corner.CornerRadius = UDim.new(0, 14)
     corner.Parent = guideGui
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 50, 150)
-    stroke.Thickness = 2
+    stroke.Color = Color3.fromRGB(0, 200, 255)
+    stroke.Thickness = 1.5
     stroke.Parent = guideGui
 
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, -24, 1, -60)
+    lbl.Size = UDim2.new(1, -24, 1, -54)
     lbl.Position = UDim2.new(0, 12, 0, 12)
     lbl.BackgroundTransparency = 1
-    lbl.Text = "HƯỚNG DẪN KHOADIEMHUB NEO:\n\n1. Di chuyển: Chỉnh tốc độ, nhảy cao, bay tự do và Noclip đi xuyên tường.\n2. Chiến đấu: Smooth Aim (Bám mượt ưu tiên gần nhất) ĐÃ ĐƯỢC FIX HOÀN TOÀN - Chỉ hoạt động khi bạn bấm BẬT.\n3. ESP & Đồ họa: Xuyên tường, soi HP và giảm lag tăng FPS.\n\nTác giả: Trần Khoa Điềm | Telegram: @TranKhoaDiem"
-    lbl.TextColor3 = Color3.fromRGB(255, 185, 235)
-    lbl.TextSize = 12
-    lbl.Font = Enum.Font.Gotham
+    lbl.Text = "HƯỚNG DẪN KHOADIEMHUB V2 CYBER:\n\n1. Di chuyển: Noclip đi xuyên tường, chỉnh tốc độ chạy, bay tự do.\n2. Smooth Aim: Đã fix hoàn toàn lỗi tự động ngắm khi chưa bật.\n3. ESP: Bổ sung Chams Highlight nhìn xuyên vật cản cực nét.\n4. Đồ họa: Tối ưu hoá tăng FPS không giật lag.\n\nTác giả: Trần Khoa Điềm | Telegram: @TranKhoaDiem"
+    lbl.TextColor3 = Color3.fromRGB(220, 225, 240)
+    lbl.TextSize = 11
+    lbl.Font = Enum.Font.GothamMedium
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.TextYAlignment = Enum.TextYAlignment.Top
     lbl.TextWrapped = true
     lbl.Parent = guideGui
 
     local closeBtn = Instance.new("TextButton")
-    closeBtn.Size = UDim2.new(0, 120, 0, 36)
-    closeBtn.Position = UDim2.new(0.5, -60, 1, -44)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(60, 20, 50)
+    closeBtn.Size = UDim2.new(0, 100, 0, 30)
+    closeBtn.Position = UDim2.new(0.5, -50, 1, -38)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(24, 24, 34)
     closeBtn.BorderSizePixel = 0
     closeBtn.Text = "Đóng"
     closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -781,15 +795,12 @@ createButton(otherTab, "Xem hướng dẫn sử dụng", function()
     closeBtn.Parent = guideGui
 
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 10)
+    btnCorner.CornerRadius = UDim.new(0, 8)
     btnCorner.Parent = closeBtn
 
     closeBtn.MouseButton1Click:Connect(function() guideGui:Destroy() end)
 end)
 
--- =======================================================
--- 4. VÒNG LẶP RENDERSTEPPED (ĐÃ ĐỐI CHIẾU FIX AIM RÕ RÀNG)
--- =======================================================
 RunService.RenderStepped:Connect(function()
     local char = LocalPlayer.Character
     if not char then return end
@@ -819,7 +830,6 @@ RunService.RenderStepped:Connect(function()
         rootPart.CFrame = rootPart.CFrame + (moveVec * (flySpeed * 0.05))
     end
 
-    -- CHỈ BÁM AIM KHI TÍNH NĂNG ĐÃ ĐƯỢC BẬT (CHẮC CHẮN 100%)
     if smoothAimEnabled == true then
         local closestTarget = nil
         local shortestDist = math.huge
