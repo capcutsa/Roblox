@@ -20,6 +20,14 @@ local CONFIG = {
 	Fly = { Min = 10, Max = 300, Default = 60, UpKey = Enum.KeyCode.Space, DownKey = Enum.KeyCode.Q },
 	XRay = { MinPercent = 10, MaxPercent = 90, DefaultPercent = 60, BatchSize = 400 },
 	Follow = { FrontDistance = 5, HeightOffset = 0, SkipTeammates = true, SnapDistance = 8, Sharpness = 14 },
+	Hop = { Min = 1, Max = 30, DefaultSeconds = 3 },
+	PanicKey = Enum.KeyCode.End,
+	ObjectEsp = {
+		EnemyColor = Color3.fromRGB(255, 170, 0),
+		LootColor = Color3.fromRGB(80, 200, 255),
+		MaxHighlights = 28,
+		FillTransparency = 0.6,
+	},
 	AutoClick = { Min = 1, Max = 30, Default = 10 },
 	AttackRate = { Min = 1, Max = 30, Default = 4 },
 	SearchInterval = 0.5,
@@ -111,7 +119,7 @@ local AIM_BIND_NAME = "MinhDiemHubAim"
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 
-for _, name in ipairs({ GUI_NAME, ESP_FOLDER_NAME }) do
+for _, name in ipairs({ GUI_NAME, ESP_FOLDER_NAME, ESP_FOLDER_NAME .. "Objects" }) do
 	local previous = playerGui:FindFirstChild(name)
 	if previous then
 		previous:Destroy()
@@ -334,7 +342,9 @@ local function handleCharacterRemoving(character)
 	CharacterWatcher.root = nil
 end
 
-local Noclip = {
+local Noclip
+do
+Noclip = {
 	requests = {},
 	originals = setmetatable({}, { __mode = "k" }),
 	active = false,
@@ -429,8 +439,11 @@ featureHandlers.Noclip = function(enabled)
 	end
 	return true
 end
+end
 
-local LightingControl = {
+local LightingControl
+do
+LightingControl = {
 	base = {},
 	layers = {},
 	priority = { "FullBright", "FixLag" },
@@ -485,8 +498,11 @@ featureHandlers.FullBright = function(enabled)
 	end
 	return true
 end
+end
 
-local FixLag = {
+local FixLag, isProtectedFromFixLag
+do
+FixLag = {
 	enabled = false,
 	generation = 0,
 	saved = setmetatable({}, { __mode = "k" }),
@@ -528,7 +544,7 @@ local function hasProtectedTag(instance)
 	return false
 end
 
-local function isProtectedFromFixLag(instance)
+function isProtectedFromFixLag(instance)
 	if string.find(string.lower(instance.Name), "hitbox", 1, true) then
 		return true
 	end
@@ -652,8 +668,11 @@ featureHandlers.FixLag = function(enabled)
 	end
 	return true
 end
+end
 
-local WalkSpeed = {
+local WalkSpeed, setWalkSpeedValue
+do
+WalkSpeed = {
 	enabled = false,
 	value = CONFIG.WalkSpeed.Default,
 	original = nil,
@@ -696,7 +715,7 @@ local function watchWalkSpeed(humanoid)
 	end))
 end
 
-local function setWalkSpeedValue(value)
+function setWalkSpeedValue(value)
 	WalkSpeed.value = value
 	local humanoid = CharacterWatcher.humanoid
 	if WalkSpeed.enabled and humanoid then
@@ -731,8 +750,11 @@ CharacterWatcher.subscribe(function(_, humanoid)
 end, function()
 	WalkSpeed.watcher:Clean()
 end)
+end
 
-local HighJump = { enabled = false, value = CONFIG.Jump.Default, original = nil }
+local HighJump, setJumpValue
+do
+HighJump = { enabled = false, value = CONFIG.Jump.Default, original = nil }
 
 local function getJumpProperty(humanoid)
 	return humanoid.UseJumpPower and "JumpPower" or "JumpHeight"
@@ -756,7 +778,7 @@ local function captureJump(humanoid)
 	writeJump(humanoid)
 end
 
-local function setJumpValue(value)
+function setJumpValue(value)
 	HighJump.value = value
 	local humanoid = CharacterWatcher.humanoid
 	if HighJump.enabled and humanoid then
@@ -788,8 +810,11 @@ CharacterWatcher.subscribe(function(_, humanoid)
 		captureJump(humanoid)
 	end
 end, function() end)
+end
 
-local InfiniteJump = { janitor = Janitor.new() }
+local InfiniteJump
+do
+InfiniteJump = { janitor = Janitor.new() }
 
 local function requestExtraJump()
 	local humanoid = CharacterWatcher.humanoid
@@ -805,15 +830,18 @@ featureHandlers.InfiniteJump = function(enabled)
 	end
 	return true
 end
+end
 
-local PlayerTools = { selected = nil, tween = nil }
+local stopOtherMovers, setHopDwell, AutoClick, PlayerTools, Spectate, attackTarget, collectLoot, flyToSelectedPlayer, getEnemyTypes, getPlayerNames, selectPlayerByName, setAttackRate, setClickRate, setEnemyType, setLootTags
+do
+PlayerTools = { selected = nil, tween = nil }
 
 local function getEquippedTool()
 	local character = CharacterWatcher.character
 	return character and character:FindFirstChildOfClass("Tool")
 end
 
-local function attackTarget(target)
+function attackTarget(target)
 	local tool = getEquippedTool()
 	if not tool then
 		return false
@@ -847,9 +875,12 @@ local Automation = {
 	activePrompt = nil,
 	noticed = {},
 	attackInterval = CONFIG.Farm.AttackInterval,
+	hopSeconds = CONFIG.Hop.DefaultSeconds,
+	hopStartedAt = 0,
+	visited = setmetatable({}, { __mode = "k" }),
 }
 
-local function collectLoot(item)
+function collectLoot(item)
 	local prompt = findPrompt(item)
 	if not prompt or not prompt.Enabled then
 		return false
@@ -949,7 +980,7 @@ local function getEnemyModels()
 	return models
 end
 
-local function getEnemyTypes()
+function getEnemyTypes()
 	local seen, names = {}, {}
 	for _, model in ipairs(getEnemyModels()) do
 		if not seen[model.Name] then
@@ -1202,6 +1233,49 @@ local function stepFollow(root, deltaTime)
 	runAttack(target, deltaTime)
 end
 
+local function findHopTarget(origin)
+	for _ = 1, 2 do
+		local nearest, nearestDistance = nil, math.huge
+		for _, player in ipairs(Players:GetPlayers()) do
+			if isFollowCandidate(player) and not Automation.visited[player] then
+				local distance = (player.Character:GetPivot().Position - origin).Magnitude
+				if distance < nearestDistance then
+					nearest, nearestDistance = player, distance
+				end
+			end
+		end
+		if nearest then
+			return nearest
+		end
+		table.clear(Automation.visited)
+	end
+	return nil
+end
+
+local function stepHop(root, deltaTime)
+	local target = Automation.target
+	if target and (not isEnemyAlive(target) or os.clock() - Automation.hopStartedAt >= Automation.hopSeconds) then
+		clearTarget()
+		target = nil
+	end
+	if not target then
+		local player = findHopTarget(root.Position)
+		if not player then
+			setStatus("Hop", "Waiting for player")
+			return
+		end
+		Automation.visited[player] = true
+		Automation.target = player.Character
+		Automation.hopStartedAt = os.clock()
+		target = player.Character
+		root.CFrame = computeFrontGoal(target:GetPivot())
+	end
+	setStatus("Hop", "Teleport: " .. target.Name)
+	zeroVelocity(root)
+	local goal = computeFrontGoal(target:GetPivot())
+	root.CFrame = root.CFrame:Lerp(goal, 1 - math.exp(-CONFIG.Follow.Sharpness * deltaTime))
+end
+
 local function onAutomationStep(deltaTime)
 	local root, humanoid = CharacterWatcher.root, CharacterWatcher.humanoid
 	if not root or not humanoid or not root.Parent or humanoid.Health <= 0 then
@@ -1213,6 +1287,8 @@ local function onAutomationStep(deltaTime)
 		stepFarm(root, deltaTime)
 	elseif Automation.mode == "Follow" then
 		stepFollow(root, deltaTime)
+	elseif Automation.mode == "Hop" then
+		stepHop(root, deltaTime)
 	else
 		stepLoot(root, deltaTime)
 	end
@@ -1237,6 +1313,7 @@ local function stopAutomation()
 	Noclip.release("AutoFarm")
 	Noclip.release("AutoLoot")
 	Noclip.release("AutoFollow")
+	Noclip.release("AutoHop")
 	if Automation.mode then
 		setStatus(Automation.mode, "Idle")
 	end
@@ -1248,11 +1325,12 @@ local function startAutomation(mode)
 	Automation.mode = mode
 	Automation.searchClock = CONFIG.SearchInterval
 	Automation.noticed = {}
+	table.clear(Automation.visited)
 	Noclip.request("Auto" .. mode)
 	Automation.connection = RunService.Heartbeat:Connect(onAutomationStep)
 end
 
-local function setEnemyType(name)
+function setEnemyType(name)
 	Automation.enemyType = name
 	if Automation.mode == "Farm" then
 		clearTarget()
@@ -1260,11 +1338,19 @@ local function setEnemyType(name)
 	end
 end
 
-local function setLootTags(selection)
+function setLootTags(selection)
 	Automation.lootTags = selection
 	if Automation.mode == "Loot" then
 		clearTarget()
 		Automation.searchClock = CONFIG.SearchInterval
+	end
+end
+
+function stopOtherMovers(except)
+	for _, key in ipairs({ "AutoFarm", "AutoLoot", "FollowPlayer", "HopPlayers", "Fly" }) do
+		if key ~= except then
+			setFeature(key, false)
+		end
 	end
 end
 
@@ -1278,9 +1364,7 @@ featureHandlers.AutoFarm = function(enabled)
 	if not Automation.enemyType then
 		return false, "Hãy chọn loại quái trước khi bật Auto Farm"
 	end
-	setFeature("AutoLoot", false)
-	setFeature("Fly", false)
-	setFeature("FollowPlayer", false)
+	stopOtherMovers("AutoFarm")
 	startAutomation("Farm")
 	return true
 end
@@ -1295,9 +1379,7 @@ featureHandlers.AutoLoot = function(enabled)
 	if next(Automation.lootTags) == nil then
 		return false, "Hãy chọn ít nhất một loại loot"
 	end
-	setFeature("AutoFarm", false)
-	setFeature("Fly", false)
-	setFeature("FollowPlayer", false)
+	stopOtherMovers("AutoLoot")
 	startAutomation("Loot")
 	return true
 end
@@ -1309,14 +1391,28 @@ featureHandlers.FollowPlayer = function(enabled)
 		end
 		return true
 	end
-	setFeature("AutoFarm", false)
-	setFeature("AutoLoot", false)
-	setFeature("Fly", false)
+	stopOtherMovers("FollowPlayer")
 	startAutomation("Follow")
 	return true
 end
 
-local function selectPlayerByName(name)
+featureHandlers.HopPlayers = function(enabled)
+	if not enabled then
+		if Automation.mode == "Hop" then
+			stopAutomation()
+		end
+		return true
+	end
+	stopOtherMovers("HopPlayers")
+	startAutomation("Hop")
+	return true
+end
+
+function setHopDwell(seconds)
+	Automation.hopSeconds = seconds
+end
+
+function selectPlayerByName(name)
 	PlayerTools.selected = Players:FindFirstChild(name)
 	if Automation.mode == "Follow" then
 		clearTarget()
@@ -1324,7 +1420,7 @@ local function selectPlayerByName(name)
 	end
 end
 
-local function getPlayerNames()
+function getPlayerNames()
 	local names = {}
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player ~= localPlayer then
@@ -1335,11 +1431,11 @@ local function getPlayerNames()
 	return names
 end
 
-local function setAttackRate(rate)
+function setAttackRate(rate)
 	Automation.attackInterval = 1 / rate
 end
 
-local function flyToSelectedPlayer()
+function flyToSelectedPlayer()
 	local player = PlayerTools.selected
 	local root = CharacterWatcher.root
 	if not player or player.Parent ~= Players then
@@ -1366,7 +1462,7 @@ local function flyToSelectedPlayer()
 	return true
 end
 
-local Spectate = { enabled = false, janitor = Janitor.new() }
+Spectate = { enabled = false, janitor = Janitor.new() }
 
 local function getPlayerHumanoid(player)
 	local character = player.Character
@@ -1423,14 +1519,14 @@ CharacterWatcher.subscribe(function()
 	end)
 end, function() end)
 
-local AutoClick = {
+AutoClick = {
 	rate = CONFIG.AutoClick.Default,
 	clock = 0,
 	noticed = false,
 	janitor = Janitor.new(),
 }
 
-local function setClickRate(rate)
+function setClickRate(rate)
 	AutoClick.rate = rate
 end
 
@@ -1459,14 +1555,23 @@ featureHandlers.AutoClick = function(enabled)
 	end
 	return true
 end
+end
 
+do
 local Esp = {
 	enabled = false,
 	hideTeammates = CONFIG.Esp.HideTeammates,
+	options = {
+		Chams = true,
+		Box = true,
+		Name = CONFIG.Esp.ShowName,
+		Health = CONFIG.Esp.ShowHealth,
+		Distance = CONFIG.Esp.ShowDistance,
+		Tracer = CONFIG.Esp.ShowTracers,
+	},
 	entries = {},
 	trackers = {},
 	folder = nil,
-	showTracers = CONFIG.Esp.ShowTracers,
 	tracerLayer = nil,
 	janitor = Janitor.new(),
 	clock = 0,
@@ -1501,15 +1606,34 @@ local function buildEspBillboard(adornee, playerName)
 		BackgroundColor3 = THEME.Success,
 		BorderSizePixel = 0,
 	}, barBack)
-	return gui, nameLabel, infoLabel, barFill
+	return gui, nameLabel, infoLabel, barBack, barFill
 end
 
-local function buildEspInfoText(entry, healthFraction, distance)
+local function buildEspBox(root, playerName)
+	local gui = create("BillboardGui", {
+		Name = playerName .. "Box",
+		Adornee = root,
+		AlwaysOnTop = true,
+		Size = UDim2.fromScale(4, 6),
+		MaxDistance = CONFIG.Esp.MaxDistance,
+		ResetOnSpawn = false,
+		LightInfluence = 0,
+	}, Esp.folder)
+	local frame = create("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+	}, gui)
+	local stroke = addStroke(frame, Color3.new(1, 1, 1), 1.5)
+	return gui, stroke
+end
+
+local function buildEspInfoText(entry, distance)
 	local parts = {}
-	if CONFIG.Esp.ShowHealth then
+	if Esp.options.Health then
 		table.insert(parts, string.format("HP %d", math.floor(entry.humanoid.Health + 0.5)))
 	end
-	if CONFIG.Esp.ShowDistance and distance then
+	if Esp.options.Distance and distance then
 		table.insert(parts, string.format("%dm", math.floor(distance + 0.5)))
 	end
 	return table.concat(parts, " | ")
@@ -1520,11 +1644,13 @@ local function updateEspEntry(entry)
 	if not humanoid.Parent or not root.Parent then
 		return
 	end
+	local options = Esp.options
 	local teammate = isTeammate(entry.player)
-	local visible = not (teammate and Esp.hideTeammates)
-	entry.highlight.Enabled = visible
-	entry.gui.Enabled = visible
+	local visible = humanoid.Health > 0 and not (teammate and Esp.hideTeammates)
 	entry.visible = visible
+	entry.highlight.Enabled = visible and options.Chams
+	entry.boxGui.Enabled = visible and options.Box
+	entry.gui.Enabled = visible and (options.Name or options.Health or options.Distance)
 	if not visible then
 		return
 	end
@@ -1532,12 +1658,14 @@ local function updateEspEntry(entry)
 	entry.color = color
 	entry.highlight.FillColor = color
 	entry.highlight.OutlineColor = color
+	entry.boxStroke.Color = color
 	local fraction = math.clamp(humanoid.Health / math.max(humanoid.MaxHealth, 1), 0, 1)
 	local localRoot = CharacterWatcher.root
 	local distance = localRoot and (root.Position - localRoot.Position).Magnitude or nil
-	entry.nameLabel.Text = CONFIG.Esp.ShowName and entry.player.DisplayName or ""
+	entry.nameLabel.Text = options.Name and entry.player.DisplayName or ""
 	entry.nameLabel.TextColor3 = color
-	entry.infoLabel.Text = buildEspInfoText(entry, fraction, distance)
+	entry.infoLabel.Text = buildEspInfoText(entry, distance)
+	entry.barBack.Visible = options.Health
 	entry.barFill.Size = UDim2.fromScale(fraction, 1)
 	entry.barFill.BackgroundColor3 = Color3.fromRGB(255, 70, 70):Lerp(THEME.Success, fraction)
 end
@@ -1549,6 +1677,7 @@ local function detachEsp(player)
 	end
 	entry.highlight:Destroy()
 	entry.gui:Destroy()
+	entry.boxGui:Destroy()
 	entry.tracer:Destroy()
 	Esp.entries[player] = nil
 end
@@ -1570,18 +1699,9 @@ local function attachEsp(player, character)
 		OutlineTransparency = 0,
 		DepthMode = Enum.HighlightDepthMode.AlwaysOnTop,
 	}, Esp.folder)
-	local gui, nameLabel, infoLabel, barFill = buildEspBillboard(character:FindFirstChild("Head") or root, player.Name)
-	local entry = {
-		player = player,
-		humanoid = humanoid,
-		root = root,
-		highlight = highlight,
-		gui = gui,
-		nameLabel = nameLabel,
-		infoLabel = infoLabel,
-		barFill = barFill,
-	}
-	entry.tracer = create("Frame", {
+	local gui, nameLabel, infoLabel, barBack, barFill = buildEspBillboard(character:FindFirstChild("Head") or root, player.Name)
+	local boxGui, boxStroke = buildEspBox(root, player.Name)
+	local tracer = create("Frame", {
 		Name = player.Name,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundColor3 = CONFIG.Esp.EnemyColor,
@@ -1589,6 +1709,21 @@ local function attachEsp(player, character)
 		Visible = false,
 		Active = false,
 	}, Esp.tracerLayer)
+	local entry = {
+		player = player,
+		humanoid = humanoid,
+		root = root,
+		highlight = highlight,
+		gui = gui,
+		boxGui = boxGui,
+		boxStroke = boxStroke,
+		nameLabel = nameLabel,
+		infoLabel = infoLabel,
+		barBack = barBack,
+		barFill = barFill,
+		tracer = tracer,
+		visible = false,
+	}
 	Esp.entries[player] = entry
 	updateEspEntry(entry)
 end
@@ -1621,7 +1756,7 @@ end
 
 local function updateTracer(entry, camera, origin)
 	local tracer = entry.tracer
-	if not entry.visible or not entry.root.Parent then
+	if not Esp.options.Tracer or not entry.visible or not entry.root.Parent then
 		tracer.Visible = false
 		return
 	end
@@ -1641,7 +1776,7 @@ end
 
 local function onEspRender(deltaTime)
 	local camera = workspace.CurrentCamera
-	if camera and Esp.showTracers then
+	if camera and Esp.options.Tracer then
 		local size = camera.ViewportSize
 		local origin = Vector2.new(size.X / 2, size.Y)
 		for _, entry in pairs(Esp.entries) do
@@ -1701,25 +1836,135 @@ featureHandlers.Esp = function(enabled)
 	return true
 end
 
-featureHandlers.EspEnemiesOnly = function(enabled)
-	Esp.hideTeammates = enabled
+local function refreshEspEntries()
 	for _, entry in pairs(Esp.entries) do
 		updateEspEntry(entry)
 	end
+end
+
+featureHandlers.EspEnemiesOnly = function(enabled)
+	Esp.hideTeammates = enabled
+	refreshEspEntries()
 	return true
 end
 
-featureHandlers.EspTracers = function(enabled)
-	Esp.showTracers = enabled
-	if not enabled then
-		for _, entry in pairs(Esp.entries) do
-			entry.tracer.Visible = false
+local function createEspOptionHandler(optionKey)
+	return function(enabled)
+		Esp.options[optionKey] = enabled
+		if optionKey == "Tracer" and not enabled then
+			for _, entry in pairs(Esp.entries) do
+				entry.tracer.Visible = false
+			end
 		end
+		refreshEspEntries()
+		return true
 	end
-	return true
 end
 
-local Fly = {
+featureHandlers.EspChams = createEspOptionHandler("Chams")
+featureHandlers.EspBox = createEspOptionHandler("Box")
+featureHandlers.EspName = createEspOptionHandler("Name")
+featureHandlers.EspHealth = createEspOptionHandler("Health")
+featureHandlers.EspDistance = createEspOptionHandler("Distance")
+featureHandlers.EspTracers = createEspOptionHandler("Tracer")
+
+local objectEspKinds = {
+	Enemies = {
+		color = CONFIG.ObjectEsp.EnemyColor,
+		getTags = function()
+			return { CONFIG.Farm.EnemyTag }
+		end,
+	},
+	Loot = {
+		color = CONFIG.ObjectEsp.LootColor,
+		getTags = function()
+			return CONFIG.Loot.Tags
+		end,
+	},
+}
+local objectEspStates = {}
+
+local function addObjectHighlight(kind, instance)
+	local state = objectEspStates[kind]
+	if not state or state.highlights[instance] or state.count >= CONFIG.ObjectEsp.MaxHighlights then
+		return
+	end
+	if not (instance:IsA("Model") or instance:IsA("BasePart")) or not instance:IsDescendantOf(workspace) then
+		return
+	end
+	local color = objectEspKinds[kind].color
+	state.highlights[instance] = create("Highlight", {
+		Name = instance.Name,
+		Adornee = instance,
+		FillColor = color,
+		OutlineColor = color,
+		FillTransparency = CONFIG.ObjectEsp.FillTransparency,
+		DepthMode = Enum.HighlightDepthMode.AlwaysOnTop,
+	}, state.folder)
+	state.count += 1
+end
+
+local function removeObjectHighlight(kind, instance)
+	local state = objectEspStates[kind]
+	local highlight = state and state.highlights[instance]
+	if highlight then
+		highlight:Destroy()
+		state.highlights[instance] = nil
+		state.count -= 1
+	end
+end
+
+local function enableObjectEsp(kind)
+	local state = {
+		highlights = {},
+		count = 0,
+		janitor = Janitor.new(),
+		folder = create("Folder", { Name = ESP_FOLDER_NAME .. "Objects" .. kind }, playerGui),
+	}
+	state.janitor:Add(state.folder)
+	objectEspStates[kind] = state
+	for _, tag in ipairs(objectEspKinds[kind].getTags()) do
+		for _, instance in ipairs(CollectionService:GetTagged(tag)) do
+			addObjectHighlight(kind, instance)
+		end
+		state.janitor:Add(CollectionService:GetInstanceAddedSignal(tag):Connect(function(instance)
+			addObjectHighlight(kind, instance)
+		end))
+		state.janitor:Add(CollectionService:GetInstanceRemovedSignal(tag):Connect(function(instance)
+			removeObjectHighlight(kind, instance)
+		end))
+	end
+end
+
+local function disableObjectEsp(kind)
+	local state = objectEspStates[kind]
+	if state then
+		state.janitor:Clean()
+		objectEspStates[kind] = nil
+	end
+end
+
+local function createObjectEspHandler(kind)
+	return function(enabled)
+		if (objectEspStates[kind] ~= nil) == enabled then
+			return true
+		end
+		if enabled then
+			enableObjectEsp(kind)
+		else
+			disableObjectEsp(kind)
+		end
+		return true
+	end
+end
+
+featureHandlers.EnemyEsp = createObjectEspHandler("Enemies")
+featureHandlers.LootEsp = createObjectEspHandler("Loot")
+end
+
+local Fly, setFlySpeed
+do
+Fly = {
 	enabled = false,
 	speed = CONFIG.Fly.Default,
 	janitor = Janitor.new(),
@@ -1770,7 +2015,7 @@ local function restoreFlyState(humanoid)
 	Fly.platformStandOriginal = nil
 end
 
-local function setFlySpeed(value)
+function setFlySpeed(value)
 	Fly.speed = value
 end
 
@@ -1780,9 +2025,7 @@ featureHandlers.Fly = function(enabled)
 	end
 	local humanoid, root = CharacterWatcher.humanoid, CharacterWatcher.root
 	if enabled then
-		setFeature("AutoFarm", false)
-		setFeature("AutoLoot", false)
-		setFeature("FollowPlayer", false)
+		stopOtherMovers("Fly")
 		Fly.enabled = true
 		if humanoid then
 			applyFlyState(humanoid)
@@ -1808,8 +2051,11 @@ CharacterWatcher.subscribe(function(_, humanoid)
 end, function()
 	Fly.platformStandOriginal = nil
 end)
+end
 
-local XRay = {
+local XRay, setXRayTransparency
+do
+XRay = {
 	enabled = false,
 	transparency = CONFIG.XRay.DefaultPercent / 100,
 	generation = 0,
@@ -1846,7 +2092,7 @@ local function queueXRayInstance(instance)
 	task.defer(applyXRay, instance)
 end
 
-local function setXRayTransparency(fraction)
+function setXRayTransparency(fraction)
 	XRay.transparency = fraction
 	for part in pairs(XRay.modified) do
 		if part.Parent then
@@ -1876,8 +2122,11 @@ featureHandlers.XRay = function(enabled)
 	end
 	return true
 end
+end
 
-local AntiAfk = { janitor = Janitor.new() }
+local AntiAfk
+do
+AntiAfk = { janitor = Janitor.new() }
 
 local function simulateActivity()
 	local ok, errorMessage = pcall(function()
@@ -1896,12 +2145,16 @@ featureHandlers.AntiAfk = function(enabled)
 	end
 	return true
 end
+end
 
-local Aim = {
+local Aim
+do
+Aim = {
 	enabled = false,
 	holding = false,
 	janitor = Janitor.new(),
 	raycastParams = RaycastParams.new(),
+	circle = nil,
 }
 Aim.raycastParams.FilterType = Enum.RaycastFilterType.Exclude
 Aim.raycastParams.RespectCanCollide = true
@@ -1933,8 +2186,14 @@ local function isAimVisible(camera, part)
 	return result == nil or result.Instance:IsDescendantOf(part.Parent)
 end
 
-local function findAimTarget(camera)
-	local center = camera.ViewportSize / 2
+local function getAimOrigin(camera)
+	if isTouchOnly or UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
+		return camera.ViewportSize / 2
+	end
+	return UserInputService:GetMouseLocation()
+end
+
+local function findAimTarget(camera, center)
 	local bestPart, bestOffset = nil, CONFIG.Aim.FieldOfView
 	for _, player in ipairs(Players:GetPlayers()) do
 		local part = getAimPart(player)
@@ -1949,18 +2208,23 @@ local function findAimTarget(camera)
 	return bestPart
 end
 
-local function onAimStep()
+local function onAimStep(deltaTime)
 	local camera = workspace.CurrentCamera
 	if not camera then
 		return
 	end
+	local center = getAimOrigin(camera)
+	if Aim.circle then
+		Aim.circle.Position = UDim2.fromOffset(center.X, center.Y)
+	end
 	if CONFIG.Aim.RequireHold and not Aim.holding and not isTouchOnly then
 		return
 	end
-	local part = findAimTarget(camera)
+	local part = findAimTarget(camera, center)
 	if part then
+		local alpha = 1 - (1 - CONFIG.Aim.Smoothness) ^ (deltaTime * 60)
 		local goal = CFrame.lookAt(camera.CFrame.Position, part.Position)
-		camera.CFrame = camera.CFrame:Lerp(goal, CONFIG.Aim.Smoothness)
+		camera.CFrame = camera.CFrame:Lerp(goal, alpha)
 	end
 end
 
@@ -1980,7 +2244,7 @@ end
 
 local function enableAim()
 	Aim.enabled = true
-	Aim.janitor:Add(createAimCircle())
+	Aim.circle = Aim.janitor:Add(createAimCircle())
 	Aim.janitor:Add(UserInputService.InputBegan:Connect(function(input, processed)
 		if not processed and input.UserInputType == CONFIG.Aim.HoldInput then
 			Aim.holding = true
@@ -2000,6 +2264,7 @@ end
 local function disableAim()
 	Aim.enabled = false
 	Aim.holding = false
+	Aim.circle = nil
 	Aim.janitor:Clean()
 end
 
@@ -2014,7 +2279,9 @@ featureHandlers.Aim = function(enabled)
 	end
 	return true
 end
+end
 
+do
 local rowCounter = 0
 local searchEntries = {}
 local pages = {}
@@ -2587,7 +2854,21 @@ searchBox:GetPropertyChangedSignal("Text"):Connect(function()
 	applySearch(searchBox.Text)
 end)
 
+local ALL_FEATURE_KEYS = {
+	"HopPlayers", "FollowPlayer", "Spectate", "AutoClick", "AutoFarm", "AutoLoot", "Fly", "Noclip",
+	"FixLag", "FullBright", "WalkSpeed", "HighJump", "InfiniteJump", "XRay", "AntiAfk", "Esp",
+	"EnemyEsp", "LootEsp", "Aim",
+}
+
+local function disableAllFeatures()
+	for _, key in ipairs(ALL_FEATURE_KEYS) do
+		setFeature(key, false)
+	end
+	notify("Đã tắt tất cả chức năng", "success")
+end
+
 local featuresPage = pages.Features
+createButton(featuresPage, "TẮT TẤT CẢ CHỨC NĂNG", THEME.Error, disableAllFeatures, "tắt tất cả panic stop all")
 createToggle(featuresPage, "WalkSpeed", "Speed Walk", "Chạy nhanh", "speed walk chạy nhanh tốc độ walkspeed")
 createSlider(featuresPage, "Tốc độ chạy", CONFIG.WalkSpeed.Min, CONFIG.WalkSpeed.Max, CONFIG.WalkSpeed.Default, setWalkSpeedValue, "speed walkspeed chạy")
 createToggle(featuresPage, "HighJump", "High Jump", "Nhảy cao", "jump nhảy cao jumppower jumpheight")
@@ -2614,8 +2895,20 @@ local visualPage = pages.Visual
 createToggle(visualPage, "Esp", "Player ESP", "Tên, máu, khoảng cách, viền", "esp người chơi highlight")
 createToggle(visualPage, "EspEnemiesOnly", "ESP chỉ đối thủ", "Ẩn đồng đội", "esp team đồng đội")
 toggleRenderers.EspEnemiesOnly(CONFIG.Esp.HideTeammates)
+createToggle(visualPage, "EspChams", "ESP Viền", "Viền và màu phủ nhìn xuyên tường", "chams viền highlight esp")
+toggleRenderers.EspChams(true)
+createToggle(visualPage, "EspBox", "ESP Hộp", "Khung hộp quanh người chơi", "box hộp khung esp")
+toggleRenderers.EspBox(true)
+createToggle(visualPage, "EspName", "ESP Tên", "Hiện tên người chơi", "tên name esp")
+toggleRenderers.EspName(CONFIG.Esp.ShowName)
+createToggle(visualPage, "EspHealth", "ESP Máu", "Hiện số máu và thanh máu", "máu health hp esp")
+toggleRenderers.EspHealth(CONFIG.Esp.ShowHealth)
+createToggle(visualPage, "EspDistance", "ESP Khoảng cách", "Hiện khoảng cách tới người chơi", "khoảng cách distance esp")
+toggleRenderers.EspDistance(CONFIG.Esp.ShowDistance)
 createToggle(visualPage, "EspTracers", "ESP Đường kẻ", "Vạch từ đáy màn hình tới người chơi", "tracer đường kẻ line esp")
 toggleRenderers.EspTracers(CONFIG.Esp.ShowTracers)
+createToggle(visualPage, "EnemyEsp", "ESP Quái", "Viền quái có tag FarmableEnemy", "quái enemy npc esp")
+createToggle(visualPage, "LootEsp", "ESP Vật phẩm", "Viền rương, trái ác quỷ theo tag", "loot vật phẩm rương esp")
 createToggle(visualPage, "Aim", "Aim Assist", "Giữ chuột phải (PC) / tự động (mobile)", "aim ngắm camera")
 createToggle(visualPage, "XRay", "X-Ray", "Nhìn xuyên tường, vật thể mờ đi", "xray nhìn xuyên tường")
 createSlider(visualPage, "Độ mờ X-Ray (%)", CONFIG.XRay.MinPercent, CONFIG.XRay.MaxPercent, CONFIG.XRay.DefaultPercent, function(percent)
@@ -2643,6 +2936,15 @@ createButton(playersPage, "Bay đến người chơi", THEME.AccentAlt, function
 	reportResult("Đang bay đến người chơi", flyToSelectedPlayer())
 end, "bay đến teleport người chơi")
 createToggle(playersPage, "FollowPlayer", "Auto bay trước mặt", "Tự bay đến và đứng trước mặt người chơi", "auto bay follow trước mặt người chơi")
+createButton(playersPage, "Dừng bay theo", THEME.Element, function()
+	reportResult("Đã dừng bay theo", setFeature("FollowPlayer", false))
+end, "dừng stop bay theo")
+createStatus(playersPage, "Hop", "Dịch chuyển")
+createToggle(playersPage, "HopPlayers", "Dịch chuyển tới người gần nhất", "Lần lượt tới từng người từ gần đến xa", "dịch chuyển teleport hop người chơi gần nhất")
+createSlider(playersPage, "Thời gian mỗi người (giây)", CONFIG.Hop.Min, CONFIG.Hop.Max, CONFIG.Hop.DefaultSeconds, setHopDwell, "dịch chuyển thời gian")
+createButton(playersPage, "Dừng dịch chuyển", THEME.Error, function()
+	reportResult("Đã dừng dịch chuyển", setFeature("HopPlayers", false))
+end, "dừng stop dịch chuyển teleport")
 createSlider(playersPage, "Tốc độ đánh (lần/giây)", CONFIG.AttackRate.Min, CONFIG.AttackRate.Max, CONFIG.AttackRate.Default, setAttackRate, "attack nhanh tốc độ đánh")
 setAttackRate(CONFIG.AttackRate.Default)
 createToggle(playersPage, "AutoClick", "Auto Click", "Tự kích hoạt vũ khí đang cầm", "auto click đánh nhanh")
@@ -2695,6 +2997,9 @@ createCard(aboutPage, "Hướng dẫn sử dụng", table.concat({
 	"11. X-Ray: làm vật thể trong map mờ đi để nhìn xuyên, chỉnh độ mờ bằng thanh trượt.",
 	"12. ESP Đường kẻ: vạch từ đáy màn hình tới từng người chơi.",
 	"13. Anti AFK mặc định bật, chỉ giúp không bị kick vì đứng yên quá lâu.",
+	"14. ESP có nhiều loại bật riêng: Viền, Hộp, Tên, Máu, Khoảng cách, Đường kẻ, ESP Quái, ESP Vật phẩm.",
+	"15. Dịch chuyển tới người gần nhất: lần lượt tới từng người từ gần đến xa, bấm Dừng dịch chuyển để dừng.",
+	"16. Nút TẮT TẤT CẢ CHỨC NĂNG (hoặc phím " .. CONFIG.PanicKey.Name .. ") tắt mọi chức năng và khôi phục trạng thái.",
 	"14. Tab Người chơi: chọn người trong server rồi bấm Xem camera / Tắt xem, hoặc Bay đến để bay ra trước mặt họ.",
 	"15. Auto bay trước mặt: tự bay theo người đã chọn (không chọn thì lấy người gần nhất, bỏ qua đồng đội) và đứng trước mặt họ.",
 	"16. Tốc độ đánh gọi attackTarget, mặc định kích hoạt vũ khí đang cầm. Auto Click cũng kích hoạt vũ khí đang cầm theo tốc độ bạn chọn.",
@@ -2812,8 +3117,13 @@ mainJanitor:Add(UserInputService.InputEnded:Connect(function(input)
 end))
 
 mainJanitor:Add(UserInputService.InputBegan:Connect(function(input, processed)
-	if not processed and input.KeyCode == CONFIG.MenuToggleKey then
+	if processed then
+		return
+	end
+	if input.KeyCode == CONFIG.MenuToggleKey then
 		toggleMenu()
+	elseif input.KeyCode == CONFIG.PanicKey then
+		disableAllFeatures()
 	end
 end))
 
@@ -2836,10 +3146,7 @@ if localPlayer.Character then
 	task.spawn(handleCharacterAdded, localPlayer.Character)
 end
 
-local SHUTDOWN_ORDER = {
-	"FollowPlayer", "Spectate", "AutoClick", "AutoFarm", "AutoLoot", "Noclip", "FixLag", "FullBright", "WalkSpeed",
-	"HighJump", "InfiniteJump", "Fly", "XRay", "AntiAfk", "Esp", "Aim",
-}
+local SHUTDOWN_ORDER = ALL_FEATURE_KEYS
 
 local function shutdown()
 	if isShutdown then
@@ -2863,3 +3170,4 @@ screenGui.Destroying:Connect(shutdown)
 selectTab("Features")
 setFeature("AntiAfk", true)
 notify(CONFIG.Name .. " " .. CONFIG.Version .. " đã sẵn sàng", "success")
+end
