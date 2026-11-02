@@ -5,6 +5,7 @@ local UserInputService = game:GetService("UserInputService")
 local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
 local GuiService = game:GetService("GuiService")
+local VirtualUser = game:GetService("VirtualUser")
 
 local CONFIG = {
 	Name = "MinhDiemHub",
@@ -16,6 +17,8 @@ local CONFIG = {
 	WalkSpeed = { Min = 16, Max = 200, Default = 50, RestoreFallback = 16 },
 	Jump = { Min = 50, Max = 300, Default = 120 },
 	TweenSpeed = 120,
+	Fly = { Min = 10, Max = 300, Default = 60, UpKey = Enum.KeyCode.Space, DownKey = Enum.KeyCode.Q },
+	XRay = { MinPercent = 10, MaxPercent = 90, DefaultPercent = 60, BatchSize = 400 },
 	SearchInterval = 0.5,
 	Farm = {
 		EnemyTag = "FarmableEnemy",
@@ -66,6 +69,8 @@ local CONFIG = {
 		ShowHealth = true,
 		ShowDistance = true,
 		HideTeammates = false,
+		ShowTracers = true,
+		TracerThickness = 1.5,
 	},
 	Aim = {
 		FieldOfView = 150,
@@ -81,10 +86,10 @@ local CONFIG = {
 }
 
 local THEME = {
-	Background = Color3.fromRGB(13, 14, 20),
-	Panel = Color3.fromRGB(21, 23, 32),
-	Element = Color3.fromRGB(28, 31, 43),
-	Stroke = Color3.fromRGB(46, 50, 68),
+	Background = Color3.fromRGB(6, 6, 8),
+	Panel = Color3.fromRGB(13, 13, 16),
+	Element = Color3.fromRGB(19, 19, 23),
+	Stroke = Color3.fromRGB(38, 38, 46),
 	Accent = Color3.fromRGB(110, 99, 255),
 	AccentAlt = Color3.fromRGB(64, 156, 255),
 	Text = Color3.fromRGB(236, 238, 247),
@@ -1182,6 +1187,7 @@ featureHandlers.AutoFarm = function(enabled)
 		return false, "Hãy chọn loại quái trước khi bật Auto Farm"
 	end
 	setFeature("AutoLoot", false)
+	setFeature("Fly", false)
 	startAutomation("Farm")
 	return true
 end
@@ -1197,6 +1203,7 @@ featureHandlers.AutoLoot = function(enabled)
 		return false, "Hãy chọn ít nhất một loại loot"
 	end
 	setFeature("AutoFarm", false)
+	setFeature("Fly", false)
 	startAutomation("Loot")
 	return true
 end
@@ -1207,6 +1214,8 @@ local Esp = {
 	entries = {},
 	trackers = {},
 	folder = nil,
+	showTracers = CONFIG.Esp.ShowTracers,
+	tracerLayer = nil,
 	janitor = Janitor.new(),
 	clock = 0,
 }
@@ -1263,10 +1272,12 @@ local function updateEspEntry(entry)
 	local visible = not (teammate and Esp.hideTeammates)
 	entry.highlight.Enabled = visible
 	entry.gui.Enabled = visible
+	entry.visible = visible
 	if not visible then
 		return
 	end
 	local color = teammate and CONFIG.Esp.TeamColor or CONFIG.Esp.EnemyColor
+	entry.color = color
 	entry.highlight.FillColor = color
 	entry.highlight.OutlineColor = color
 	local fraction = math.clamp(humanoid.Health / math.max(humanoid.MaxHealth, 1), 0, 1)
@@ -1286,6 +1297,7 @@ local function detachEsp(player)
 	end
 	entry.highlight:Destroy()
 	entry.gui:Destroy()
+	entry.tracer:Destroy()
 	Esp.entries[player] = nil
 end
 
@@ -1317,6 +1329,14 @@ local function attachEsp(player, character)
 		infoLabel = infoLabel,
 		barFill = barFill,
 	}
+	entry.tracer = create("Frame", {
+		Name = player.Name,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = CONFIG.Esp.EnemyColor,
+		BorderSizePixel = 0,
+		Visible = false,
+		Active = false,
+	}, Esp.tracerLayer)
 	Esp.entries[player] = entry
 	updateEspEntry(entry)
 end
@@ -1347,7 +1367,35 @@ local function untrackEspPlayer(player)
 	detachEsp(player)
 end
 
-local function onEspHeartbeat(deltaTime)
+local function updateTracer(entry, camera, origin)
+	local tracer = entry.tracer
+	if not entry.visible or not entry.root.Parent then
+		tracer.Visible = false
+		return
+	end
+	local screenPoint, onScreen = camera:WorldToViewportPoint(entry.root.Position)
+	if not onScreen then
+		tracer.Visible = false
+		return
+	end
+	local target = Vector2.new(screenPoint.X, screenPoint.Y)
+	local delta = target - origin
+	tracer.Visible = true
+	tracer.BackgroundColor3 = entry.color or CONFIG.Esp.EnemyColor
+	tracer.Size = UDim2.fromOffset(delta.Magnitude, CONFIG.Esp.TracerThickness)
+	tracer.Position = UDim2.fromOffset((origin.X + target.X) / 2, (origin.Y + target.Y) / 2)
+	tracer.Rotation = math.deg(math.atan2(delta.Y, delta.X))
+end
+
+local function onEspRender(deltaTime)
+	local camera = workspace.CurrentCamera
+	if camera and Esp.showTracers then
+		local size = camera.ViewportSize
+		local origin = Vector2.new(size.X / 2, size.Y)
+		for _, entry in pairs(Esp.entries) do
+			updateTracer(entry, camera, origin)
+		end
+	end
 	Esp.clock += deltaTime
 	if Esp.clock < CONFIG.Esp.UpdateInterval then
 		return
@@ -1364,7 +1412,14 @@ local function enableEsp()
 	Esp.janitor:Add(Esp.folder)
 	Esp.janitor:Add(Players.PlayerAdded:Connect(trackEspPlayer))
 	Esp.janitor:Add(Players.PlayerRemoving:Connect(untrackEspPlayer))
-	Esp.janitor:Add(RunService.Heartbeat:Connect(onEspHeartbeat))
+	Esp.tracerLayer = Esp.janitor:Add(create("Frame", {
+		Name = "Tracers",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Active = false,
+		ZIndex = 0,
+	}, screenGui))
+	Esp.janitor:Add(RunService.RenderStepped:Connect(onEspRender))
 	for _, player in ipairs(Players:GetPlayers()) do
 		trackEspPlayer(player)
 	end
@@ -1379,6 +1434,7 @@ local function disableEsp()
 	table.clear(Esp.trackers)
 	table.clear(Esp.entries)
 	Esp.folder = nil
+	Esp.tracerLayer = nil
 end
 
 featureHandlers.Esp = function(enabled)
@@ -1397,6 +1453,193 @@ featureHandlers.EspEnemiesOnly = function(enabled)
 	Esp.hideTeammates = enabled
 	for _, entry in pairs(Esp.entries) do
 		updateEspEntry(entry)
+	end
+	return true
+end
+
+featureHandlers.EspTracers = function(enabled)
+	Esp.showTracers = enabled
+	if not enabled then
+		for _, entry in pairs(Esp.entries) do
+			entry.tracer.Visible = false
+		end
+	end
+	return true
+end
+
+local Fly = {
+	enabled = false,
+	speed = CONFIG.Fly.Default,
+	janitor = Janitor.new(),
+	platformStandOriginal = nil,
+}
+
+local function readFlyDirection(camera, humanoid)
+	local look = camera.CFrame.LookVector
+	local right = camera.CFrame.RightVector
+	local move = humanoid.MoveDirection
+	local direction = Vector3.zero
+	if move.Magnitude > 0.01 then
+		local forwardAmount = move:Dot(flatDirection(look))
+		local sideAmount = move:Dot(flatDirection(right))
+		direction = look * forwardAmount + right * sideAmount
+	end
+	local vertical = 0
+	if UserInputService:IsKeyDown(CONFIG.Fly.UpKey) or humanoid.Jump then
+		vertical += 1
+	end
+	if UserInputService:IsKeyDown(CONFIG.Fly.DownKey) then
+		vertical -= 1
+	end
+	return direction + Vector3.new(0, vertical, 0)
+end
+
+local function onFlyStep()
+	local root, humanoid = CharacterWatcher.root, CharacterWatcher.humanoid
+	local camera = workspace.CurrentCamera
+	if not root or not humanoid or not camera or humanoid.Health <= 0 then
+		return
+	end
+	local direction = readFlyDirection(camera, humanoid)
+	if direction.Magnitude > 1 then
+		direction = direction.Unit
+	end
+	root.AssemblyLinearVelocity = direction * Fly.speed
+	root.AssemblyAngularVelocity = Vector3.zero
+end
+
+local function applyFlyState(humanoid)
+	Fly.platformStandOriginal = humanoid.PlatformStand
+	humanoid.PlatformStand = true
+end
+
+local function restoreFlyState(humanoid)
+	humanoid.PlatformStand = Fly.platformStandOriginal or false
+	Fly.platformStandOriginal = nil
+end
+
+local function setFlySpeed(value)
+	Fly.speed = value
+end
+
+featureHandlers.Fly = function(enabled)
+	if Fly.enabled == enabled then
+		return true
+	end
+	local humanoid, root = CharacterWatcher.humanoid, CharacterWatcher.root
+	if enabled then
+		setFeature("AutoFarm", false)
+		setFeature("AutoLoot", false)
+		Fly.enabled = true
+		if humanoid then
+			applyFlyState(humanoid)
+		end
+		Fly.janitor:Add(RunService.Heartbeat:Connect(onFlyStep))
+	else
+		Fly.enabled = false
+		Fly.janitor:Clean()
+		if humanoid then
+			restoreFlyState(humanoid)
+		end
+		if root then
+			root.AssemblyLinearVelocity = Vector3.zero
+		end
+	end
+	return true
+end
+
+CharacterWatcher.subscribe(function(_, humanoid)
+	if Fly.enabled then
+		applyFlyState(humanoid)
+	end
+end, function()
+	Fly.platformStandOriginal = nil
+end)
+
+local XRay = {
+	enabled = false,
+	transparency = CONFIG.XRay.DefaultPercent / 100,
+	generation = 0,
+	modified = setmetatable({}, { __mode = "k" }),
+	janitor = Janitor.new(),
+}
+
+local function applyXRay(instance)
+	if not XRay.enabled or not instance:IsA("BasePart") then
+		return
+	end
+	if instance == workspace.Terrain or instance.Transparency >= 1 or isProtectedFromFixLag(instance) then
+		return
+	end
+	XRay.modified[instance] = true
+	instance.LocalTransparencyModifier = XRay.transparency
+end
+
+local function scanXRay(generation)
+	local processed = 0
+	for _, instance in ipairs(workspace:GetDescendants()) do
+		if XRay.generation ~= generation then
+			return
+		end
+		applyXRay(instance)
+		processed += 1
+		if processed % CONFIG.XRay.BatchSize == 0 then
+			task.wait()
+		end
+	end
+end
+
+local function queueXRayInstance(instance)
+	task.defer(applyXRay, instance)
+end
+
+local function setXRayTransparency(fraction)
+	XRay.transparency = fraction
+	for part in pairs(XRay.modified) do
+		if part.Parent then
+			part.LocalTransparencyModifier = fraction
+		end
+	end
+end
+
+featureHandlers.XRay = function(enabled)
+	if XRay.enabled == enabled then
+		return true
+	end
+	XRay.enabled = enabled
+	XRay.generation += 1
+	if enabled then
+		local generation = XRay.generation
+		XRay.janitor:Add(workspace.DescendantAdded:Connect(queueXRayInstance))
+		XRay.janitor:Add(task.spawn(scanXRay, generation))
+	else
+		XRay.janitor:Clean()
+		for part in pairs(XRay.modified) do
+			if part.Parent then
+				part.LocalTransparencyModifier = 0
+			end
+			XRay.modified[part] = nil
+		end
+	end
+	return true
+end
+
+local AntiAfk = { janitor = Janitor.new() }
+
+local function simulateActivity()
+	local ok, errorMessage = pcall(function()
+		VirtualUser:CaptureController()
+		VirtualUser:ClickButton2(Vector2.zero)
+	end)
+	if not ok then
+		warn(string.format("[%s] Anti AFK lỗi: %s", CONFIG.Name, tostring(errorMessage)))
+	end
+end
+
+featureHandlers.AntiAfk = function(enabled)
+	AntiAfk.janitor:Clean()
+	if enabled then
+		AntiAfk.janitor:Add(localPlayer.Idled:Connect(simulateActivity))
 	end
 	return true
 end
@@ -2096,9 +2339,12 @@ createSlider(featuresPage, "Tốc độ chạy", CONFIG.WalkSpeed.Min, CONFIG.Wa
 createToggle(featuresPage, "HighJump", "High Jump", "Nhảy cao", "jump nhảy cao jumppower jumpheight")
 createSlider(featuresPage, "Độ cao nhảy", CONFIG.Jump.Min, CONFIG.Jump.Max, CONFIG.Jump.Default, setJumpValue, "jump nhảy")
 createToggle(featuresPage, "InfiniteJump", "Infinite Jump", "Nhảy liên tục trên không", "nhảy liên tục infinite jump")
+createToggle(featuresPage, "Fly", "Fly", "Bay theo hướng camera (Space lên, Q xuống)", "bay fly camera")
+createSlider(featuresPage, "Tốc độ bay", CONFIG.Fly.Min, CONFIG.Fly.Max, CONFIG.Fly.Default, setFlySpeed, "bay fly speed tốc độ")
 createToggle(featuresPage, "Noclip", "Noclip", "Đi xuyên vật cản", "noclip xuyên tường")
 createToggle(featuresPage, "FullBright", "Full Bright", "Sáng bản đồ, bật/tắt khôi phục", "sáng fullbright ánh sáng")
 createToggle(featuresPage, "FixLag", "Fix Lag", "Giảm đồ họa, tắt để khôi phục", "lag giảm đồ họa fps")
+createToggle(featuresPage, "AntiAfk", "Anti AFK", "Không bị kick khi đứng yên (mặc định bật)", "afk idle kick đứng yên")
 
 local autoPage = pages.Auto
 createStatus(autoPage, "Farm", "Auto Farm")
@@ -2114,7 +2360,13 @@ local visualPage = pages.Visual
 createToggle(visualPage, "Esp", "Player ESP", "Tên, máu, khoảng cách, viền", "esp người chơi highlight")
 createToggle(visualPage, "EspEnemiesOnly", "ESP chỉ đối thủ", "Ẩn đồng đội", "esp team đồng đội")
 toggleRenderers.EspEnemiesOnly(CONFIG.Esp.HideTeammates)
+createToggle(visualPage, "EspTracers", "ESP Đường kẻ", "Vạch từ đáy màn hình tới người chơi", "tracer đường kẻ line esp")
+toggleRenderers.EspTracers(CONFIG.Esp.ShowTracers)
 createToggle(visualPage, "Aim", "Aim Assist", "Giữ chuột phải (PC) / tự động (mobile)", "aim ngắm camera")
+createToggle(visualPage, "XRay", "X-Ray", "Nhìn xuyên tường, vật thể mờ đi", "xray nhìn xuyên tường")
+createSlider(visualPage, "Độ mờ X-Ray (%)", CONFIG.XRay.MinPercent, CONFIG.XRay.MaxPercent, CONFIG.XRay.DefaultPercent, function(percent)
+	setXRayTransparency(percent / 100)
+end, "xray độ mờ")
 
 local aboutPage = pages.About
 createCard(aboutPage, CONFIG.Name .. " " .. CONFIG.Version, "Dev: " .. CONFIG.Developer .. "\nTelegram: " .. CONFIG.TelegramHandle)
@@ -2159,25 +2411,60 @@ createCard(aboutPage, "Hướng dẫn sử dụng", table.concat({
 	"7. Auto Farm và Auto Loot không chạy cùng lúc.",
 	"8. ESP hiện tên, máu, khoảng cách. Aim Assist: giữ chuột phải (PC), mobile tự hỗ trợ khi bật.",
 	"9. Fix Lag: bật để giảm đồ họa, tắt để trả lại như cũ.",
+	"10. Fly: bật rồi đẩy joystick/WASD, bạn bay theo hướng camera. Space bay lên, Q bay xuống. Chỉnh tốc độ bằng thanh trượt.",
+	"11. X-Ray: làm vật thể trong map mờ đi để nhìn xuyên, chỉnh độ mờ bằng thanh trượt.",
+	"12. ESP Đường kẻ: vạch từ đáy màn hình tới từng người chơi.",
+	"13. Anti AFK mặc định bật, chỉ giúp không bị kick vì đứng yên quá lâu.",
 }, "\n"))
 createButton(aboutPage, "Gỡ MinhDiemHub (khôi phục mọi thứ)", THEME.Error, function()
 	mainJanitor:Clean()
 end, "gỡ tắt hoàn toàn")
 
+local LAUNCHER_COLOR = Color3.fromRGB(0, 0, 0)
+
+local function createIconPiece(icon, size, position, color, rotation)
+	local piece = create("Frame", {
+		Size = UDim2.fromOffset(size.X, size.Y),
+		Position = UDim2.fromOffset(position.X, position.Y),
+		BackgroundColor3 = color,
+		BorderSizePixel = 0,
+		Rotation = rotation or 0,
+		Active = false,
+	}, icon)
+	addCorner(piece, 100)
+	return piece
+end
+
+local function buildAppleIcon(parent, backgroundColor)
+	local icon = create("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.55),
+		Size = UDim2.fromOffset(28, 28),
+		BackgroundTransparency = 1,
+		Active = false,
+	}, parent)
+	local white = Color3.new(1, 1, 1)
+	createIconPiece(icon, Vector2.new(15, 15), Vector2.new(2, 8), white)
+	createIconPiece(icon, Vector2.new(15, 15), Vector2.new(11, 8), white)
+	createIconPiece(icon, Vector2.new(16, 15), Vector2.new(6, 12), white)
+	createIconPiece(icon, Vector2.new(9, 9), Vector2.new(19, 10), backgroundColor)
+	createIconPiece(icon, Vector2.new(2, 6), Vector2.new(13, 2), white, 12)
+	createIconPiece(icon, Vector2.new(9, 5), Vector2.new(15, 1), THEME.Success, -30)
+	return icon
+end
+
 local launcher = create("TextButton", {
 	Name = "Launcher",
 	Size = UDim2.fromOffset(44, 44),
 	Position = UDim2.new(0, 12, 0.5, -22),
-	BackgroundColor3 = THEME.Accent,
-	Text = "M",
-	TextColor3 = Color3.new(1, 1, 1),
-	Font = Enum.Font.GothamBlack,
-	TextSize = 20,
+	BackgroundColor3 = LAUNCHER_COLOR,
+	Text = "",
 	AutoButtonColor = false,
 	BorderSizePixel = 0,
 }, screenGui)
 addCorner(launcher, 12)
-create("UIGradient", { Color = ColorSequence.new(THEME.Accent, THEME.AccentAlt), Rotation = 45 }, launcher)
+addStroke(launcher, THEME.Stroke, 1)
+buildAppleIcon(launcher, LAUNCHER_COLOR)
 
 local collapsed = false
 
@@ -2255,7 +2542,7 @@ end
 
 local SHUTDOWN_ORDER = {
 	"AutoFarm", "AutoLoot", "Noclip", "FixLag", "FullBright", "WalkSpeed",
-	"HighJump", "InfiniteJump", "Esp", "Aim",
+	"HighJump", "InfiniteJump", "Fly", "XRay", "AntiAfk", "Esp", "Aim",
 }
 
 local function shutdown()
@@ -2278,4 +2565,5 @@ end)
 screenGui.Destroying:Connect(shutdown)
 
 selectTab("Features")
+setFeature("AntiAfk", true)
 notify(CONFIG.Name .. " " .. CONFIG.Version .. " đã sẵn sàng", "success")
