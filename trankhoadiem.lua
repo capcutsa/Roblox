@@ -688,19 +688,11 @@ local function writeWalkSpeed(humanoid)
 	end
 end
 
-local function handleWalkSpeedOverride(humanoid)
+local function warnWalkSpeedOverride()
 	local now = os.clock()
-	if now - WalkSpeed.windowStart > 2 then
-		WalkSpeed.windowStart = now
-		WalkSpeed.windowCount = 0
-	end
-	WalkSpeed.windowCount += 1
 	if now - WalkSpeed.lastWarning > 10 then
 		WalkSpeed.lastWarning = now
-		notify("Server đang ghi đè WalkSpeed của bạn", "warn")
-	end
-	if WalkSpeed.windowCount <= 5 then
-		writeWalkSpeed(humanoid)
+		notify("Game đang ghi đè WalkSpeed, script giữ lại liên tục", "warn")
 	end
 end
 
@@ -710,7 +702,12 @@ local function watchWalkSpeed(humanoid)
 	writeWalkSpeed(humanoid)
 	WalkSpeed.watcher:Add(humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
 		if WalkSpeed.enabled and humanoid.WalkSpeed ~= WalkSpeed.value then
-			handleWalkSpeedOverride(humanoid)
+			warnWalkSpeedOverride()
+		end
+	end))
+	WalkSpeed.watcher:Add(RunService.Heartbeat:Connect(function()
+		if WalkSpeed.enabled and humanoid.Parent and humanoid.Health > 0 then
+			writeWalkSpeed(humanoid)
 		end
 	end))
 end
