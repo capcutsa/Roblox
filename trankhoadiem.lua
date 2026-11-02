@@ -19,6 +19,9 @@ local CONFIG = {
 	TweenSpeed = 120,
 	Fly = { Min = 10, Max = 300, Default = 60, UpKey = Enum.KeyCode.Space, DownKey = Enum.KeyCode.Q },
 	XRay = { MinPercent = 10, MaxPercent = 90, DefaultPercent = 60, BatchSize = 400 },
+	Follow = { FrontDistance = 5, HeightOffset = 0, SkipTeammates = true, SnapDistance = 8, Sharpness = 14 },
+	AutoClick = { Min = 1, Max = 30, Default = 10 },
+	AttackRate = { Min = 1, Max = 30, Default = 4 },
 	SearchInterval = 0.5,
 	Farm = {
 		EnemyTag = "FarmableEnemy",
@@ -803,8 +806,20 @@ featureHandlers.InfiniteJump = function(enabled)
 	return true
 end
 
+local PlayerTools = { selected = nil, tween = nil }
+
+local function getEquippedTool()
+	local character = CharacterWatcher.character
+	return character and character:FindFirstChildOfClass("Tool")
+end
+
 local function attackTarget(target)
-	return false
+	local tool = getEquippedTool()
+	if not tool then
+		return false
+	end
+	tool:Activate()
+	return true
 end
 
 local function findPrompt(item)
@@ -831,6 +846,7 @@ local Automation = {
 	collectThread = nil,
 	activePrompt = nil,
 	noticed = {},
+	attackInterval = CONFIG.Farm.AttackInterval,
 }
 
 local function collectLoot(item)
@@ -864,7 +880,7 @@ local function callUserHook(label, hook, argument)
 	end
 	if result ~= true and not Automation.noticed[label] then
 		Automation.noticed[label] = true
-		notify(label .. " chưa được kết nối với game của bạn", "warn")
+		notify(label .. " chưa hoạt động (chưa kết nối hoặc chưa cầm vũ khí)", "warn")
 	end
 	return result == true
 end
@@ -1014,7 +1030,7 @@ end
 
 local function runAttack(enemy, deltaTime)
 	Automation.attackClock += deltaTime
-	if Automation.attackClock < CONFIG.Farm.AttackInterval then
+	if Automation.attackClock < Automation.attackInterval then
 		return
 	end
 	Automation.attackClock = 0
@@ -1113,6 +1129,79 @@ local function stepLoot(root, deltaTime)
 	approachLoot(root, item)
 end
 
+local function isFollowCandidate(player)
+	if player == localPlayer then
+		return false
+	end
+	if CONFIG.Follow.SkipTeammates and isTeammate(player) then
+		return false
+	end
+	local character = player.Character
+	return isEnemyAlive(character) and character:FindFirstChild("HumanoidRootPart") ~= nil
+end
+
+local function findFollowTarget(origin)
+	local selected = PlayerTools.selected
+	if selected then
+		if selected.Parent == Players and isEnemyAlive(selected.Character) then
+			return selected.Character
+		end
+		return nil
+	end
+	local nearest, nearestDistance = nil, math.huge
+	for _, player in ipairs(Players:GetPlayers()) do
+		if isFollowCandidate(player) then
+			local distance = (player.Character:GetPivot().Position - origin).Magnitude
+			if distance < nearestDistance then
+				nearest, nearestDistance = player.Character, distance
+			end
+		end
+	end
+	return nearest
+end
+
+local function computeFrontGoal(targetCFrame)
+	local front = flatDirection(targetCFrame.LookVector)
+	if front == Vector3.zero then
+		front = Vector3.zAxis
+	end
+	local position = targetCFrame.Position + front * CONFIG.Follow.FrontDistance + Vector3.new(0, CONFIG.Follow.HeightOffset, 0)
+	local facing = flatDirection(targetCFrame.Position - position)
+	if facing == Vector3.zero then
+		facing = -front
+	end
+	return CFrame.lookAt(position, position + facing)
+end
+
+local function stepFollow(root, deltaTime)
+	if Automation.target and not isEnemyAlive(Automation.target) then
+		clearTarget()
+		Automation.searchClock = CONFIG.SearchInterval
+	end
+	if not Automation.target then
+		Automation.searchClock += deltaTime
+		if Automation.searchClock >= CONFIG.SearchInterval then
+			Automation.searchClock = 0
+			Automation.target = findFollowTarget(root.Position)
+		end
+	end
+	local target = Automation.target
+	if not target then
+		setStatus("Follow", "Waiting for player")
+		return
+	end
+	setStatus("Follow", "Following: " .. target.Name)
+	local goal = computeFrontGoal(target:GetPivot())
+	zeroVelocity(root)
+	if (root.Position - goal.Position).Magnitude > CONFIG.Follow.SnapDistance then
+		tweenRootTo(root, goal)
+		return
+	end
+	cancelAutomationTween()
+	root.CFrame = root.CFrame:Lerp(goal, 1 - math.exp(-CONFIG.Follow.Sharpness * deltaTime))
+	runAttack(target, deltaTime)
+end
+
 local function onAutomationStep(deltaTime)
 	local root, humanoid = CharacterWatcher.root, CharacterWatcher.humanoid
 	if not root or not humanoid or not root.Parent or humanoid.Health <= 0 then
@@ -1122,6 +1211,8 @@ local function onAutomationStep(deltaTime)
 	end
 	if Automation.mode == "Farm" then
 		stepFarm(root, deltaTime)
+	elseif Automation.mode == "Follow" then
+		stepFollow(root, deltaTime)
 	else
 		stepLoot(root, deltaTime)
 	end
@@ -1145,6 +1236,7 @@ local function stopAutomation()
 	Automation.arrivedAt = nil
 	Noclip.release("AutoFarm")
 	Noclip.release("AutoLoot")
+	Noclip.release("AutoFollow")
 	if Automation.mode then
 		setStatus(Automation.mode, "Idle")
 	end
@@ -1188,6 +1280,7 @@ featureHandlers.AutoFarm = function(enabled)
 	end
 	setFeature("AutoLoot", false)
 	setFeature("Fly", false)
+	setFeature("FollowPlayer", false)
 	startAutomation("Farm")
 	return true
 end
@@ -1204,7 +1297,166 @@ featureHandlers.AutoLoot = function(enabled)
 	end
 	setFeature("AutoFarm", false)
 	setFeature("Fly", false)
+	setFeature("FollowPlayer", false)
 	startAutomation("Loot")
+	return true
+end
+
+featureHandlers.FollowPlayer = function(enabled)
+	if not enabled then
+		if Automation.mode == "Follow" then
+			stopAutomation()
+		end
+		return true
+	end
+	setFeature("AutoFarm", false)
+	setFeature("AutoLoot", false)
+	setFeature("Fly", false)
+	startAutomation("Follow")
+	return true
+end
+
+local function selectPlayerByName(name)
+	PlayerTools.selected = Players:FindFirstChild(name)
+	if Automation.mode == "Follow" then
+		clearTarget()
+		Automation.searchClock = CONFIG.SearchInterval
+	end
+end
+
+local function getPlayerNames()
+	local names = {}
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= localPlayer then
+			table.insert(names, player.Name)
+		end
+	end
+	table.sort(names)
+	return names
+end
+
+local function setAttackRate(rate)
+	Automation.attackInterval = 1 / rate
+end
+
+local function flyToSelectedPlayer()
+	local player = PlayerTools.selected
+	local root = CharacterWatcher.root
+	if not player or player.Parent ~= Players then
+		return false, "Hãy chọn người chơi trước"
+	end
+	if Automation.mode then
+		return false, "Hãy tắt chức năng tự động đang chạy trước"
+	end
+	local character = player.Character
+	if not root or not isEnemyAlive(character) then
+		return false, "Không thể bay tới người chơi này"
+	end
+	if PlayerTools.tween then
+		PlayerTools.tween:Cancel()
+	end
+	local goal = computeFrontGoal(character:GetPivot())
+	local duration = math.max((root.Position - goal.Position).Magnitude / CONFIG.TweenSpeed, 0.05)
+	local tween = TweenService:Create(root, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = goal })
+	tween.Completed:Once(function()
+		root.AssemblyLinearVelocity = Vector3.zero
+	end)
+	PlayerTools.tween = tween
+	tween:Play()
+	return true
+end
+
+local Spectate = { enabled = false, janitor = Janitor.new() }
+
+local function getPlayerHumanoid(player)
+	local character = player.Character
+	return character and character:FindFirstChildOfClass("Humanoid")
+end
+
+local function pointCameraAt(humanoid)
+	local camera = workspace.CurrentCamera
+	if camera and humanoid then
+		camera.CameraSubject = humanoid
+	end
+end
+
+featureHandlers.Spectate = function(enabled)
+	Spectate.janitor:Clean()
+	Spectate.enabled = false
+	if not enabled then
+		pointCameraAt(CharacterWatcher.humanoid)
+		return true
+	end
+	local player = PlayerTools.selected
+	if not player or player.Parent ~= Players then
+		return false, "Hãy chọn người chơi trước"
+	end
+	local humanoid = getPlayerHumanoid(player)
+	if not humanoid then
+		return false, "Người chơi này chưa có nhân vật"
+	end
+	Spectate.enabled = true
+	pointCameraAt(humanoid)
+	Spectate.janitor:Add(player.CharacterAdded:Connect(function(character)
+		local newHumanoid = character:WaitForChild("Humanoid", 10)
+		if Spectate.enabled and newHumanoid then
+			pointCameraAt(newHumanoid)
+		end
+	end))
+	Spectate.janitor:Add(Players.PlayerRemoving:Connect(function(leaving)
+		if leaving == player then
+			setFeature("Spectate", false)
+			notify("Người chơi đã thoát, đã tắt xem", "warn")
+		end
+	end))
+	return true
+end
+
+CharacterWatcher.subscribe(function()
+	if not Spectate.enabled or not PlayerTools.selected then
+		return
+	end
+	task.delay(0.25, function()
+		if Spectate.enabled and PlayerTools.selected then
+			pointCameraAt(getPlayerHumanoid(PlayerTools.selected))
+		end
+	end)
+end, function() end)
+
+local AutoClick = {
+	rate = CONFIG.AutoClick.Default,
+	clock = 0,
+	noticed = false,
+	janitor = Janitor.new(),
+}
+
+local function setClickRate(rate)
+	AutoClick.rate = rate
+end
+
+local function onAutoClickStep(deltaTime)
+	AutoClick.clock += deltaTime
+	local interval = 1 / AutoClick.rate
+	if AutoClick.clock < interval then
+		return
+	end
+	AutoClick.clock = math.min(AutoClick.clock - interval, interval)
+	local tool = getEquippedTool()
+	if tool then
+		tool:Activate()
+	elseif not AutoClick.noticed then
+		AutoClick.noticed = true
+		notify("Hãy cầm vũ khí để Auto Click hoạt động", "warn")
+	end
+end
+
+featureHandlers.AutoClick = function(enabled)
+	AutoClick.janitor:Clean()
+	AutoClick.clock = 0
+	AutoClick.noticed = false
+	if enabled then
+		AutoClick.janitor:Add(RunService.Heartbeat:Connect(onAutoClickStep))
+	end
 	return true
 end
 
@@ -1530,6 +1782,7 @@ featureHandlers.Fly = function(enabled)
 	if enabled then
 		setFeature("AutoFarm", false)
 		setFeature("AutoLoot", false)
+		setFeature("FollowPlayer", false)
 		Fly.enabled = true
 		if humanoid then
 			applyFlyState(humanoid)
@@ -2270,6 +2523,7 @@ local TAB_DEFINITIONS = {
 	{ key = "Features", label = "Chức năng" },
 	{ key = "Auto", label = "Tự động" },
 	{ key = "Visual", label = "Hiển thị" },
+	{ key = "Players", label = "Người chơi" },
 	{ key = "About", label = "Giới thiệu" },
 }
 
@@ -2311,12 +2565,12 @@ end
 for index, definition in ipairs(TAB_DEFINITIONS) do
 	pages[definition.key] = createPage(pageHolder)
 	local button = create("TextButton", {
-		Size = UDim2.new(0.25, -3, 1, 0),
+		Size = UDim2.new(0.2, -4, 1, 0),
 		BackgroundColor3 = THEME.Panel,
 		Text = definition.label,
 		TextColor3 = THEME.TextDim,
 		Font = THEME.FontBold,
-		TextSize = 11,
+		TextSize = 10,
 		AutoButtonColor = false,
 		BorderSizePixel = 0,
 		LayoutOrder = index,
@@ -2368,6 +2622,32 @@ createSlider(visualPage, "Độ mờ X-Ray (%)", CONFIG.XRay.MinPercent, CONFIG.
 	setXRayTransparency(percent / 100)
 end, "xray độ mờ")
 
+local function reportResult(successMessage, accepted, reason)
+	if accepted then
+		notify(successMessage, "success")
+	else
+		notify(reason or "Không thực hiện được", "error")
+	end
+end
+
+local playersPage = pages.Players
+createStatus(playersPage, "Follow", "Auto bay")
+createDropdown(playersPage, "Người chơi", "Chọn người chơi...", getPlayerNames, false, selectPlayerByName, "người chơi player chọn danh sách server")
+createButton(playersPage, "Xem camera người chơi", THEME.Accent, function()
+	reportResult("Đang xem người chơi", setFeature("Spectate", true))
+end, "xem camera spectate")
+createButton(playersPage, "Tắt xem", THEME.Element, function()
+	reportResult("Đã tắt xem", setFeature("Spectate", false))
+end, "tắt xem spectate camera")
+createButton(playersPage, "Bay đến người chơi", THEME.AccentAlt, function()
+	reportResult("Đang bay đến người chơi", flyToSelectedPlayer())
+end, "bay đến teleport người chơi")
+createToggle(playersPage, "FollowPlayer", "Auto bay trước mặt", "Tự bay đến và đứng trước mặt người chơi", "auto bay follow trước mặt người chơi")
+createSlider(playersPage, "Tốc độ đánh (lần/giây)", CONFIG.AttackRate.Min, CONFIG.AttackRate.Max, CONFIG.AttackRate.Default, setAttackRate, "attack nhanh tốc độ đánh")
+setAttackRate(CONFIG.AttackRate.Default)
+createToggle(playersPage, "AutoClick", "Auto Click", "Tự kích hoạt vũ khí đang cầm", "auto click đánh nhanh")
+createSlider(playersPage, "Tốc độ click (lần/giây)", CONFIG.AutoClick.Min, CONFIG.AutoClick.Max, CONFIG.AutoClick.Default, setClickRate, "click tốc độ")
+
 local aboutPage = pages.About
 createCard(aboutPage, CONFIG.Name .. " " .. CONFIG.Version, "Dev: " .. CONFIG.Developer .. "\nTelegram: " .. CONFIG.TelegramHandle)
 
@@ -2415,6 +2695,9 @@ createCard(aboutPage, "Hướng dẫn sử dụng", table.concat({
 	"11. X-Ray: làm vật thể trong map mờ đi để nhìn xuyên, chỉnh độ mờ bằng thanh trượt.",
 	"12. ESP Đường kẻ: vạch từ đáy màn hình tới từng người chơi.",
 	"13. Anti AFK mặc định bật, chỉ giúp không bị kick vì đứng yên quá lâu.",
+	"14. Tab Người chơi: chọn người trong server rồi bấm Xem camera / Tắt xem, hoặc Bay đến để bay ra trước mặt họ.",
+	"15. Auto bay trước mặt: tự bay theo người đã chọn (không chọn thì lấy người gần nhất, bỏ qua đồng đội) và đứng trước mặt họ.",
+	"16. Tốc độ đánh gọi attackTarget, mặc định kích hoạt vũ khí đang cầm. Auto Click cũng kích hoạt vũ khí đang cầm theo tốc độ bạn chọn.",
 }, "\n"))
 createButton(aboutPage, "Gỡ MinhDiemHub (khôi phục mọi thứ)", THEME.Error, function()
 	mainJanitor:Clean()
@@ -2534,6 +2817,19 @@ mainJanitor:Add(UserInputService.InputBegan:Connect(function(input, processed)
 	end
 end))
 
+mainJanitor:Add(function()
+	if PlayerTools.tween then
+		PlayerTools.tween:Cancel()
+		PlayerTools.tween = nil
+	end
+end)
+
+mainJanitor:Add(Players.PlayerRemoving:Connect(function(leaving)
+	if leaving == PlayerTools.selected then
+		PlayerTools.selected = nil
+	end
+end))
+
 mainJanitor:Add(localPlayer.CharacterAdded:Connect(handleCharacterAdded))
 mainJanitor:Add(localPlayer.CharacterRemoving:Connect(handleCharacterRemoving))
 if localPlayer.Character then
@@ -2541,7 +2837,7 @@ if localPlayer.Character then
 end
 
 local SHUTDOWN_ORDER = {
-	"AutoFarm", "AutoLoot", "Noclip", "FixLag", "FullBright", "WalkSpeed",
+	"FollowPlayer", "Spectate", "AutoClick", "AutoFarm", "AutoLoot", "Noclip", "FixLag", "FullBright", "WalkSpeed",
 	"HighJump", "InfiniteJump", "Fly", "XRay", "AntiAfk", "Esp", "Aim",
 }
 
