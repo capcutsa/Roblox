@@ -6,6 +6,8 @@ local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
 local GuiService = game:GetService("GuiService")
 local VirtualUser = game:GetService("VirtualUser")
+local TextChatService = game:GetService("TextChatService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CONFIG = {
 	Name = "MinhDiemHub",
@@ -22,6 +24,14 @@ local CONFIG = {
 	Follow = { FrontDistance = 5, HeightOffset = 0, SkipTeammates = true, SnapDistance = 8, Sharpness = 14 },
 	Hop = { Min = 1, Max = 30, DefaultSeconds = 3 },
 	PanicKey = Enum.KeyCode.End,
+	AutoAttack = { Min = 1, Max = 20, Default = 3 },
+	Orbit = {
+		Radius = { Min = 3, Max = 60, Default = 12 },
+		Speed = { Min = 10, Max = 360, Default = 90 },
+		Height = 3,
+	},
+	Fov = { Min = 40, Max = 120, Default = 90 },
+	AutoChat = { Enabled = true, Message = "Chào Mừng Bạn Đến Với MinhDiemHub", DelaySeconds = 2 },
 	ObjectEsp = {
 		EnemyColor = Color3.fromRGB(255, 170, 0),
 		LootColor = Color3.fromRGB(80, 200, 255),
@@ -85,7 +95,8 @@ local CONFIG = {
 	},
 	Aim = {
 		FieldOfView = 150,
-		Smoothness = 0.35,
+		Smoothness = 1,
+		Mode = "Enemies",
 		MaxDistance = 800,
 		TargetPart = "Head",
 		RequireHold = true,
@@ -97,19 +108,19 @@ local CONFIG = {
 }
 
 local THEME = {
-	Background = Color3.fromRGB(6, 6, 8),
-	Panel = Color3.fromRGB(13, 13, 16),
-	Element = Color3.fromRGB(19, 19, 23),
-	Stroke = Color3.fromRGB(38, 38, 46),
-	Accent = Color3.fromRGB(110, 99, 255),
-	AccentAlt = Color3.fromRGB(64, 156, 255),
-	Text = Color3.fromRGB(236, 238, 247),
-	TextDim = Color3.fromRGB(141, 147, 168),
-	Success = Color3.fromRGB(52, 211, 153),
-	Error = Color3.fromRGB(248, 113, 113),
-	Warn = Color3.fromRGB(251, 191, 36),
-	Font = Enum.Font.GothamMedium,
-	FontBold = Enum.Font.GothamBold,
+	Background = Color3.fromRGB(0, 0, 0),
+	Panel = Color3.fromRGB(7, 9, 8),
+	Element = Color3.fromRGB(11, 16, 13),
+	Stroke = Color3.fromRGB(0, 80, 48),
+	Accent = Color3.fromRGB(0, 230, 120),
+	AccentAlt = Color3.fromRGB(0, 190, 255),
+	Text = Color3.fromRGB(205, 255, 228),
+	TextDim = Color3.fromRGB(95, 145, 118),
+	Success = Color3.fromRGB(0, 230, 120),
+	Error = Color3.fromRGB(255, 60, 80),
+	Warn = Color3.fromRGB(255, 196, 0),
+	Font = Enum.Font.RobotoMono,
+	FontBold = Enum.Font.RobotoMono,
 }
 
 local GUI_NAME = "MinhDiemHub"
@@ -118,6 +129,13 @@ local AIM_BIND_NAME = "MinhDiemHubAim"
 
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
+
+for _, name in ipairs({ ESP_FOLDER_NAME, ESP_FOLDER_NAME .. "ObjectsEnemies", ESP_FOLDER_NAME .. "ObjectsLoot" }) do
+	local previousWorld = workspace:FindFirstChild(name)
+	if previousWorld then
+		previousWorld:Destroy()
+	end
+end
 
 for _, name in ipairs({ GUI_NAME, ESP_FOLDER_NAME, ESP_FOLDER_NAME .. "Objects" }) do
 	local previous = playerGui:FindFirstChild(name)
@@ -172,7 +190,7 @@ local function create(className, properties, parent)
 end
 
 local function addCorner(instance, radius)
-	return create("UICorner", { CornerRadius = UDim.new(0, radius) }, instance)
+	return create("UICorner", { CornerRadius = UDim.new(0, math.min(radius, 4)) }, instance)
 end
 
 local function addStroke(instance, color, thickness)
@@ -829,11 +847,11 @@ featureHandlers.InfiniteJump = function(enabled)
 end
 end
 
-local stopOtherMovers, setHopDwell, AutoClick, PlayerTools, Spectate, attackTarget, collectLoot, flyToSelectedPlayer, getEnemyTypes, getPlayerNames, selectPlayerByName, setAttackRate, setClickRate, setEnemyType, setLootTags
+local setOrbitRadius, setOrbitSpeed, setAutoAttackRange, getEquippedTool, stopOtherMovers, setHopDwell, AutoClick, PlayerTools, Spectate, attackTarget, collectLoot, flyToSelectedPlayer, getEnemyTypes, getPlayerNames, selectPlayerByName, setAttackRate, setClickRate, setEnemyType, setLootTags
 do
 PlayerTools = { selected = nil, tween = nil }
 
-local function getEquippedTool()
+function getEquippedTool()
 	local character = CharacterWatcher.character
 	return character and character:FindFirstChildOfClass("Tool")
 end
@@ -875,6 +893,9 @@ local Automation = {
 	hopSeconds = CONFIG.Hop.DefaultSeconds,
 	hopStartedAt = 0,
 	visited = setmetatable({}, { __mode = "k" }),
+	orbitAngle = 0,
+	orbitRadius = CONFIG.Orbit.Radius.Default,
+	orbitSpeed = CONFIG.Orbit.Speed.Default,
 }
 
 function collectLoot(item)
@@ -1273,6 +1294,29 @@ local function stepHop(root, deltaTime)
 	root.CFrame = root.CFrame:Lerp(goal, 1 - math.exp(-CONFIG.Follow.Sharpness * deltaTime))
 end
 
+local function stepOrbit(root, deltaTime)
+	local selected = PlayerTools.selected
+	local character = selected and selected.Character
+	if not selected or selected.Parent ~= Players or not isEnemyAlive(character) then
+		cancelAutomationTween()
+		setStatus("Orbit", "Waiting for player")
+		return
+	end
+	setStatus("Orbit", "Orbit: " .. selected.Name)
+	Automation.orbitAngle = (Automation.orbitAngle + math.rad(Automation.orbitSpeed) * deltaTime) % (math.pi * 2)
+	local center = character:GetPivot().Position
+	local offset = Vector3.new(math.cos(Automation.orbitAngle) * Automation.orbitRadius, CONFIG.Orbit.Height, math.sin(Automation.orbitAngle) * Automation.orbitRadius)
+	local position = center + offset
+	local goal = CFrame.lookAt(position, Vector3.new(center.X, position.Y, center.Z))
+	zeroVelocity(root)
+	if (root.Position - position).Magnitude > CONFIG.Follow.SnapDistance then
+		tweenRootTo(root, goal)
+		return
+	end
+	cancelAutomationTween()
+	root.CFrame = goal
+end
+
 local function onAutomationStep(deltaTime)
 	local root, humanoid = CharacterWatcher.root, CharacterWatcher.humanoid
 	if not root or not humanoid or not root.Parent or humanoid.Health <= 0 then
@@ -1286,6 +1330,8 @@ local function onAutomationStep(deltaTime)
 		stepFollow(root, deltaTime)
 	elseif Automation.mode == "Hop" then
 		stepHop(root, deltaTime)
+	elseif Automation.mode == "Orbit" then
+		stepOrbit(root, deltaTime)
 	else
 		stepLoot(root, deltaTime)
 	end
@@ -1311,6 +1357,7 @@ local function stopAutomation()
 	Noclip.release("AutoLoot")
 	Noclip.release("AutoFollow")
 	Noclip.release("AutoHop")
+	Noclip.release("AutoOrbit")
 	if Automation.mode then
 		setStatus(Automation.mode, "Idle")
 	end
@@ -1344,7 +1391,7 @@ function setLootTags(selection)
 end
 
 function stopOtherMovers(except)
-	for _, key in ipairs({ "AutoFarm", "AutoLoot", "FollowPlayer", "HopPlayers", "Fly" }) do
+	for _, key in ipairs({ "AutoFarm", "AutoLoot", "FollowPlayer", "HopPlayers", "OrbitPlayer", "Fly" }) do
 		if key ~= except then
 			setFeature(key, false)
 		end
@@ -1407,6 +1454,97 @@ end
 
 function setHopDwell(seconds)
 	Automation.hopSeconds = seconds
+end
+
+featureHandlers.OrbitPlayer = function(enabled)
+	if not enabled then
+		if Automation.mode == "Orbit" then
+			stopAutomation()
+		end
+		return true
+	end
+	local selected = PlayerTools.selected
+	if not selected or selected.Parent ~= Players then
+		return false, "Hãy chọn người chơi trước khi bay vòng"
+	end
+	stopOtherMovers("OrbitPlayer")
+	startAutomation("Orbit")
+	return true
+end
+
+function setOrbitRadius(value)
+	Automation.orbitRadius = value
+end
+
+function setOrbitSpeed(value)
+	Automation.orbitSpeed = value
+end
+
+local AutoAttack = {
+	enabled = false,
+	range = CONFIG.AutoAttack.Default,
+	scanClock = 0,
+	attackClock = 0,
+	target = nil,
+	janitor = Janitor.new(),
+}
+
+local function findAttackTarget(root)
+	local best, bestDistance = nil, AutoAttack.range
+	for _, player in ipairs(Players:GetPlayers()) do
+		if isFollowCandidate(player) then
+			local distance = (player.Character:GetPivot().Position - root.Position).Magnitude
+			if distance <= bestDistance then
+				best, bestDistance = player.Character, distance
+			end
+		end
+	end
+	for _, model in ipairs(getEnemyModels()) do
+		if isEnemyAlive(model) then
+			local distance = (model:GetPivot().Position - root.Position).Magnitude
+			if distance <= bestDistance then
+				best, bestDistance = model, distance
+			end
+		end
+	end
+	return best
+end
+
+local function onAutoAttackStep(deltaTime)
+	local root, humanoid = CharacterWatcher.root, CharacterWatcher.humanoid
+	if not root or not humanoid or humanoid.Health <= 0 then
+		return
+	end
+	AutoAttack.scanClock += deltaTime
+	if AutoAttack.scanClock >= 0.2 then
+		AutoAttack.scanClock = 0
+		AutoAttack.target = findAttackTarget(root)
+	end
+	AutoAttack.attackClock += deltaTime
+	if AutoAttack.attackClock < Automation.attackInterval then
+		return
+	end
+	AutoAttack.attackClock = 0
+	local target = AutoAttack.target
+	if target and isEnemyAlive(target) then
+		callUserHook("attackTarget", attackTarget, target)
+	end
+end
+
+featureHandlers.AutoAttack = function(enabled)
+	AutoAttack.janitor:Clean()
+	AutoAttack.target = nil
+	AutoAttack.scanClock = 0
+	AutoAttack.attackClock = 0
+	AutoAttack.enabled = enabled
+	if enabled then
+		AutoAttack.janitor:Add(RunService.Heartbeat:Connect(onAutoAttackStep))
+	end
+	return true
+end
+
+function setAutoAttackRange(value)
+	AutoAttack.range = value
 end
 
 function selectPlayerByName(name)
@@ -1792,7 +1930,7 @@ end
 
 local function enableEsp()
 	Esp.enabled = true
-	Esp.folder = create("Folder", { Name = ESP_FOLDER_NAME }, playerGui)
+	Esp.folder = create("Folder", { Name = ESP_FOLDER_NAME }, workspace)
 	Esp.janitor:Add(Esp.folder)
 	Esp.janitor:Add(Players.PlayerAdded:Connect(trackEspPlayer))
 	Esp.janitor:Add(Players.PlayerRemoving:Connect(untrackEspPlayer))
@@ -1916,7 +2054,7 @@ local function enableObjectEsp(kind)
 		highlights = {},
 		count = 0,
 		janitor = Janitor.new(),
-		folder = create("Folder", { Name = ESP_FOLDER_NAME .. "Objects" .. kind }, playerGui),
+		folder = create("Folder", { Name = ESP_FOLDER_NAME .. "Objects" .. kind }, workspace),
 	}
 	state.janitor:Add(state.folder)
 	objectEspStates[kind] = state
@@ -1955,6 +2093,13 @@ local function createObjectEspHandler(kind)
 	end
 end
 
+CharacterWatcher.subscribe(function()
+	if Esp.enabled then
+		disableEsp()
+		enableEsp()
+	end
+end, function() end)
+
 featureHandlers.EnemyEsp = createObjectEspHandler("Enemies")
 featureHandlers.LootEsp = createObjectEspHandler("Loot")
 end
@@ -1965,6 +2110,9 @@ Fly = {
 	enabled = false,
 	speed = CONFIG.Fly.Default,
 	janitor = Janitor.new(),
+	bodyJanitor = Janitor.new(),
+	velocity = nil,
+	align = nil,
 	platformStandOriginal = nil,
 }
 
@@ -1989,26 +2137,54 @@ local function readFlyDirection(camera, humanoid)
 end
 
 local function onFlyStep()
-	local root, humanoid = CharacterWatcher.root, CharacterWatcher.humanoid
+	local humanoid = CharacterWatcher.humanoid
 	local camera = workspace.CurrentCamera
-	if not root or not humanoid or not camera or humanoid.Health <= 0 then
+	if not humanoid or not camera or humanoid.Health <= 0 or not Fly.velocity then
 		return
 	end
 	local direction = readFlyDirection(camera, humanoid)
 	if direction.Magnitude > 1 then
 		direction = direction.Unit
 	end
-	root.AssemblyLinearVelocity = direction * Fly.speed
-	root.AssemblyAngularVelocity = Vector3.zero
+	Fly.velocity.VectorVelocity = direction * Fly.speed
+	local facing = flatDirection(camera.CFrame.LookVector)
+	if facing ~= Vector3.zero then
+		Fly.align.CFrame = CFrame.lookAt(Vector3.zero, facing)
+	end
 end
 
-local function applyFlyState(humanoid)
+local function applyFlyBody(humanoid, root)
+	Fly.bodyJanitor:Clean()
 	Fly.platformStandOriginal = humanoid.PlatformStand
 	humanoid.PlatformStand = true
+	local facing = flatDirection(root.CFrame.LookVector)
+	if facing == Vector3.zero then
+		facing = Vector3.zAxis
+	end
+	local attachment = Fly.bodyJanitor:Add(create("Attachment", { Name = "MinhDiemFlyAnchor" }, root))
+	Fly.velocity = Fly.bodyJanitor:Add(create("LinearVelocity", {
+		Attachment0 = attachment,
+		MaxForce = 1e9,
+		VelocityConstraintMode = Enum.VelocityConstraintMode.Vector,
+		RelativeTo = Enum.ActuatorRelativeTo.World,
+		VectorVelocity = Vector3.zero,
+	}, root))
+	Fly.align = Fly.bodyJanitor:Add(create("AlignOrientation", {
+		Attachment0 = attachment,
+		Mode = Enum.OrientationAlignmentMode.OneAttachment,
+		MaxTorque = 1e9,
+		Responsiveness = 100,
+		CFrame = CFrame.lookAt(Vector3.zero, facing),
+	}, root))
 end
 
-local function restoreFlyState(humanoid)
-	humanoid.PlatformStand = Fly.platformStandOriginal or false
+local function releaseFlyBody(humanoid)
+	Fly.bodyJanitor:Clean()
+	Fly.velocity = nil
+	Fly.align = nil
+	if humanoid then
+		humanoid.PlatformStand = Fly.platformStandOriginal or false
+	end
 	Fly.platformStandOriginal = nil
 end
 
@@ -2022,32 +2198,151 @@ featureHandlers.Fly = function(enabled)
 	end
 	local humanoid, root = CharacterWatcher.humanoid, CharacterWatcher.root
 	if enabled then
+		if not humanoid or not root then
+			return false, "Chưa có nhân vật để bay"
+		end
 		stopOtherMovers("Fly")
 		Fly.enabled = true
-		if humanoid then
-			applyFlyState(humanoid)
-		end
+		applyFlyBody(humanoid, root)
 		Fly.janitor:Add(RunService.Heartbeat:Connect(onFlyStep))
 	else
 		Fly.enabled = false
 		Fly.janitor:Clean()
-		if humanoid then
-			restoreFlyState(humanoid)
-		end
-		if root then
-			root.AssemblyLinearVelocity = Vector3.zero
-		end
+		releaseFlyBody(humanoid)
 	end
 	return true
 end
 
-CharacterWatcher.subscribe(function(_, humanoid)
+CharacterWatcher.subscribe(function(_, humanoid, root)
 	if Fly.enabled then
-		applyFlyState(humanoid)
+		applyFlyBody(humanoid, root)
 	end
 end, function()
+	Fly.bodyJanitor:Clean()
+	Fly.velocity = nil
+	Fly.align = nil
 	Fly.platformStandOriginal = nil
 end)
+end
+
+local GodMode
+do
+GodMode = {
+	enabled = false,
+	burning = false,
+	janitor = Janitor.new(),
+	fire = nil,
+}
+
+local function refreshFire(root)
+	if GodMode.fire then
+		GodMode.fire:Destroy()
+		GodMode.fire = nil
+	end
+	if GodMode.burning and root then
+		GodMode.fire = create("Fire", {
+			Size = 9,
+			Heat = 12,
+			Color = Color3.fromRGB(255, 110, 0),
+			SecondaryColor = Color3.fromRGB(255, 220, 40),
+		}, root)
+	end
+end
+
+local function protectHumanoid(humanoid)
+	GodMode.janitor:Clean()
+	humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+	GodMode.janitor:Add(function()
+		if humanoid.Parent then
+			humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+		end
+	end)
+	GodMode.janitor:Add(humanoid.HealthChanged:Connect(function(health)
+		if health < humanoid.MaxHealth then
+			humanoid.Health = humanoid.MaxHealth
+		end
+	end))
+end
+
+featureHandlers.GodMode = function(enabled)
+	if GodMode.enabled == enabled then
+		return true
+	end
+	GodMode.enabled = enabled
+	local humanoid = CharacterWatcher.humanoid
+	if enabled then
+		if humanoid then
+			protectHumanoid(humanoid)
+		end
+	else
+		GodMode.janitor:Clean()
+	end
+	return true
+end
+
+featureHandlers.BurnEffect = function(enabled)
+	GodMode.burning = enabled
+	refreshFire(CharacterWatcher.root)
+	return true
+end
+
+CharacterWatcher.subscribe(function(_, humanoid, root)
+	if GodMode.enabled then
+		protectHumanoid(humanoid)
+	end
+	if GodMode.burning then
+		refreshFire(root)
+	end
+end, function()
+	GodMode.janitor:Clean()
+	GodMode.fire = nil
+end)
+end
+
+local setFovValue
+do
+local FieldOfView = {
+	enabled = false,
+	value = CONFIG.Fov.Default,
+	original = nil,
+	janitor = Janitor.new(),
+}
+
+local function applyFov()
+	local camera = workspace.CurrentCamera
+	if camera and camera.FieldOfView ~= FieldOfView.value then
+		camera.FieldOfView = FieldOfView.value
+	end
+end
+
+function setFovValue(value)
+	FieldOfView.value = value
+	if FieldOfView.enabled then
+		applyFov()
+	end
+end
+
+featureHandlers.Fov = function(enabled)
+	if FieldOfView.enabled == enabled then
+		return true
+	end
+	FieldOfView.enabled = enabled
+	local camera = workspace.CurrentCamera
+	if enabled then
+		FieldOfView.original = camera and camera.FieldOfView
+		applyFov()
+		if camera then
+			FieldOfView.janitor:Add(camera:GetPropertyChangedSignal("FieldOfView"):Connect(applyFov))
+		end
+	else
+		FieldOfView.janitor:Clean()
+		if camera and FieldOfView.original then
+			camera.FieldOfView = FieldOfView.original
+		end
+		FieldOfView.original = nil
+	end
+	return true
+end
 end
 
 local XRay, setXRayTransparency
@@ -2152,17 +2447,33 @@ Aim = {
 	janitor = Janitor.new(),
 	raycastParams = RaycastParams.new(),
 	circle = nil,
+	mode = CONFIG.Aim.Mode,
+	selectedPlayer = nil,
+	fieldOfView = CONFIG.Aim.FieldOfView,
+	smoothness = CONFIG.Aim.Smoothness,
+	wallCheck = CONFIG.Aim.WallCheck,
+	requireHold = CONFIG.Aim.RequireHold,
 }
 Aim.raycastParams.FilterType = Enum.RaycastFilterType.Exclude
 Aim.raycastParams.RespectCanCollide = true
 
 local isTouchOnly = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
-local function getAimPart(player)
+local function isAimTargetAllowed(player)
 	if player == localPlayer then
-		return nil
+		return false
 	end
-	if CONFIG.Aim.TeamCheck and isTeammate(player) then
+	if Aim.mode == "Selected" then
+		return player == Aim.selectedPlayer
+	end
+	if Aim.mode == "Enemies" and isTeammate(player) then
+		return false
+	end
+	return true
+end
+
+local function getAimPart(player)
+	if not isAimTargetAllowed(player) then
 		return nil
 	end
 	local character = player.Character
@@ -2174,7 +2485,7 @@ local function getAimPart(player)
 end
 
 local function isAimVisible(camera, part)
-	if not CONFIG.Aim.WallCheck then
+	if not Aim.wallCheck then
 		return true
 	end
 	Aim.raycastParams.FilterDescendantsInstances = { CharacterWatcher.character or workspace.Terrain }
@@ -2190,8 +2501,23 @@ local function getAimOrigin(camera)
 	return UserInputService:GetMouseLocation()
 end
 
+local function findSelectedTarget(camera)
+	local player = Aim.selectedPlayer
+	if not player or player.Parent ~= Players then
+		return nil
+	end
+	local part = getAimPart(player)
+	if part and (part.Position - camera.CFrame.Position).Magnitude <= CONFIG.Aim.MaxDistance and isAimVisible(camera, part) then
+		return part
+	end
+	return nil
+end
+
 local function findAimTarget(camera, center)
-	local bestPart, bestOffset = nil, CONFIG.Aim.FieldOfView
+	if Aim.mode == "Selected" then
+		return findSelectedTarget(camera)
+	end
+	local bestPart, bestOffset = nil, Aim.fieldOfView
 	for _, player in ipairs(Players:GetPlayers()) do
 		local part = getAimPart(player)
 		if part and (part.Position - camera.CFrame.Position).Magnitude <= CONFIG.Aim.MaxDistance then
@@ -2214,15 +2540,19 @@ local function onAimStep(deltaTime)
 	if Aim.circle then
 		Aim.circle.Position = UDim2.fromOffset(center.X, center.Y)
 	end
-	if CONFIG.Aim.RequireHold and not Aim.holding and not isTouchOnly then
+	if Aim.requireHold and not Aim.holding and not isTouchOnly then
 		return
 	end
 	local part = findAimTarget(camera, center)
-	if part then
-		local alpha = 1 - (1 - CONFIG.Aim.Smoothness) ^ (deltaTime * 60)
-		local goal = CFrame.lookAt(camera.CFrame.Position, part.Position)
-		camera.CFrame = camera.CFrame:Lerp(goal, alpha)
+	if not part then
+		return
 	end
+	local alpha = 1
+	if Aim.smoothness < 0.99 then
+		alpha = 1 - (1 - Aim.smoothness) ^ (deltaTime * 60)
+	end
+	local goal = CFrame.lookAt(camera.CFrame.Position, part.Position)
+	camera.CFrame = camera.CFrame:Lerp(goal, alpha)
 end
 
 local function createAimCircle()
@@ -2230,11 +2560,11 @@ local function createAimCircle()
 		Name = "AimFov",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(CONFIG.Aim.FieldOfView * 2, CONFIG.Aim.FieldOfView * 2),
+		Size = UDim2.fromOffset(Aim.fieldOfView * 2, Aim.fieldOfView * 2),
 		BackgroundTransparency = 1,
 		Active = false,
 	}, screenGui)
-	addCorner(circle, CONFIG.Aim.FieldOfView)
+	create("UICorner", { CornerRadius = UDim.new(0.5, 0) }, circle)
 	addStroke(circle, THEME.Accent, 1.5)
 	return circle
 end
@@ -2265,6 +2595,25 @@ local function disableAim()
 	Aim.janitor:Clean()
 end
 
+function Aim.setMode(mode)
+	Aim.mode = mode
+end
+
+function Aim.setSelectedPlayer(name)
+	Aim.selectedPlayer = Players:FindFirstChild(name)
+end
+
+function Aim.setFieldOfView(value)
+	Aim.fieldOfView = value
+	if Aim.circle then
+		Aim.circle.Size = UDim2.fromOffset(value * 2, value * 2)
+	end
+end
+
+function Aim.setSmoothness(percent)
+	Aim.smoothness = percent / 100
+end
+
 featureHandlers.Aim = function(enabled)
 	if Aim.enabled == enabled then
 		return true
@@ -2274,6 +2623,16 @@ featureHandlers.Aim = function(enabled)
 	else
 		disableAim()
 	end
+	return true
+end
+
+featureHandlers.AimWallCheck = function(enabled)
+	Aim.wallCheck = enabled
+	return true
+end
+
+featureHandlers.AimHold = function(enabled)
+	Aim.requireHold = enabled
 	return true
 end
 end
@@ -2445,7 +2804,7 @@ local function createButton(page, text, color, callback, keywords)
 		Size = UDim2.new(1, 0, 0, 36),
 		BackgroundColor3 = color,
 		Text = text,
-		TextColor3 = Color3.new(1, 1, 1),
+		TextColor3 = (color == THEME.Error or color == THEME.Element) and THEME.Text or Color3.new(0, 0, 0),
 		Font = THEME.FontBold,
 		TextSize = 13,
 		AutoButtonColor = true,
@@ -2601,7 +2960,7 @@ local function createDropdown(page, title, placeholder, getOptions, multiple, on
 			Size = UDim2.new(1, -6, 0, 26),
 			BackgroundColor3 = selected[name] and THEME.Accent or THEME.Panel,
 			Text = name,
-			TextColor3 = THEME.Text,
+			TextColor3 = selected[name] and Color3.new(0, 0, 0) or THEME.Text,
 			Font = THEME.Font,
 			TextSize = 12,
 			AutoButtonColor = true,
@@ -2641,6 +3000,13 @@ local function createDropdown(page, title, placeholder, getOptions, multiple, on
 	search:GetPropertyChangedSignal("Text"):Connect(rebuildOptions)
 	registerSearchable(root, page, title .. " " .. (keywords or ""))
 	updateSummary()
+	return {
+		refresh = rebuildOptions,
+		select = function(name)
+			selected = { [name] = true }
+			updateSummary()
+		end,
+	}
 end
 
 local function createPage(parent)
@@ -2661,9 +3027,11 @@ local function createPage(parent)
 end
 
 local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
-local menuWidth = math.min(350, viewport.X - 24)
-local menuHeight = math.min(440, viewport.Y - 24)
-local HEADER_HEIGHT = 44
+local menuWidth = math.min(500, viewport.X - 24)
+local menuHeight = math.min(380, viewport.Y - 24)
+local HEADER_HEIGHT = 40
+local FOOTER_HEIGHT = 22
+local SIDEBAR_WIDTH = 108
 
 local main = create("Frame", {
 	Name = "Main",
@@ -2673,8 +3041,8 @@ local main = create("Frame", {
 	BorderSizePixel = 0,
 	ClipsDescendants = true,
 }, screenGui)
-addCorner(main, 12)
-addStroke(main, THEME.Stroke, 1)
+addCorner(main, 3)
+addStroke(main, THEME.Accent, 1)
 
 local header = create("Frame", {
 	Size = UDim2.new(1, 0, 0, HEADER_HEIGHT),
@@ -2682,97 +3050,115 @@ local header = create("Frame", {
 	BorderSizePixel = 0,
 	Active = true,
 }, main)
-local accentLine = create("Frame", {
+create("Frame", {
 	Position = UDim2.fromOffset(0, HEADER_HEIGHT),
-	Size = UDim2.new(1, 0, 0, 2),
+	Size = UDim2.new(1, 0, 0, 1),
 	BackgroundColor3 = THEME.Accent,
 	BorderSizePixel = 0,
 }, main)
-create("UIGradient", { Color = ColorSequence.new(THEME.Accent, THEME.AccentAlt) }, accentLine)
 
-local titleLabel = createLabel(header, CONFIG.Name, 16, THEME.Text, Enum.Font.GothamBlack)
-titleLabel.Position = UDim2.fromOffset(14, 0)
-titleLabel.Size = UDim2.new(0, 130, 1, 0)
+local titleLabel = createLabel(header, ">_ " .. CONFIG.Name, 15, THEME.Accent, THEME.FontBold)
+titleLabel.Position = UDim2.fromOffset(12, 5)
+titleLabel.Size = UDim2.new(0, 220, 0, 18)
+local subtitleLabel = createLabel(header, "dev: " .. CONFIG.Developer .. "  |  tg: " .. CONFIG.TelegramHandle, 10, THEME.TextDim)
+subtitleLabel.Position = UDim2.fromOffset(12, 23)
+subtitleLabel.Size = UDim2.new(0, 300, 0, 12)
 local versionBadge = create("TextLabel", {
-	Position = UDim2.fromOffset(14 + 128, 12),
-	Size = UDim2.fromOffset(34, 20),
-	BackgroundColor3 = THEME.Accent,
-	Text = CONFIG.Version,
-	TextColor3 = Color3.new(1, 1, 1),
+	AnchorPoint = Vector2.new(1, 0.5),
+	Position = UDim2.new(1, -78, 0.5, 0),
+	Size = UDim2.fromOffset(44, 18),
+	BackgroundTransparency = 1,
+	Text = "[" .. CONFIG.Version .. "]",
+	TextColor3 = THEME.Accent,
 	Font = THEME.FontBold,
-	TextSize = 11,
-	BorderSizePixel = 0,
+	TextSize = 12,
 }, header)
-addCorner(versionBadge, 10)
 
 local function createHeaderButton(text, offset, color)
 	local button = create("TextButton", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, offset, 0.5, 0),
-		Size = UDim2.fromOffset(28, 28),
+		Size = UDim2.fromOffset(26, 26),
 		BackgroundColor3 = color,
 		Text = text,
-		TextColor3 = Color3.new(1, 1, 1),
+		TextColor3 = THEME.Text,
 		Font = THEME.FontBold,
-		TextSize = 16,
+		TextSize = 14,
 		AutoButtonColor = true,
 		BorderSizePixel = 0,
 	}, header)
-	addCorner(button, 8)
+	addCorner(button, 3)
+	addStroke(button, THEME.Stroke, 1)
 	return button
 end
 
-local minimizeButton = createHeaderButton("–", -48, THEME.Element)
-local closeButton = createHeaderButton("×", -12, THEME.Error)
+local minimizeButton = createHeaderButton("-", -42, THEME.Element)
+local closeButton = createHeaderButton("x", -10, THEME.Error)
 
 local body = create("Frame", {
-	Position = UDim2.fromOffset(0, HEADER_HEIGHT + 2),
-	Size = UDim2.new(1, 0, 1, -(HEADER_HEIGHT + 2)),
+	Position = UDim2.fromOffset(0, HEADER_HEIGHT + 1),
+	Size = UDim2.new(1, 0, 1, -(HEADER_HEIGHT + 1)),
 	BackgroundTransparency = 1,
 }, main)
 
-local tabBar = create("Frame", {
-	Position = UDim2.fromOffset(8, 8),
-	Size = UDim2.new(1, -16, 0, 34),
+local sidebar = create("Frame", {
+	Size = UDim2.new(0, SIDEBAR_WIDTH, 1, -FOOTER_HEIGHT),
 	BackgroundColor3 = THEME.Panel,
 	BorderSizePixel = 0,
 }, body)
-addCorner(tabBar, 8)
-addPadding(tabBar, 4)
-create("UIListLayout", {
-	FillDirection = Enum.FillDirection.Horizontal,
-	Padding = UDim.new(0, 4),
-	SortOrder = Enum.SortOrder.LayoutOrder,
-}, tabBar)
+addPadding(sidebar, 6)
+addList(sidebar, 4)
+create("Frame", {
+	Position = UDim2.fromOffset(SIDEBAR_WIDTH, 0),
+	Size = UDim2.new(0, 1, 1, -FOOTER_HEIGHT),
+	BackgroundColor3 = THEME.Stroke,
+	BorderSizePixel = 0,
+}, body)
+
+local content = create("Frame", {
+	Position = UDim2.fromOffset(SIDEBAR_WIDTH + 8, 8),
+	Size = UDim2.new(1, -(SIDEBAR_WIDTH + 16), 1, -(FOOTER_HEIGHT + 16)),
+	BackgroundTransparency = 1,
+}, body)
 
 local searchBox = create("TextBox", {
-	Position = UDim2.fromOffset(8, 48),
-	Size = UDim2.new(1, -16, 0, 30),
+	Size = UDim2.new(1, 0, 0, 28),
 	BackgroundColor3 = THEME.Panel,
-	PlaceholderText = "Tìm kiếm chức năng...",
+	PlaceholderText = "> tim kiem chuc nang...",
 	PlaceholderColor3 = THEME.TextDim,
 	Text = "",
-	TextColor3 = THEME.Text,
+	TextColor3 = THEME.Accent,
 	Font = THEME.Font,
 	TextSize = 12,
 	ClearTextOnFocus = false,
 	TextXAlignment = Enum.TextXAlignment.Left,
 	BorderSizePixel = 0,
-}, body)
-addCorner(searchBox, 8)
+}, content)
+addCorner(searchBox, 3)
 addStroke(searchBox, THEME.Stroke, 1)
 create("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }, searchBox)
 
 local pageHolder = create("Frame", {
-	Position = UDim2.fromOffset(8, 86),
-	Size = UDim2.new(1, -16, 1, -94),
+	Position = UDim2.fromOffset(0, 36),
+	Size = UDim2.new(1, 0, 1, -36),
 	BackgroundTransparency = 1,
+}, content)
+
+local footer = create("Frame", {
+	AnchorPoint = Vector2.new(0, 1),
+	Position = UDim2.new(0, 0, 1, 0),
+	Size = UDim2.new(1, 0, 0, FOOTER_HEIGHT),
+	BackgroundColor3 = THEME.Panel,
+	BorderSizePixel = 0,
 }, body)
+local statusLabel = createLabel(footer, "FPS -- | PING -- | PLAYERS --", 10, THEME.TextDim)
+statusLabel.Position = UDim2.fromOffset(10, 0)
+statusLabel.Size = UDim2.new(1, -20, 1, 0)
 
 notifyContainer = create("Frame", {
 	AnchorPoint = Vector2.new(0.5, 0),
 	Position = UDim2.new(0.5, 0, 0, 56),
-	Size = UDim2.fromOffset(280, 200),
+	Size = UDim2.fromOffset(300, 200),
 	BackgroundTransparency = 1,
 	ZIndex = 50,
 }, screenGui)
@@ -2783,12 +3169,15 @@ create("UIListLayout", {
 }, notifyContainer)
 
 local tabButtons = {}
+local tabBars = {}
 local TAB_DEFINITIONS = {
-	{ key = "Features", label = "Chức năng" },
-	{ key = "Auto", label = "Tự động" },
-	{ key = "Visual", label = "Hiển thị" },
-	{ key = "Players", label = "Người chơi" },
-	{ key = "About", label = "Giới thiệu" },
+	{ key = "Features", label = "CHUC NANG" },
+	{ key = "Auto", label = "TU DONG" },
+	{ key = "Visual", label = "HIEN THI" },
+	{ key = "Aim", label = "AIM" },
+	{ key = "Players", label = "NGUOI CHOI" },
+	{ key = "Actions", label = "HANH DONG" },
+	{ key = "About", label = "GIOI THIEU" },
 }
 
 local function applySearch(query)
@@ -2816,8 +3205,9 @@ local function selectTab(key)
 	activeTab = key
 	for tabKey, button in pairs(tabButtons) do
 		local isActive = tabKey == key
-		button.BackgroundColor3 = isActive and THEME.Accent or THEME.Panel
-		button.TextColor3 = isActive and Color3.new(1, 1, 1) or THEME.TextDim
+		button.BackgroundTransparency = isActive and 0 or 1
+		button.TextColor3 = isActive and THEME.Accent or THEME.TextDim
+		tabBars[tabKey].Visible = isActive
 	end
 	if searchBox.Text ~= "" then
 		searchBox.Text = ""
@@ -2829,17 +3219,25 @@ end
 for index, definition in ipairs(TAB_DEFINITIONS) do
 	pages[definition.key] = createPage(pageHolder)
 	local button = create("TextButton", {
-		Size = UDim2.new(0.2, -4, 1, 0),
-		BackgroundColor3 = THEME.Panel,
-		Text = definition.label,
+		Size = UDim2.new(1, 0, 0, 30),
+		BackgroundColor3 = THEME.Element,
+		BackgroundTransparency = 1,
+		Text = "  " .. definition.label,
 		TextColor3 = THEME.TextDim,
 		Font = THEME.FontBold,
-		TextSize = 10,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		AutoButtonColor = false,
 		BorderSizePixel = 0,
 		LayoutOrder = index,
-	}, tabBar)
-	addCorner(button, 6)
+	}, sidebar)
+	addCorner(button, 3)
+	tabBars[definition.key] = create("Frame", {
+		Size = UDim2.new(0, 2, 1, 0),
+		BackgroundColor3 = THEME.Accent,
+		BorderSizePixel = 0,
+		Visible = false,
+	}, button)
 	button.Activated:Connect(function()
 		selectTab(definition.key)
 	end)
@@ -2851,204 +3249,409 @@ searchBox:GetPropertyChangedSignal("Text"):Connect(function()
 	applySearch(searchBox.Text)
 end)
 
+local function reportResult(successMessage, accepted, reason)
+	if accepted then
+		notify(successMessage, "success")
+	else
+		notify(reason or "Khong thuc hien duoc", "error")
+	end
+end
+
 local ALL_FEATURE_KEYS = {
-	"HopPlayers", "FollowPlayer", "Spectate", "AutoClick", "AutoFarm", "AutoLoot", "Fly", "Noclip",
-	"FixLag", "FullBright", "WalkSpeed", "HighJump", "InfiniteJump", "XRay", "AntiAfk", "Esp",
-	"EnemyEsp", "LootEsp", "Aim",
+	"HopPlayers", "OrbitPlayer", "FollowPlayer", "Spectate", "AutoAttack", "AutoClick", "AutoFarm", "AutoLoot",
+	"Fly", "Noclip", "GodMode", "BurnEffect", "FixLag", "FullBright", "WalkSpeed", "HighJump", "InfiniteJump",
+	"Fov", "XRay", "AntiAfk", "Esp", "EnemyEsp", "LootEsp", "Aim",
 }
 
 local function disableAllFeatures()
 	for _, key in ipairs(ALL_FEATURE_KEYS) do
 		setFeature(key, false)
 	end
-	notify("Đã tắt tất cả chức năng", "success")
+	notify("Da tat tat ca chuc nang", "success")
 end
 
-local featuresPage = pages.Features
-createButton(featuresPage, "TẮT TẤT CẢ CHỨC NĂNG", THEME.Error, disableAllFeatures, "tắt tất cả panic stop all")
-createToggle(featuresPage, "WalkSpeed", "Speed Walk", "Chạy nhanh", "speed walk chạy nhanh tốc độ walkspeed")
-createSlider(featuresPage, "Tốc độ chạy", CONFIG.WalkSpeed.Min, CONFIG.WalkSpeed.Max, CONFIG.WalkSpeed.Default, setWalkSpeedValue, "speed walkspeed chạy")
-createToggle(featuresPage, "HighJump", "High Jump", "Nhảy cao", "jump nhảy cao jumppower jumpheight")
-createSlider(featuresPage, "Độ cao nhảy", CONFIG.Jump.Min, CONFIG.Jump.Max, CONFIG.Jump.Default, setJumpValue, "jump nhảy")
-createToggle(featuresPage, "InfiniteJump", "Infinite Jump", "Nhảy liên tục trên không", "nhảy liên tục infinite jump")
-createToggle(featuresPage, "Fly", "Fly", "Bay theo hướng camera (Space lên, Q xuống)", "bay fly camera")
-createSlider(featuresPage, "Tốc độ bay", CONFIG.Fly.Min, CONFIG.Fly.Max, CONFIG.Fly.Default, setFlySpeed, "bay fly speed tốc độ")
-createToggle(featuresPage, "Noclip", "Noclip", "Đi xuyên vật cản", "noclip xuyên tường")
-createToggle(featuresPage, "FullBright", "Full Bright", "Sáng bản đồ, bật/tắt khôi phục", "sáng fullbright ánh sáng")
-createToggle(featuresPage, "FixLag", "Fix Lag", "Giảm đồ họa, tắt để khôi phục", "lag giảm đồ họa fps")
-createToggle(featuresPage, "AntiAfk", "Anti AFK", "Không bị kick khi đứng yên (mặc định bật)", "afk idle kick đứng yên")
+do
+	local featuresPage = pages.Features
+	createButton(featuresPage, "TAT TAT CA CHUC NANG", THEME.Error, disableAllFeatures, "tat tat ca panic stop all")
+	createToggle(featuresPage, "WalkSpeed", "Speed Walk", "Chay nhanh", "speed walk chay nhanh toc do walkspeed")
+	createSlider(featuresPage, "Toc do chay", CONFIG.WalkSpeed.Min, CONFIG.WalkSpeed.Max, CONFIG.WalkSpeed.Default, setWalkSpeedValue, "speed walkspeed chay")
+	createToggle(featuresPage, "HighJump", "High Jump", "Nhay cao", "jump nhay cao jumppower jumpheight")
+	createSlider(featuresPage, "Do cao nhay", CONFIG.Jump.Min, CONFIG.Jump.Max, CONFIG.Jump.Default, setJumpValue, "jump nhay")
+	createToggle(featuresPage, "InfiniteJump", "Infinite Jump", "Nhay lien tuc tren khong", "nhay lien tuc infinite jump")
+	createToggle(featuresPage, "Fly", "Fly", "Bay theo huong camera, dung yen khi khong di chuyen", "bay fly camera")
+	createSlider(featuresPage, "Toc do bay", CONFIG.Fly.Min, CONFIG.Fly.Max, CONFIG.Fly.Default, setFlySpeed, "bay fly speed toc do")
+	createToggle(featuresPage, "Noclip", "Noclip", "Di xuyen vat can", "noclip xuyen tuong")
+	createToggle(featuresPage, "GodMode", "Bat tu", "Chan chet o phia client (xem huong dan)", "bat tu god mode khong chet lava")
+	createToggle(featuresPage, "BurnEffect", "Hieu ung chay nguoi", "Lua boc quanh nhan vat", "chay lua fire hieu ung")
+	createToggle(featuresPage, "FullBright", "Full Bright", "Sang ban do, tat de khoi phuc", "sang fullbright anh sang")
+	createToggle(featuresPage, "FixLag", "Fix Lag", "Giam do hoa, tat de khoi phuc", "lag giam do hoa fps")
+	createToggle(featuresPage, "Fov", "Camera FOV", "Doi goc nhin camera", "fov goc nhin camera")
+	createSlider(featuresPage, "Goc nhin (FOV)", CONFIG.Fov.Min, CONFIG.Fov.Max, CONFIG.Fov.Default, setFovValue, "fov goc nhin")
+	createToggle(featuresPage, "AntiAfk", "Anti AFK", "Khong bi kick khi dung yen (mac dinh bat)", "afk idle kick dung yen")
+end
 
-local autoPage = pages.Auto
-createStatus(autoPage, "Farm", "Auto Farm")
-createDropdown(autoPage, "Loại quái", "Chọn quái...", getEnemyTypes, false, setEnemyType, "quái enemy farm")
-createToggle(autoPage, "AutoFarm", "Auto Farm", "Bay trên đầu quái gần nhất", "farm quái tự động")
-createStatus(autoPage, "Loot", "Auto Loot")
-createDropdown(autoPage, "Loại loot", "Chọn loot...", function()
-	return table.clone(CONFIG.Loot.Tags)
-end, true, setLootTags, "loot rương trái ác quỷ nhặt đồ")
-createToggle(autoPage, "AutoLoot", "Auto Loot", "Tự động đến vật phẩm gần nhất", "loot nhặt tự động")
+do
+	local autoPage = pages.Auto
+	createStatus(autoPage, "Farm", "Auto Farm")
+	createDropdown(autoPage, "Loai quai", "Chon quai...", getEnemyTypes, false, setEnemyType, "quai enemy farm")
+	createToggle(autoPage, "AutoFarm", "Auto Farm", "Bay tren dau quai gan nhat", "farm quai tu dong")
+	createStatus(autoPage, "Loot", "Auto Loot")
+	createDropdown(autoPage, "Loai loot", "Chon loot...", function()
+		return table.clone(CONFIG.Loot.Tags)
+	end, true, setLootTags, "loot ruong trai ac quy nhat do")
+	createToggle(autoPage, "AutoLoot", "Auto Loot", "Tu dong den vat pham gan nhat", "loot nhat tu dong")
+	createToggle(autoPage, "AutoAttack", "Auto danh gan nhat", "Tu danh muc tieu trong tam gan", "auto attack danh gan nhat 3m")
+	createSlider(autoPage, "Tam danh (met)", CONFIG.AutoAttack.Min, CONFIG.AutoAttack.Max, CONFIG.AutoAttack.Default, setAutoAttackRange, "tam danh met range")
+	createSlider(autoPage, "Toc do danh (lan/giay)", CONFIG.AttackRate.Min, CONFIG.AttackRate.Max, CONFIG.AttackRate.Default, setAttackRate, "attack nhanh toc do danh")
+	setAttackRate(CONFIG.AttackRate.Default)
+	createToggle(autoPage, "AutoClick", "Auto Click", "Tu kich hoat vu khi dang cam", "auto click danh nhanh")
+	createSlider(autoPage, "Toc do click (lan/giay)", CONFIG.AutoClick.Min, CONFIG.AutoClick.Max, CONFIG.AutoClick.Default, setClickRate, "click toc do")
+end
 
-local visualPage = pages.Visual
-createToggle(visualPage, "Esp", "Player ESP", "Tên, máu, khoảng cách, viền", "esp người chơi highlight")
-createToggle(visualPage, "EspEnemiesOnly", "ESP chỉ đối thủ", "Ẩn đồng đội", "esp team đồng đội")
-toggleRenderers.EspEnemiesOnly(CONFIG.Esp.HideTeammates)
-createToggle(visualPage, "EspChams", "ESP Viền", "Viền và màu phủ nhìn xuyên tường", "chams viền highlight esp")
-toggleRenderers.EspChams(true)
-createToggle(visualPage, "EspBox", "ESP Hộp", "Khung hộp quanh người chơi", "box hộp khung esp")
-toggleRenderers.EspBox(true)
-createToggle(visualPage, "EspName", "ESP Tên", "Hiện tên người chơi", "tên name esp")
-toggleRenderers.EspName(CONFIG.Esp.ShowName)
-createToggle(visualPage, "EspHealth", "ESP Máu", "Hiện số máu và thanh máu", "máu health hp esp")
-toggleRenderers.EspHealth(CONFIG.Esp.ShowHealth)
-createToggle(visualPage, "EspDistance", "ESP Khoảng cách", "Hiện khoảng cách tới người chơi", "khoảng cách distance esp")
-toggleRenderers.EspDistance(CONFIG.Esp.ShowDistance)
-createToggle(visualPage, "EspTracers", "ESP Đường kẻ", "Vạch từ đáy màn hình tới người chơi", "tracer đường kẻ line esp")
-toggleRenderers.EspTracers(CONFIG.Esp.ShowTracers)
-createToggle(visualPage, "EnemyEsp", "ESP Quái", "Viền quái có tag FarmableEnemy", "quái enemy npc esp")
-createToggle(visualPage, "LootEsp", "ESP Vật phẩm", "Viền rương, trái ác quỷ theo tag", "loot vật phẩm rương esp")
-createToggle(visualPage, "Aim", "Aim Assist", "Giữ chuột phải (PC) / tự động (mobile)", "aim ngắm camera")
-createToggle(visualPage, "XRay", "X-Ray", "Nhìn xuyên tường, vật thể mờ đi", "xray nhìn xuyên tường")
-createSlider(visualPage, "Độ mờ X-Ray (%)", CONFIG.XRay.MinPercent, CONFIG.XRay.MaxPercent, CONFIG.XRay.DefaultPercent, function(percent)
-	setXRayTransparency(percent / 100)
-end, "xray độ mờ")
+do
+	local visualPage = pages.Visual
+	createToggle(visualPage, "Esp", "Player ESP", "Bat ESP nguoi choi", "esp nguoi choi highlight")
+	createToggle(visualPage, "EspEnemiesOnly", "ESP chi doi thu", "An dong doi", "esp team dong doi")
+	toggleRenderers.EspEnemiesOnly(CONFIG.Esp.HideTeammates)
+	createToggle(visualPage, "EspChams", "ESP Vien", "Vien va mau phu nhin xuyen tuong", "chams vien highlight esp")
+	toggleRenderers.EspChams(true)
+	createToggle(visualPage, "EspBox", "ESP Hop", "Khung hop quanh nguoi choi", "box hop khung esp")
+	toggleRenderers.EspBox(true)
+	createToggle(visualPage, "EspName", "ESP Ten", "Hien ten nguoi choi", "ten name esp")
+	toggleRenderers.EspName(CONFIG.Esp.ShowName)
+	createToggle(visualPage, "EspHealth", "ESP Mau", "Hien so mau va thanh mau", "mau health hp esp")
+	toggleRenderers.EspHealth(CONFIG.Esp.ShowHealth)
+	createToggle(visualPage, "EspDistance", "ESP Khoang cach", "Hien khoang cach", "khoang cach distance esp")
+	toggleRenderers.EspDistance(CONFIG.Esp.ShowDistance)
+	createToggle(visualPage, "EspTracers", "ESP Duong ke", "Vach tu day man hinh toi nguoi choi", "tracer duong ke line esp")
+	toggleRenderers.EspTracers(CONFIG.Esp.ShowTracers)
+	createToggle(visualPage, "EnemyEsp", "ESP Quai", "Vien quai co tag FarmableEnemy", "quai enemy npc esp")
+	createToggle(visualPage, "LootEsp", "ESP Vat pham", "Vien ruong, trai ac quy theo tag", "loot vat pham ruong esp")
+	createToggle(visualPage, "XRay", "X-Ray", "Nhin xuyen tuong, vat the mo di", "xray nhin xuyen tuong")
+	createSlider(visualPage, "Do mo X-Ray (%)", CONFIG.XRay.MinPercent, CONFIG.XRay.MaxPercent, CONFIG.XRay.DefaultPercent, function(percent)
+		setXRayTransparency(percent / 100)
+	end, "xray do mo")
+end
 
-local function reportResult(successMessage, accepted, reason)
-	if accepted then
-		notify(successMessage, "success")
-	else
-		notify(reason or "Không thực hiện được", "error")
+local playerDropdown, aimDropdown
+
+do
+	local aimPage = pages.Aim
+	local modeLookup = { ["Tat ca moi nguoi"] = "All", ["Chi doi thu"] = "Enemies", ["Nguoi da chon"] = "Selected" }
+	createToggle(aimPage, "Aim", "Aim Assist", "Khoa camera vao dau muc tieu", "aim ngam camera dau")
+	createDropdown(aimPage, "Che do aim", "Chon che do...", function()
+		return { "Tat ca moi nguoi", "Chi doi thu", "Nguoi da chon" }
+	end, false, function(name)
+		Aim.setMode(modeLookup[name])
+	end, "che do aim tat ca doi thu chon")
+	aimDropdown = createDropdown(aimPage, "Nguoi de aim", "Chon nguoi...", getPlayerNames, false, function(name)
+		Aim.setSelectedPlayer(name)
+	end, "nguoi aim chon player")
+	createSlider(aimPage, "Do chat (%)", 10, 100, 100, Aim.setSmoothness, "do chat lock cung smooth")
+	createSlider(aimPage, "Vung FOV aim", 20, 400, CONFIG.Aim.FieldOfView, Aim.setFieldOfView, "fov vung aim vong tron")
+	createToggle(aimPage, "AimWallCheck", "Kiem tra vat can", "Khong aim xuyen tuong", "wall check vat can")
+	toggleRenderers.AimWallCheck(CONFIG.Aim.WallCheck)
+	createToggle(aimPage, "AimHold", "Giu chuot phai de aim", "Tat = aim lien tuc khi bat Aim", "giu chuot phai hold")
+	toggleRenderers.AimHold(CONFIG.Aim.RequireHold)
+end
+
+local function spectateNextPlayer()
+	local names = getPlayerNames()
+	if #names == 0 then
+		return false, "Khong co nguoi choi nao khac"
 	end
+	local current = PlayerTools.selected and PlayerTools.selected.Name
+	local nextIndex = 1
+	for index, name in ipairs(names) do
+		if name == current then
+			nextIndex = index % #names + 1
+		end
+	end
+	selectPlayerByName(names[nextIndex])
+	playerDropdown.select(names[nextIndex])
+	return setFeature("Spectate", true)
 end
 
-local playersPage = pages.Players
-createStatus(playersPage, "Follow", "Auto bay")
-createDropdown(playersPage, "Người chơi", "Chọn người chơi...", getPlayerNames, false, selectPlayerByName, "người chơi player chọn danh sách server")
-createButton(playersPage, "Xem camera người chơi", THEME.Accent, function()
-	reportResult("Đang xem người chơi", setFeature("Spectate", true))
-end, "xem camera spectate")
-createButton(playersPage, "Tắt xem", THEME.Element, function()
-	reportResult("Đã tắt xem", setFeature("Spectate", false))
-end, "tắt xem spectate camera")
-createButton(playersPage, "Bay đến người chơi", THEME.AccentAlt, function()
-	reportResult("Đang bay đến người chơi", flyToSelectedPlayer())
-end, "bay đến teleport người chơi")
-createToggle(playersPage, "FollowPlayer", "Auto bay trước mặt", "Tự bay đến và đứng trước mặt người chơi", "auto bay follow trước mặt người chơi")
-createButton(playersPage, "Dừng bay theo", THEME.Element, function()
-	reportResult("Đã dừng bay theo", setFeature("FollowPlayer", false))
-end, "dừng stop bay theo")
-createStatus(playersPage, "Hop", "Dịch chuyển")
-createToggle(playersPage, "HopPlayers", "Dịch chuyển tới người gần nhất", "Lần lượt tới từng người từ gần đến xa", "dịch chuyển teleport hop người chơi gần nhất")
-createSlider(playersPage, "Thời gian mỗi người (giây)", CONFIG.Hop.Min, CONFIG.Hop.Max, CONFIG.Hop.DefaultSeconds, setHopDwell, "dịch chuyển thời gian")
-createButton(playersPage, "Dừng dịch chuyển", THEME.Error, function()
-	reportResult("Đã dừng dịch chuyển", setFeature("HopPlayers", false))
-end, "dừng stop dịch chuyển teleport")
-createSlider(playersPage, "Tốc độ đánh (lần/giây)", CONFIG.AttackRate.Min, CONFIG.AttackRate.Max, CONFIG.AttackRate.Default, setAttackRate, "attack nhanh tốc độ đánh")
-setAttackRate(CONFIG.AttackRate.Default)
-createToggle(playersPage, "AutoClick", "Auto Click", "Tự kích hoạt vũ khí đang cầm", "auto click đánh nhanh")
-createSlider(playersPage, "Tốc độ click (lần/giây)", CONFIG.AutoClick.Min, CONFIG.AutoClick.Max, CONFIG.AutoClick.Default, setClickRate, "click tốc độ")
+do
+	local playersPage = pages.Players
+	createStatus(playersPage, "Follow", "Auto bay")
+	playerDropdown = createDropdown(playersPage, "Nguoi choi", "Chon nguoi choi...", getPlayerNames, false, selectPlayerByName, "nguoi choi player chon danh sach server")
+	createButton(playersPage, "Lam moi danh sach", THEME.Element, function()
+		playerDropdown.refresh()
+		aimDropdown.refresh()
+		notify("Da lam moi danh sach nguoi choi", "success")
+	end, "lam moi reset danh sach nguoi choi")
+	createButton(playersPage, "Xem camera nguoi choi", THEME.Accent, function()
+		reportResult("Dang xem nguoi choi", setFeature("Spectate", true))
+	end, "xem camera spectate")
+	createButton(playersPage, "Xem nguoi ke tiep", THEME.AccentAlt, function()
+		reportResult("Dang xem nguoi ke tiep", spectateNextPlayer())
+	end, "xem nguoi ke tiep next spectate")
+	createButton(playersPage, "Tat xem", THEME.Element, function()
+		reportResult("Da tat xem", setFeature("Spectate", false))
+	end, "tat xem spectate camera")
+	createButton(playersPage, "Bay den nguoi choi", THEME.AccentAlt, function()
+		reportResult("Dang bay den nguoi choi", flyToSelectedPlayer())
+	end, "bay den teleport nguoi choi")
+	createToggle(playersPage, "FollowPlayer", "Auto bay truoc mat", "Tu bay den va dung truoc mat nguoi choi", "auto bay follow truoc mat nguoi choi")
+	createButton(playersPage, "Dung bay theo", THEME.Element, function()
+		reportResult("Da dung bay theo", setFeature("FollowPlayer", false))
+	end, "dung stop bay theo")
+	createStatus(playersPage, "Orbit", "Bay vong tron")
+	createToggle(playersPage, "OrbitPlayer", "Bay vong quanh nguoi choi", "Bay tron quanh nguoi da chon nhu compa", "bay vong tron compa orbit")
+	createSlider(playersPage, "Ban kinh vong", CONFIG.Orbit.Radius.Min, CONFIG.Orbit.Radius.Max, CONFIG.Orbit.Radius.Default, setOrbitRadius, "ban kinh vong orbit")
+	createSlider(playersPage, "Toc do vong (do/giay)", CONFIG.Orbit.Speed.Min, CONFIG.Orbit.Speed.Max, CONFIG.Orbit.Speed.Default, setOrbitSpeed, "toc do vong orbit")
+	createButton(playersPage, "Dung bay vong", THEME.Error, function()
+		reportResult("Da dung bay vong", setFeature("OrbitPlayer", false))
+	end, "dung stop bay vong orbit")
+	createStatus(playersPage, "Hop", "Dich chuyen")
+	createToggle(playersPage, "HopPlayers", "Dich chuyen toi nguoi gan nhat", "Lan luot toi tung nguoi tu gan den xa", "dich chuyen teleport hop nguoi gan nhat")
+	createSlider(playersPage, "Thoi gian moi nguoi (giay)", CONFIG.Hop.Min, CONFIG.Hop.Max, CONFIG.Hop.DefaultSeconds, setHopDwell, "dich chuyen thoi gian")
+	createButton(playersPage, "Dung dich chuyen", THEME.Error, function()
+		reportResult("Da dung dich chuyen", setFeature("HopPlayers", false))
+	end, "dung stop dich chuyen teleport")
+end
 
-local aboutPage = pages.About
-createCard(aboutPage, CONFIG.Name .. " " .. CONFIG.Version, "Dev: " .. CONFIG.Developer .. "\nTelegram: " .. CONFIG.TelegramHandle)
+mainJanitor:Add(Players.PlayerAdded:Connect(function()
+	playerDropdown.refresh()
+	aimDropdown.refresh()
+end))
+mainJanitor:Add(Players.PlayerRemoving:Connect(function()
+	task.defer(function()
+		if not isShutdown then
+			playerDropdown.refresh()
+			aimDropdown.refresh()
+		end
+	end)
+end))
+
+local ACTIONS = {
+	{ label = "Vay tay", emote = "wave" },
+	{ label = "Chi tay", emote = "point" },
+	{ label = "Nhay mua 1", emote = "dance" },
+	{ label = "Nhay mua 2", emote = "dance2" },
+	{ label = "Nhay mua 3", emote = "dance3" },
+	{ label = "Cuoi", emote = "laugh" },
+	{ label = "Reo ho", emote = "cheer" },
+}
+local actionLookup = {}
+local actionLabels = {}
+for _, action in ipairs(ACTIONS) do
+	actionLookup[action.label] = action.emote
+	table.insert(actionLabels, action.label)
+end
+local selectedAction = nil
+
+local function playSelectedAction()
+	local humanoid = CharacterWatcher.humanoid
+	if not selectedAction then
+		return false, "Hay chon hanh dong truoc"
+	end
+	if not humanoid then
+		return false, "Chua co nhan vat"
+	end
+	local ok, played = pcall(humanoid.PlayEmote, humanoid, actionLookup[selectedAction])
+	if not ok or not played then
+		return false, "Hanh dong khong kha dung voi nhan vat nay"
+	end
+	return true
+end
+
+local function jumpAction()
+	local humanoid = CharacterWatcher.humanoid
+	if not humanoid then
+		return false, "Chua co nhan vat"
+	end
+	humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	return true
+end
+
+local function sitAction()
+	local humanoid = CharacterWatcher.humanoid
+	if not humanoid then
+		return false, "Chua co nhan vat"
+	end
+	humanoid.Sit = not humanoid.Sit
+	return true
+end
+
+local function useToolAction()
+	local tool = getEquippedTool()
+	if not tool then
+		return false, "Ban chua cam vu khi nao"
+	end
+	tool:Activate()
+	return true
+end
+
+local function resetCharacterAction()
+	local character = CharacterWatcher.character
+	if not character then
+		return false, "Chua co nhan vat"
+	end
+	character:BreakJoints()
+	return true
+end
+
+local function sendWelcomeChat()
+	local message = CONFIG.AutoChat.Message
+	local ok, errorMessage = pcall(function()
+		local channels = TextChatService:FindFirstChild("TextChannels")
+		local general = channels and channels:FindFirstChild("RBXGeneral")
+		if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService and general then
+			general:SendAsync(message)
+			return
+		end
+		local events = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+		local sayRequest = events and events:FindFirstChild("SayMessageRequest")
+		if not sayRequest then
+			error("Khong tim thay he thong chat")
+		end
+		sayRequest:FireServer(message, "All")
+	end)
+	if ok then
+		return true
+	end
+	warn(string.format("[%s] Khong gui duoc tin nhan chat: %s", CONFIG.Name, tostring(errorMessage)))
+	return false, "Khong gui duoc tin nhan chat"
+end
+
+do
+	local actionsPage = pages.Actions
+	createDropdown(actionsPage, "Hanh dong", "Chon hanh dong...", function()
+		return table.clone(actionLabels)
+	end, false, function(name)
+		selectedAction = name
+	end, "hanh dong emote action")
+	createButton(actionsPage, "Dung hanh dong", THEME.Accent, function()
+		reportResult("Dang thuc hien hanh dong", playSelectedAction())
+	end, "dung hanh dong emote")
+	createButton(actionsPage, "Nhay", THEME.Element, function()
+		reportResult("Da nhay", jumpAction())
+	end, "nhay jump")
+	createButton(actionsPage, "Ngoi / Dung day", THEME.Element, function()
+		reportResult("Da doi tu the ngoi", sitAction())
+	end, "ngoi sit dung day")
+	createButton(actionsPage, "Dung vu khi dang cam", THEME.AccentAlt, function()
+		reportResult("Da dung vu khi", useToolAction())
+	end, "dung vu khi tool activate")
+	createButton(actionsPage, "Gui loi chao vao chat", THEME.Element, function()
+		reportResult("Da gui loi chao", sendWelcomeChat())
+	end, "chat loi chao welcome")
+	createButton(actionsPage, "Reset nhan vat", THEME.Error, function()
+		reportResult("Da reset nhan vat", resetCharacterAction())
+	end, "reset nhan vat respawn")
+end
+
+local linkBox
+
+local function selectLinkText()
+	linkBox:CaptureFocus()
+	linkBox.CursorPosition = #linkBox.Text + 1
+	linkBox.SelectionStart = 1
+end
 
 local function openTelegram()
 	local ok, errorMessage = pcall(GuiService.OpenBrowserWindow, GuiService, CONFIG.TelegramUrl)
 	if ok then
-		notify("Đang mở Telegram...", "success")
-	else
-		warn(string.format("[%s] Không thể tự mở link: %s", CONFIG.Name, tostring(errorMessage)))
-		notify("Roblox không cho tự mở link. Hãy sao chép link bên dưới", "warn")
+		notify("Dang mo Telegram...", "success")
+		return
 	end
+	warn(string.format("[%s] Khong the tu mo link: %s", CONFIG.Name, tostring(errorMessage)))
+	selectLinkText()
+	notify("Khong mo duoc link. Da chon san link, nhan Ctrl+C de sao chep", "warn")
 end
 
-createButton(aboutPage, "Mở Telegram " .. CONFIG.TelegramHandle, THEME.AccentAlt, openTelegram, "telegram liên hệ dev")
-
-local linkRow = createRow(aboutPage, 36)
-local linkBox = create("TextBox", {
-	Size = UDim2.new(1, -16, 1, 0),
-	Position = UDim2.fromOffset(8, 0),
-	BackgroundTransparency = 1,
-	Text = CONFIG.TelegramUrl,
-	TextColor3 = THEME.AccentAlt,
-	Font = THEME.Font,
-	TextSize = 12,
-	ClearTextOnFocus = false,
-	TextXAlignment = Enum.TextXAlignment.Left,
-}, linkRow)
-linkBox.FocusLost:Connect(function()
-	linkBox.Text = CONFIG.TelegramUrl
-end)
-registerSearchable(linkRow, aboutPage, "telegram link")
-
-createCard(aboutPage, "Giới thiệu", "MinhDiemHub là bộ tiện ích chạy hoàn toàn phía client cho trải nghiệm do bạn sở hữu. Giao diện tối, gọn nhẹ, hỗ trợ PC và điện thoại. Không gọi mạng, không tải mã bên ngoài.")
-createCard(aboutPage, "Hướng dẫn sử dụng", table.concat({
-	"1. Bấm nút M hoặc phím " .. CONFIG.MenuToggleKey.Name .. " để mở/đóng menu. Kéo thanh tiêu đề để di chuyển.",
-	"2. Nút – thu gọn menu, nút × ẩn menu (chức năng vẫn chạy).",
-	"3. Ô Tìm kiếm giúp lọc nhanh chức năng ở mọi tab.",
-	"4. Speed Walk / High Jump: bật công tắc rồi kéo thanh trượt hoặc nhập số.",
-	"5. Auto Farm: chọn loại quái rồi bật. Quái cần tag " .. CONFIG.Farm.EnemyTag .. " hoặc nằm trong thư mục " .. CONFIG.Farm.FallbackFolderName .. " ở Workspace. Cần nối hàm attackTarget.",
-	"6. Auto Loot: chọn một hoặc nhiều loại rồi bật. Cần nối hàm collectLoot hoặc vật phẩm có ProximityPrompt.",
-	"7. Auto Farm và Auto Loot không chạy cùng lúc.",
-	"8. ESP hiện tên, máu, khoảng cách. Aim Assist: giữ chuột phải (PC), mobile tự hỗ trợ khi bật.",
-	"9. Fix Lag: bật để giảm đồ họa, tắt để trả lại như cũ.",
-	"10. Fly: bật rồi đẩy joystick/WASD, bạn bay theo hướng camera. Space bay lên, Q bay xuống. Chỉnh tốc độ bằng thanh trượt.",
-	"11. X-Ray: làm vật thể trong map mờ đi để nhìn xuyên, chỉnh độ mờ bằng thanh trượt.",
-	"12. ESP Đường kẻ: vạch từ đáy màn hình tới từng người chơi.",
-	"13. Anti AFK mặc định bật, chỉ giúp không bị kick vì đứng yên quá lâu.",
-	"14. ESP có nhiều loại bật riêng: Viền, Hộp, Tên, Máu, Khoảng cách, Đường kẻ, ESP Quái, ESP Vật phẩm.",
-	"15. Dịch chuyển tới người gần nhất: lần lượt tới từng người từ gần đến xa, bấm Dừng dịch chuyển để dừng.",
-	"16. Nút TẮT TẤT CẢ CHỨC NĂNG (hoặc phím " .. CONFIG.PanicKey.Name .. ") tắt mọi chức năng và khôi phục trạng thái.",
-	"14. Tab Người chơi: chọn người trong server rồi bấm Xem camera / Tắt xem, hoặc Bay đến để bay ra trước mặt họ.",
-	"15. Auto bay trước mặt: tự bay theo người đã chọn (không chọn thì lấy người gần nhất, bỏ qua đồng đội) và đứng trước mặt họ.",
-	"16. Tốc độ đánh gọi attackTarget, mặc định kích hoạt vũ khí đang cầm. Auto Click cũng kích hoạt vũ khí đang cầm theo tốc độ bạn chọn.",
-}, "\n"))
-createButton(aboutPage, "Gỡ MinhDiemHub (khôi phục mọi thứ)", THEME.Error, function()
-	mainJanitor:Clean()
-end, "gỡ tắt hoàn toàn")
+do
+	local aboutPage = pages.About
+	createCard(aboutPage, CONFIG.Name .. " " .. CONFIG.Version, "Dev: " .. CONFIG.Developer .. "\nTelegram: " .. CONFIG.TelegramHandle)
+	createButton(aboutPage, "Mo Telegram " .. CONFIG.TelegramHandle, THEME.AccentAlt, openTelegram, "telegram lien he dev")
+	local linkRow = createRow(aboutPage, 36)
+	linkBox = create("TextBox", {
+		Size = UDim2.new(1, -16, 1, 0),
+		Position = UDim2.fromOffset(8, 0),
+		BackgroundTransparency = 1,
+		Text = CONFIG.TelegramUrl,
+		TextColor3 = THEME.AccentAlt,
+		Font = THEME.Font,
+		TextSize = 12,
+		ClearTextOnFocus = false,
+		TextXAlignment = Enum.TextXAlignment.Left,
+	}, linkRow)
+	linkBox.FocusLost:Connect(function()
+		linkBox.Text = CONFIG.TelegramUrl
+	end)
+	registerSearchable(linkRow, aboutPage, "telegram link")
+	createCard(aboutPage, "Gioi thieu", "MinhDiemHub la bo tien ich chay hoan toan phia client cho trai nghiem do ban so huu. Giao dien den kieu terminal, ho tro PC va dien thoai. Khong goi mang, khong tai ma ben ngoai.")
+	createCard(aboutPage, "Huong dan su dung", table.concat({
+		"1. Bam nut qua tao hoac phim " .. CONFIG.MenuToggleKey.Name .. " de mo/dong menu. Keo thanh tieu de de di chuyen.",
+		"2. Nut - thu gon menu, nut x an menu (chuc nang van chay).",
+		"3. O tim kiem loc nhanh chuc nang o moi tab.",
+		"4. Speed Walk / High Jump / Fly: bat cong tac roi keo thanh truot. Fly: Space bay len, Q bay xuong, dung yen khi khong di chuyen.",
+		"5. Bat tu: chi chan o phia client. Neu server tru mau thi van co the chet. Hieu ung chay chi la hinh anh.",
+		"6. Auto Farm: chon loai quai roi bat. Quai can tag " .. CONFIG.Farm.EnemyTag .. " hoac nam trong thu muc " .. CONFIG.Farm.FallbackFolderName .. " o Workspace.",
+		"7. Auto Loot: chon mot hoac nhieu loai roi bat. Can vat pham co ProximityPrompt hoac noi ham collectLoot.",
+		"8. Auto danh gan nhat: tu danh muc tieu trong tam chon (mac dinh 3m). Mac dinh dung vu khi dang cam, hoac noi ham attackTarget.",
+		"9. ESP: bat rieng tung loai (Vien, Hop, Ten, Mau, Khoang cach, Duong ke, Quai, Vat pham).",
+		"10. Aim: chon che do (tat ca, chi doi thu, nguoi da chon). Giu chuot phai de aim tren PC, mobile tu ho tro. Do chat 100% la khoa cung vao dau.",
+		"11. Tab Nguoi choi: chon nguoi, xem camera / tat xem / xem nguoi ke tiep, bay den, bay truoc mat, bay vong tron nhu compa, dich chuyen tuan tu.",
+		"12. Tab Hanh dong: dung emote, nhay, ngoi, dung vu khi, reset nhan vat, gui loi chao vao chat.",
+		"13. Nut TAT TAT CA CHUC NANG (hoac phim " .. CONFIG.PanicKey.Name .. ") tat moi chuc nang va khoi phuc trang thai.",
+		"14. Fix Lag: bat de giam do hoa, tat de tra lai nhu cu.",
+	}, "\n"))
+	createButton(aboutPage, "Go MinhDiemHub (khoi phuc moi thu)", THEME.Error, function()
+		mainJanitor:Clean()
+	end, "go tat hoan toan")
+end
 
 local LAUNCHER_COLOR = Color3.fromRGB(0, 0, 0)
 
-local function createIconPiece(icon, size, position, color, rotation)
+local function createIconPiece(icon, size, position, color, rotation, transparency)
 	local piece = create("Frame", {
 		Size = UDim2.fromOffset(size.X, size.Y),
 		Position = UDim2.fromOffset(position.X, position.Y),
 		BackgroundColor3 = color,
+		BackgroundTransparency = transparency or 0,
 		BorderSizePixel = 0,
 		Rotation = rotation or 0,
 		Active = false,
 	}, icon)
-	addCorner(piece, 100)
+	create("UICorner", { CornerRadius = UDim.new(0.5, 0) }, piece)
 	return piece
 end
 
 local function buildAppleIcon(parent, backgroundColor)
 	local icon = create("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.55),
-		Size = UDim2.fromOffset(28, 28),
+		Position = UDim2.fromScale(0.5, 0.56),
+		Size = UDim2.fromOffset(30, 30),
 		BackgroundTransparency = 1,
 		Active = false,
 	}, parent)
-	local white = Color3.new(1, 1, 1)
-	createIconPiece(icon, Vector2.new(15, 15), Vector2.new(2, 8), white)
-	createIconPiece(icon, Vector2.new(15, 15), Vector2.new(11, 8), white)
-	createIconPiece(icon, Vector2.new(16, 15), Vector2.new(6, 12), white)
-	createIconPiece(icon, Vector2.new(9, 9), Vector2.new(19, 10), backgroundColor)
-	createIconPiece(icon, Vector2.new(2, 6), Vector2.new(13, 2), white, 12)
-	createIconPiece(icon, Vector2.new(9, 5), Vector2.new(15, 1), THEME.Success, -30)
+	local red = Color3.fromRGB(226, 40, 52)
+	local darkRed = Color3.fromRGB(150, 18, 32)
+	createIconPiece(icon, Vector2.new(15, 16), Vector2.new(2, 9), red)
+	createIconPiece(icon, Vector2.new(15, 16), Vector2.new(13, 9), red)
+	createIconPiece(icon, Vector2.new(19, 15), Vector2.new(5, 13), red)
+	createIconPiece(icon, Vector2.new(13, 9), Vector2.new(13, 18), darkRed, 0, 0.55)
+	createIconPiece(icon, Vector2.new(6, 6), Vector2.new(12, 7), backgroundColor)
+	createIconPiece(icon, Vector2.new(4, 8), Vector2.new(6, 12), Color3.fromRGB(255, 160, 160), 20, 0.3)
+	createIconPiece(icon, Vector2.new(3, 8), Vector2.new(14, 2), Color3.fromRGB(112, 72, 40), 12)
+	createIconPiece(icon, Vector2.new(11, 6), Vector2.new(16, 2), Color3.fromRGB(70, 205, 95), -35)
 	return icon
 end
 
 local launcher = create("TextButton", {
 	Name = "Launcher",
-	Size = UDim2.fromOffset(44, 44),
-	Position = UDim2.new(0, 12, 0.5, -22),
+	Size = UDim2.fromOffset(46, 46),
+	Position = UDim2.new(0, 12, 0.5, -23),
 	BackgroundColor3 = LAUNCHER_COLOR,
 	Text = "",
 	AutoButtonColor = false,
 	BorderSizePixel = 0,
 }, screenGui)
-addCorner(launcher, 12)
-addStroke(launcher, THEME.Stroke, 1)
+addCorner(launcher, 4)
+addStroke(launcher, THEME.Accent, 1)
 buildAppleIcon(launcher, LAUNCHER_COLOR)
 
 local collapsed = false
@@ -3060,7 +3663,7 @@ end
 local function toggleCollapse()
 	collapsed = not collapsed
 	body.Visible = not collapsed
-	local height = collapsed and (HEADER_HEIGHT + 2) or menuHeight
+	local height = collapsed and (HEADER_HEIGHT + 1) or menuHeight
 	TweenService:Create(main, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { Size = UDim2.fromOffset(menuWidth, height) }):Play()
 end
 
@@ -3124,6 +3727,19 @@ mainJanitor:Add(UserInputService.InputBegan:Connect(function(input, processed)
 	end
 end))
 
+local statusClock, statusFrames = 0, 0
+mainJanitor:Add(RunService.Heartbeat:Connect(function(deltaTime)
+	statusFrames += 1
+	statusClock += deltaTime
+	if statusClock < 0.5 then
+		return
+	end
+	local fps = math.floor(statusFrames / statusClock + 0.5)
+	local ping = math.floor(localPlayer:GetNetworkPing() * 1000 + 0.5)
+	statusLabel.Text = string.format("FPS %d | PING %dms | PLAYERS %d", fps, ping, #Players:GetPlayers())
+	statusClock, statusFrames = 0, 0
+end))
+
 mainJanitor:Add(function()
 	if PlayerTools.tween then
 		PlayerTools.tween:Cancel()
@@ -3143,14 +3759,12 @@ if localPlayer.Character then
 	task.spawn(handleCharacterAdded, localPlayer.Character)
 end
 
-local SHUTDOWN_ORDER = ALL_FEATURE_KEYS
-
 local function shutdown()
 	if isShutdown then
 		return
 	end
 	isShutdown = true
-	for _, key in ipairs(SHUTDOWN_ORDER) do
+	for _, key in ipairs(ALL_FEATURE_KEYS) do
 		featureHandlers[key](false)
 	end
 	mainJanitor:Clean()
@@ -3166,5 +3780,13 @@ screenGui.Destroying:Connect(shutdown)
 
 selectTab("Features")
 setFeature("AntiAfk", true)
-notify(CONFIG.Name .. " " .. CONFIG.Version .. " đã sẵn sàng", "success")
+notify(CONFIG.Name .. " " .. CONFIG.Version .. " da san sang", "success")
+if CONFIG.AutoChat.Enabled then
+	mainJanitor:Add(task.delay(CONFIG.AutoChat.DelaySeconds, function()
+		local ok, reason = sendWelcomeChat()
+		if not ok then
+			notify(reason, "warn")
+		end
+	end))
+end
 end
